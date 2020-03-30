@@ -1,0 +1,8 @@
+<launch>
+    <include file="$(find autolabor_driver)/launch/driver.launch"/>
+    <include file="$(find yocs_cmd_vel_mux)/launch/standalone.launch"/>
+    <include file="$(find demo_pioneer)/launch/pioneer-teleop.launch"/>
+    <node pkg="p3dx_navigation" name="Neopixel" type="Neopixel"/>
+    
+    <node pkg="rosserial_python" type="serial_node.py" args="/dev/ttyACM0" name="serial_node" respawn="true"/>
+</launch>  

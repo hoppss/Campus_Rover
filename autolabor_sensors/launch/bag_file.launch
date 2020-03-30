@@ -1,0 +1,63 @@
+<!-- -*- mode: XML -*- -->
+
+<launch>
+
+  <arg name="file_name"/>
+
+  <node pkg="rosbag" name="record" type="record" output="screen"
+        args="-O $(env HOME)/bags/pev_bag/$(arg file_name) 
+        /gps_fix
+        /gps_time
+        /gps_vel
+        /lidar10m/scan
+        /lidar30m_top/scan
+        /lidar30m_tilt/scan
+        /lidar30m/scan
+        /velodyne_points
+        /velodyne_front/velodyne_points
+        /px4flow/opt_flow
+        /xsens_imu_odom/imu/data
+        /xsens_imu_odom/imu/mag
+        /xsens_imu_odom/imu_data_str
+        /xsens_imu_odom/time_reference
+        /xsens_imu_odom/velocity
+        /xsens_imu_slam/imu/data
+        /xsens_imu_slam/imu/mag
+        /xsens_imu_slam/imu_data_str
+        /xsens_imu_slam/time_reference
+        /xsens_imu_slam/velocity
+        /xsens_imu_tilt/imu/data
+        /xsens_imu_tilt/imu/mag
+        /xsens_imu_tilt/imu_data_str
+        /xsens_imu_tilt/time_reference
+        /xsens_imu_tilt/velocity
+        /rear_wheel_encoder_data
+        /zed/depth/camera_info
+        /zed/depth/depth_registered
+        /zed/joint_states
+        /zed/rgb/image_rect_color
+        /zed/rgb/camera_info
+        /zed/odom
+        /web_cam/camera_info
+        /web_cam/image_raw
+        /gopro/image_raw
+        /gopro/camera_info 
+        /camRing_F/camera_info
+        /camRing_F/image_raw
+        /camRing_FR/camera_info
+        /camRing_FR/image_raw
+        /camRing_FL/camera_info
+        /camRing_FL/image_raw
+        /camRing_B/camera_info
+        /camRing_B/image_raw
+        /camPed_FR/camera_info
+        /camPed_FR/image_raw
+        /camPed_RR/camera_info
+        /camPed_RR/image_raw
+        /camPed_FL/camera_info
+        /camPed_FL/image_raw
+        /camPed_RL/camera_info
+        /camPed_RL/image_raw
+        /detectnet_node/deep_boundingBox" />
+
+</launch>

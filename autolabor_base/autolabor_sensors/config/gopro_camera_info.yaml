@@ -1,0 +1,20 @@
+image_width: 1280
+image_height: 720
+camera_name: gopro
+camera_matrix:
+  rows: 3
+  cols: 3
+  data: [1176.335967085282, 0, 642.2420218174783, 0, 1177.464211656795, 378.8898762905961, 0, 0, 1]
+distortion_model: plumb_bob
+distortion_coefficients:
+  rows: 1
+  cols: 5
+  data: [-0.2674422436405955, 0.117137046667655, 0.0007944357602872618, -0.001567684159301148, 0]
+rectification_matrix:
+  rows: 3
+  cols: 3
+  data: [1, 0, 0, 0, 1, 0, 0, 0, 1]
+projection_matrix:
+  rows: 3
+  cols: 4
+  data: [1083.2099609375, 0, 640.3613757646526, 0, 0, 1147.462036132812, 380.1569315327506, 0, 0, 0, 1, 0]

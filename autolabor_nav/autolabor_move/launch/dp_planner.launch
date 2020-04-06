@@ -1,0 +1,64 @@
+<launch>
+  <arg name="debug" default="false"/>
+  <arg name="globle_path" default="/route_path"/>
+  <arg name="costmap_topic" default="/autolabor_local_costmap"/>
+  <arg name="twist_output_topic" default="/cmd_vel"/>
+  <arg name="enable_path_switch_stop" default="false"/>
+  <arg name="enble_costmap_obstacle" default="true"/>
+
+ <!-- /////////////////////////////////////////////////////////////////////////////////// -->
+ <group if="$(arg debug)">
+
+   <!-- <param name="use_sim_time" value="true" /> -->
+
+   <param name="robot_description"
+     textfile="$(find autolabor_description)/urdf/autolabor.urdf" />
+
+   <node name="robot_state_publisher" pkg="robot_state_publisher"
+     type="robot_state_publisher" />
+
+
+   <!-- rviz -->
+   <node name="rviz" pkg="rviz" type="rviz" args="-d $(find autolabor_move)/rviz/dp_planner.rviz" required="true"/>
+
+ </group>
+
+  <!-- dp planner -->
+  <node pkg="autolabor_move" type="dp_planner" name="dp_planner" output="screen">
+    <remap from="path"    to="$(arg globle_path)" />
+    <remap from="costmap" to="$(arg costmap_topic)" />
+    <remap from="cmd_vel" to="$(arg twist_output_topic)" />
+    <param name="robot_frame" value="base_link" />
+    <param name="arriving_range" value="1.0" />
+    <param name="max_vel_x" value="0.8" />
+    <param name="max_rot_vel" value="3.0" />
+    <param name="min_rot_vel" value="-3.0" />
+    <param name="min_turning_radius" value="0.5" />
+
+    <param name="step_linear_x" value="0.05" />
+    <param name="step_angular_z" value="0.02" /> 
+    <param name="angular_velocity_p" value="0.3" /> 
+  
+    <param name="max_dist" value="3.5" />
+    <param name="vel_x_step" value="0.8" />
+    <param name="rot_x_step" value="0.05" /> 
+    <param name="path_resolution" value="0.1" />
+
+    <param name="target_point_dis" value="1.2" />
+    <param name="threshold_occupied" value="10" />
+
+    <param name="footprint_max_x" value="1.0" />
+    <param name="footprint_min_x" value="-0.1" />
+    <param name="footprint_max_y" value="0.03" />
+    <param name="footprint_min_y" value="-0.03" />
+
+    <param name="enable_path_switch_stop" value="$(arg enable_path_switch_stop)" />
+    <param name="obstacle_path_switch_stop_time" value="1.5" />
+
+    <param name="enble_costmap_obstacle" value="$(arg enble_costmap_obstacle)" />
+    <param name="twist_profile" value="true" />
+    <param name="PathVisualize" value="true" />
+
+  </node>
+
+</launch>

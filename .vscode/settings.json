@@ -60,6 +60,9 @@
         "cinttypes": "cpp",
         "utility": "cpp",
         "typeindex": "cpp",
-        "typeinfo": "cpp"
+        "typeinfo": "cpp",
+        "unordered_set": "cpp",
+        "hash_set": "cpp",
+        "valarray": "cpp"
     }
 }

@@ -1,0 +1,92 @@
+<!-- xml -->
+<launch>
+
+  <!-- send table.xml to param server -->
+  <arg name="use_openmp" default="false" />
+  <arg name="use_imu" default="false" />
+  <arg name="use_odom" default="false" />
+  <arg name="imu_upside_down" default="false" />
+  <arg name="imu_topic" default="/xsens_imu_odom/imu/data" />
+  <arg name="viz" default="true" />
+  <arg name="nodelet_manager" default="velodyne_nodelet_manager" />
+  <arg name="points_topic" default="/velodyne_points" />
+
+  <node pkg="rosbag" type="play" name="rosbag_play_node"
+      args="$(env HOME)/bags/autolabor_bag/20200402_3f_1.bag --clock" >
+  </node>
+
+  <rosparam>
+    tf_x: -0.232
+    tf_y: 0
+    tf_z: 1.329
+    tf_roll: 0
+    tf_pitch: 0
+    tf_yaw: 0
+  </rosparam>
+
+  <!-- Static transtorm -->
+  <param name="robot_description"
+    textfile="$(find autolabor_description)/urdf/autolabor.urdf" />
+  <node name="robot_state_publisher" pkg="robot_state_publisher"
+    type="robot_state_publisher" />
+
+  <!-- in case you use velodyne_driver, comment out the following line -->
+  <node pkg="nodelet" type="nodelet" name="$(arg nodelet_manager)" args="manager" output="screen"/>
+
+  <!-- prefiltering_nodelet -->
+  <node pkg="nodelet" type="nodelet" name="prefiltering_nodelet" args="load hdl_graph_slam/PrefilteringNodelet $(arg nodelet_manager)">
+    <remap from="/velodyne_points" to="$(arg points_topic)" />
+    <!-- in case base_link_frame is blank, mapping will be performed in the lidar frame -->
+    <param name="base_link_frame" value="base_link" />
+    <!-- distance filter -->
+    <param name="use_distance_filter" value="true" />
+    <param name="distance_near_thresh" value="0.5" />
+    <param name="distance_far_thresh" value="100.0" />
+    <!-- NONE, VOXELGRID, or APPROX_VOXELGRID -->
+    <param name="downsample_method" value="VOXELGRID" />
+    <param name="downsample_resolution" value="0.1" />
+    <!-- NONE, RADIUS, or STATISTICAL -->
+    <param name="outlier_removal_method" value="RADIUS" />
+    <param name="statistical_mean_k" value="10" />
+    <param name="statistical_stddev" value="1.2" />
+    <param name="radius_radius" value="0.5" />
+    <param name="radius_min_neighbors" value="2" />
+  </node>
+
+  <!-- rosrun ndt_localizer ndt_mapping  -->
+  <node pkg="ndt_localizer" type="queue_counter" name="queue_counter" output="log" />
+  <node pkg="ndt_localizer" type="ndt_mapping" name="ndt_mapping" output="log">
+    <remap from="points_raw" to="$(arg points_topic)" />
+    <param name="use_openmp" value="$(arg use_openmp)" />
+    <param name="use_imu" value="$(arg use_imu)" />
+    <param name="use_odom" value="$(arg use_odom)" />
+    <param name="imu_upside_down" value="$(arg imu_upside_down)" />
+    <param name="imu_topic" value="$(arg imu_topic)" />
+  </node>
+
+  <node pkg="rostopic" type="rostopic" name="ndt_confing"
+    args="pub -r 1 /config/ndt_mapping autoware_msgs/ConfigNdtMapping
+    {'header: {
+      seq: 0,
+      stamp: {secs: 0, nsecs: 0},
+      frame_id: 'config'},
+    resolution: 1,
+    step_size: 0.1,
+    trans_epsilon: 0.01,
+    max_iterations: 200,
+    leaf_size: 1,
+    min_scan_range: 2.0,
+    min_add_scan_shift: 1'} "/>
+
+    <node pkg="hector_trajectory_server" type="hector_trajectory_server" name="trajectory_node">
+      <remap from="trajectory" to="autolabor_odom" />
+      <param name="target_frame_name" type="string" value="/map" />
+      <param name="source_frame_name" type="string" value="/base_link" />
+      <param name="trajectory_update_rate" value="10" />
+      <param name="trajectory_publish_rate" value="10" />
+    </node>
+
+    <!-- RVIZ -->
+    <node if="$(arg viz)" pkg="rviz" type="rviz" name="rviz" args="-d $(find ndt_localizer)/rviz/ndt_mapping.rviz" />
+
+</launch>

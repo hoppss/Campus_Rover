@@ -1,0 +1,9 @@
+<library path="lib/libpev_rviz_tools">
+  <class name="pev_rviz_tools/ClickPoint"
+       type="pev_rviz_tools::ClickPointTool"
+       base_class_type="rviz::Tool">
+    <description>
+      Tool for planting flags on the ground plane in rviz.
+    </description>
+  </class>
+</library>

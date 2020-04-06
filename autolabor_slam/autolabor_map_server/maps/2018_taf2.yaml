@@ -1,0 +1,10 @@
+pcd_file: 20181221_taf2_50cm.pcd
+gps_topic:
+  topic_name: /fake_gps/fix
+  parent_frame: world
+  child_frame: local_map
+  latitude: 25.038705
+  longitude: 121.539809
+map_fix_tf:
+  child_frame: map
+  tf: [-120.6875, 3, 0, 2.947602162350904e-09, -2.930778536525125e-11, -0.04901226609945297, 0.9987982511520386]

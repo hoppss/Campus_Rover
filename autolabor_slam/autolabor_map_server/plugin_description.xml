@@ -1,0 +1,9 @@
+<library path="lib/libautolabor_rviz_panels">
+    <class name="autolabor_rviz_panels/MapTool"
+           type="autolabor_rviz_panels::MapToolPanel"
+           base_class_type="rviz::Panel">
+        <description>
+            A panel for help user to drawing osm baes on point cloud
+        </description>
+    </class>
+</library>

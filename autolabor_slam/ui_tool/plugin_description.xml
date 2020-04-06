@@ -1,0 +1,9 @@
+<library path="lib/libautolabor_rviz_tools">
+  <class name="autolabor_rviz_tools/ClickPoint"
+       type="autolabor_rviz_tools::ClickPointTool"
+       base_class_type="rviz::Tool">
+    <description>
+      Tool for planting flags on the ground plane in rviz.
+    </description>
+  </class>
+</library>

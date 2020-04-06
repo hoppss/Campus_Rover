@@ -1,0 +1,11 @@
+<launch>
+  <arg name="debug" default="false"/>
+  <node pkg="pev_map_server" type="pcd_publish" name="pcd_publish_node" >
+    <param name="frame_id" type="str" value="map" />
+    <param name="pcd_file" type="str" value="$(env HOME)/pcd/1012vassar_st_5cm.pcd" />
+    <param name="visualization" type="bool" value="false" />
+  </node>
+
+  <node if="$(arg debug)" name="rviz" pkg="rviz" type="rviz" required="true"
+    args="-d $(find pev_map_server)/rviz/pcd_publish.rviz" />
+</launch>

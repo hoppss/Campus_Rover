@@ -1,0 +1,14 @@
+<!-- xml -->
+<launch>
+  <node name="cartographer_node" pkg="cartographer_ros"
+      type="cartographer_node" args="
+          -configuration_directory $(find pev_map_server)/cartographer
+          -configuration_basename cartographer_3d_odom.lua"
+      output="screen">
+    <remap from="odom" to="odom" />
+    <remap from="imu" to="xsens_imu_odom/imu/data" />
+    <remap from="points2" to="velodyne_points" />
+  </node>
+  <node name="cartographer_occupancy_grid_node" pkg="cartographer_ros"
+    type="cartographer_occupancy_grid_node" args="-resolution 0.10" />
+</launch>

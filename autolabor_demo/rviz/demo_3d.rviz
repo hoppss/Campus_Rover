@@ -5,7 +5,6 @@ Panels:
     Property Tree Widget:
       Expanded:
         - /Global Options1
-        - /LDP path1
         - /OSM_PEV1/Namespaces1
         - /TF1/Frames1
       Splitter Ratio: 0.5
@@ -49,80 +48,12 @@ Visualization Manager:
           Show Axes: false
           Show Trail: false
           Value: true
-        cam_ped_fl_link:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-        cam_ped_fr_link:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-        cam_ped_link:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-        cam_ped_rl_link:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-        cam_ped_rr_link:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-        cam_ring_b_link:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-        cam_ring_f_link:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-        cam_ring_fl_link:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-        cam_ring_fr_link:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-        cam_ring_link:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-        laser30m_link:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-          Value: true
-        laser30m_tilt_link:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-          Value: true
-        lidar_footprint:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-        px4flow_link:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-          Value: true
-        rtk_link:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-          Value: true
-        tilt_velodyne_footprint:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-        velodyne_front_link:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-          Value: true
         velodyne_link:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
+        wit_imu_link:
           Alpha: 1
           Show Axes: false
           Show Trail: false
@@ -132,7 +63,7 @@ Visualization Manager:
           Show Axes: false
           Show Trail: false
           Value: true
-        zed_link:
+        ydlidar_link:
           Alpha: 1
           Show Axes: false
           Show Trail: false
@@ -194,8 +125,8 @@ Visualization Manager:
     - Alpha: 1
       Autocompute Intensity Bounds: true
       Autocompute Value Bounds:
-        Max Value: 26.2870636
-        Min Value: -0.588217258
+        Max Value: 3.74396992
+        Min Value: -1.24301291
         Value: true
       Axis: Z
       Channel Name: intensity
@@ -246,19 +177,19 @@ Visualization Manager:
       Size (Pixels): 3
       Size (m): 0.0500000007
       Style: Squares
-      Topic: /lidar30m/scan
+      Topic: /scan
       Unreliable: false
       Use Fixed Frame: true
       Use rainbow: true
       Value: true
     - Class: rviz/MarkerArray
-      Enabled: false
+      Enabled: true
       Marker Topic: /local_trajectories
       Name: LDP path
       Namespaces:
-        {}
+        path_array_marker: true
       Queue Size: 100
-      Value: false
+      Value: true
     - Alpha: 1
       Buffer Length: 1
       Class: rviz/Path
@@ -279,7 +210,7 @@ Visualization Manager:
       Radius: 0.0299999993
       Shaft Diameter: 0.100000001
       Shaft Length: 0.100000001
-      Topic: /pev_route_path
+      Topic: /autolabor_route_path
       Unreliable: false
       Value: true
     - Class: rviz/MarkerArray
@@ -290,43 +221,13 @@ Visualization Manager:
         {}
       Queue Size: 100
       Value: true
-    - Alpha: 1
-      Autocompute Intensity Bounds: true
-      Autocompute Value Bounds:
-        Max Value: 10
-        Min Value: -10
-        Value: true
-      Axis: Z
-      Channel Name: intensity
-      Class: rviz/PointCloud2
-      Color: 255; 255; 255
-      Color Transformer: Intensity
-      Decay Time: 0
-      Enabled: true
-      Invert Rainbow: false
-      Max Color: 255; 255; 255
-      Max Intensity: 190
-      Min Color: 0; 0; 0
-      Min Intensity: 0
-      Name: PointCloud2
-      Position Transformer: XYZ
-      Queue Size: 10
-      Selectable: true
-      Size (Pixels): 3
-      Size (m): 0.00999999978
-      Style: Points
-      Topic: /velodyne_front/velodyne_points
-      Unreliable: false
-      Use Fixed Frame: true
-      Use rainbow: true
-      Value: true
     - Alpha: 0.699999988
       Class: rviz/Map
       Color Scheme: costmap
       Draw Behind: false
       Enabled: true
       Name: Local Map
-      Topic: /pev_local_costmap
+      Topic: /autolabor_local_costmap
       Unreliable: false
       Use Timestamp: false
       Value: true
@@ -402,25 +303,25 @@ Visualization Manager:
   Views:
     Current:
       Class: rviz/XYOrbit
-      Distance: 21.0511246
+      Distance: 18.8828754
       Enable Stereo Rendering:
         Stereo Eye Separation: 0.0599999987
         Stereo Focal Distance: 1
         Swap Stereo Eyes: false
         Value: false
       Focal Point:
-        X: 0
-        Y: 0
-        Z: 0
+        X: -4.39776373
+        Y: 1.13648188
+        Z: -3.04637297e-06
       Focal Shape Fixed Size: true
       Focal Shape Size: 0.0500000007
       Invert Z Axis: false
       Name: Current View
       Near Clip Distance: 0.00999999978
-      Pitch: 0.595398605
+      Pitch: 1.56979632
       Target Frame: base_link
       Value: XYOrbit (rviz)
-      Yaw: 2.81039619
+      Yaw: 3.15539885
     Saved: ~
 Window Geometry:
   Displays:

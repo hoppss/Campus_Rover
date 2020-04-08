@@ -1,4 +1,4 @@
-pcd_file: 20200402_3f.pcd
+pcd_file: 20200402_3f_ndt.pcd
 gps_topic:
   topic_name: /fake_gps/fix
   parent_frame: world

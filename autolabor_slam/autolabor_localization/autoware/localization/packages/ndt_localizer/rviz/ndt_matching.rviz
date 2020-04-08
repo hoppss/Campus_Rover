@@ -27,7 +27,7 @@ Panels:
     Experimental: false
     Name: Time
     SyncMode: 0
-    SyncSource: LaserScan
+    SyncSource: Map
 Toolbars:
   toolButtonStyle: 2
 Visualization Manager:
@@ -48,80 +48,12 @@ Visualization Manager:
           Show Axes: false
           Show Trail: false
           Value: true
-        cam_ped_fl_link:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-        cam_ped_fr_link:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-        cam_ped_link:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-        cam_ped_rl_link:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-        cam_ped_rr_link:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-        cam_ring_b_link:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-        cam_ring_f_link:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-        cam_ring_fl_link:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-        cam_ring_fr_link:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-        cam_ring_link:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-        laser30m_link:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-          Value: true
-        laser30m_tilt_link:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-          Value: true
-        lidar_footprint:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-        px4flow_link:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-          Value: true
-        rtk_link:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-          Value: true
-        tilt_velodyne_footprint:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-        velodyne_front_link:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-          Value: true
         velodyne_link:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
+        wit_imu_link:
           Alpha: 1
           Show Axes: false
           Show Trail: false
@@ -131,7 +63,7 @@ Visualization Manager:
           Show Axes: false
           Show Trail: false
           Value: true
-        zed_link:
+        ydlidar_link:
           Alpha: 1
           Show Axes: false
           Show Trail: false
@@ -205,7 +137,7 @@ Visualization Manager:
       Enabled: true
       Invert Rainbow: false
       Max Color: 255; 255; 255
-      Max Intensity: 138
+      Max Intensity: 221
       Min Color: 0; 0; 0
       Min Intensity: 0
       Name: Velonyne
@@ -274,17 +206,6 @@ Visualization Manager:
       Unreliable: false
       Value: true
     - Alpha: 0.699999988
-      Blocks: 3
-      Class: rviz_plugins/AerialMapDisplay
-      Draw Behind: false
-      Enabled: false
-      Frame Convention: XYZ -> ENU
-      Name: AerialMapDisplay
-      Object URI: http://a.tiles.mapbox.com/v4/mapbox.satellite/{z}/{x}/{y}.jpg?access_token=pk.eyJ1IjoibHVrZWppIiwiYSI6ImNrN2JqbHc0aDAzY2Uza3J5cXF5dWoxeG8ifQ.JgBV0az21rL74i2ld61nyA
-      Topic: /fake_gps/fix
-      Value: false
-      Zoom: 17
-    - Alpha: 0.699999988
       Class: rviz/Map
       Color Scheme: costmap
       Draw Behind: false
@@ -301,53 +222,21 @@ Visualization Manager:
         All Enabled: true
         base_link:
           Value: true
-        cam_ped_fl_link:
-          Value: true
-        cam_ped_fr_link:
-          Value: true
-        cam_ped_link:
-          Value: true
-        cam_ped_rl_link:
-          Value: true
-        cam_ped_rr_link:
-          Value: true
-        cam_ring_b_link:
-          Value: true
-        cam_ring_f_link:
-          Value: true
-        cam_ring_fl_link:
-          Value: true
-        cam_ring_fr_link:
-          Value: true
-        cam_ring_link:
-          Value: true
         fake_base_link:
-          Value: true
-        laser30m_link:
-          Value: true
-        laser30m_tilt_link:
-          Value: true
-        lidar_footprint:
           Value: true
         local_map:
           Value: true
         map:
           Value: true
-        px4flow_link:
-          Value: true
-        rtk_link:
-          Value: true
-        tilt_velodyne_footprint:
-          Value: true
-        velodyne_front_link:
-          Value: true
         velodyne_link:
+          Value: true
+        wit_imu_link:
           Value: true
         world:
           Value: true
         xsens_imu_odom_link:
           Value: true
-        zed_link:
+        ydlidar_link:
           Value: true
       Marker Scale: 1
       Name: TF
@@ -361,43 +250,13 @@ Visualization Manager:
               {}
             map:
               base_link:
-                cam_ped_link:
-                  cam_ped_fl_link:
-                    {}
-                  cam_ped_fr_link:
-                    {}
-                  cam_ped_rl_link:
-                    {}
-                  cam_ped_rr_link:
-                    {}
-                cam_ring_link:
-                  cam_ring_b_link:
-                    {}
-                  cam_ring_f_link:
-                    {}
-                  cam_ring_fl_link:
-                    {}
-                  cam_ring_fr_link:
-                    {}
-                laser30m_link:
-                  {}
-                laser30m_tilt_link:
-                  {}
-                lidar_footprint:
-                  {}
-                px4flow_link:
-                  {}
-                rtk_link:
-                  {}
-                tilt_velodyne_footprint:
-                  {}
-                velodyne_front_link:
-                  {}
                 velodyne_link:
+                  {}
+                wit_imu_link:
                   {}
                 xsens_imu_odom_link:
                   {}
-                zed_link:
+                ydlidar_link:
                   {}
       Update Interval: 0
       Value: true
@@ -498,7 +357,7 @@ Visualization Manager:
   Value: true
   Views:
     Current:
-      Angle: -1.51999998
+      Angle: -1.57999992
       Class: rviz/TopDownOrtho
       Enable Stereo Rendering:
         Stereo Eye Separation: 0.0599999987
@@ -508,11 +367,11 @@ Visualization Manager:
       Invert Z Axis: false
       Name: Current View
       Near Clip Distance: 0.00999999978
-      Scale: 7.41425371
+      Scale: 23.577261
       Target Frame: base_link
       Value: TopDownOrtho (rviz)
-      X: -11.4789753
-      Y: -14.9049835
+      X: 0.873232007
+      Y: -11.1795702
     Saved: ~
 Window Geometry:
   Displays:

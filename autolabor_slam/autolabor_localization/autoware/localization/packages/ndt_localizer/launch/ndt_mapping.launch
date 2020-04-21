@@ -70,7 +70,7 @@
       seq: 0,
       stamp: {secs: 0, nsecs: 0},
       frame_id: 'config'},
-    resolution: 1,
+    resolution: 0.1,
     step_size: 0.1,
     trans_epsilon: 0.01,
     max_iterations: 30,

@@ -3,12 +3,12 @@
 
   <arg name="use_osrm" default="true" />
 
-  <arg name="bag_file" default="20200402_3f_1.bag" />
-  <arg name="map_file" default="$(find autolabor_map_server)/maps/20200402_TT_3F.yaml" />
+  <arg name="bag_file" default="20200410_2.bag" />
+  <arg name="map_file" default="$(find autolabor_map_server)/maps/20200320_taipeitech.yaml" />
   <arg name="map_file_2d" default="$(find autolabor_map_server)/maps/map2d/2018taf1.yaml" />
-  <arg name="path_file" default="20200402_3f_ndt.path" />
+  <arg name="path_file" default="20200320TT.path" />
 
-  <arg name="route" default="$(env HOME)/osrm/20200402_3f_ndt/20200402_TaipeiTech_3f_ndt.osrm" />
+  <arg name="route" default="$(env HOME)/osrm/TaipeiTech/20200326_TaipeiTech.osrm" />
   <arg name="use_avoidance" default="true" />
   <arg name="costmap_with_global_map" default="true" />
 
@@ -38,10 +38,11 @@
   <!-- autolabor path planner -->
   <include file="$(find autolabor_move)/launch/adp_planner.launch" >
     <arg name="debug"               value="false"/>
-    <arg name="globle_path"         value="/osrm_route_path"/>
-    <!-- <arg name="globle_path"         value="/autolabor_route_path"/> -->
+    <!-- <arg name="globle_path"         value="/osrm_route_path"/> -->
+    <arg name="globle_path"         value="/autolabor_route_path"/>
     <arg name="costmap_topic"       value="/autolabor_local_costmap"/>
-    <arg name="twist_output_topic"  value="/yocs_cmd_vel_mux/input/navigation"/>
+    <arg name="twist_output_topic"  value="/cmd_vel"/>
+    <!-- <arg name="twist_output_topic"  value="/yocs_cmd_vel_mux/input/navigation"/> -->
   </include>
 
   <!-- Localization -->
@@ -83,7 +84,7 @@
   </include> -->
 
   <!-- pev network sever-->
-  <include file="$(find autolabor_network)/launch/start_network_service.launch"/>
+  <!-- <include file="$(find autolabor_network)/launch/start_network_service.launch"/> -->
 
   <!-- RVIZ -->
   <node pkg="rviz" type="rviz" name="rviz" args="-d $(find autolabor_demo)/rviz/demo_3d.rviz" />

@@ -43,6 +43,7 @@ ros::Time stop_timer_last_;
 ros::Time stop_timer_current_;
 
 int status_msg_ = 0;
+int swap_path_num_;
 
 double max_vel_x_;
 double min_vel_x_;
@@ -65,6 +66,7 @@ double target_point_dis_;
 double angular_velocity_p_;
 
 double max_dist_;
+double min_dist_;
 double vel_x_step_;
 double rot_x_step_;
 double path_resolution_;
@@ -83,6 +85,7 @@ bool arriving_end_point_;
 bool obstacle_path_switch_ = false;
 bool enable_path_switch_stop_;
 bool enble_costmap_obstacle_;
+bool avoid_right_side_priority_;
 
 bool twist_profile_;
 bool PathVisualize_;
@@ -106,6 +109,7 @@ void get_parameters(ros::NodeHandle n_private)
   n_private.param<double>("target_point_dis", target_point_dis_, 3.0);
   //velocity profile
   n_private.param<double>("max_dist", max_dist_, 3.0);
+  n_private.param<double>("min_dist", min_dist_, 3.0);
   n_private.param<double>("step_linear_x", step_linear_x_, 0.02);
   n_private.param<double>("step_angular_z", step_angular_z_, 0.03);
   n_private.param<double>("angular_velocity_p", angular_velocity_p_, 1.0);
@@ -114,6 +118,7 @@ void get_parameters(ros::NodeHandle n_private)
   n_private.param<double>("rot_x_step", rot_x_step_, 0.1);
   n_private.param<double>("rot_x_zero_vel_angle", rot_x_zero_vel_angle_, 1.0);
   n_private.param<double>("path_resolution", path_resolution_, 0.1);
+  n_private.param<int>("swap_path_num", swap_path_num_, 8);
 
   n_private.param<double>("threshold_occupied", threshold_occupied_, 10);
   n_private.param<double>("footprint_max_x", footprint_max_x_, 3.5);
@@ -123,6 +128,7 @@ void get_parameters(ros::NodeHandle n_private)
 
   n_private.param<bool>("enable_path_switch_stop", enable_path_switch_stop_, false);
   n_private.param<double>("obstacle_path_switch_stop_time", obstacle_path_switch_stop_time_, 2.0);
+  n_private.param<bool>("avoid_right_side_priority", avoid_right_side_priority_, true);
 
   n_private.param<bool>("enble_costmap_obstacle", enble_costmap_obstacle_, false);
   n_private.param<bool>("twist_profile", twist_profile_, true);
@@ -331,7 +337,7 @@ void make_path()
         }
         else
         {
-          twist.linear.x = vel_x_in * (rot_x_zero_vel_angle_ - abs(vel_rot_in))/rot_x_zero_vel_angle_;
+          twist.linear.x = vel_x_in * ((rot_x_zero_vel_angle_ - abs(vel_rot_in))/rot_x_zero_vel_angle_);
           twist.angular.x = max_dist_ / vel_rot_in;
           twist.angular.z = vel_rot_in;
           twist_set.push_back(twist);
@@ -484,9 +490,13 @@ void make_path()
 
   //compare target point and twist end point
   static double com_dist;
+  static int closest_path_id;
+  static double cmp_min_dist;
   static geometry_msgs::PoseStamped comp_end_point;
   static geometry_msgs::Twist twist_swap;
-  std::vector<geometry_msgs::Twist> twist_swap_set;
+  static std::vector<geometry_msgs::Twist> twist_swap_set;
+
+  twist_swap_set.clear();
 
   for (int cmp = 0; cmp < twist_end_points.size(); cmp++)
   {
@@ -506,29 +516,113 @@ void make_path()
                     pow(comp_end_point.pose.position.y - target_pose.pose.position.y, 2));
     // cout<<" comp_end_point_x : "<<comp_end_point.pose.position.x<<" target_pose_x : "<<target_pose.pose.position.x<<" com_dist : "<<com_dist<<endl;
     // cout<<" comp_end_point_y : "<<comp_end_point.pose.position.y<<" target_pose_y : "<<target_pose.pose.position.y<<" com_dist : "<<com_dist<<endl;
-    twist_swap.linear.x = twist_set[cmp].linear.x;
-    twist_swap.linear.y = com_dist;
-    twist_swap.angular.x = twist_set[cmp].angular.x;
-    twist_swap.angular.z = twist_set[cmp].angular.z;
-    twist_swap_set.push_back(twist_swap);
-  }
-  //cout<<"--------------------------------------------- "<<endl;
+    // twist_swap.linear.x = twist_set[cmp].linear.x;
+    // twist_swap.linear.y = com_dist;
+    // twist_swap.angular.x = twist_set[cmp].angular.x;
+    // twist_swap.angular.z = twist_set[cmp].angular.z;
+    //twist_swap_set.push_back(twist_swap);
 
-  //swap twist commond set basis "com_dist" from close to far
-  for (int a = 0; a < twist_swap_set.size() - 1; a++)
-  {
-    for (int b = a; b < twist_swap_set.size(); b++)
+    if(cmp == 0)
     {
-      if (twist_swap_set[b].linear.y < twist_swap_set[a].linear.y)
-      {
-        // swap elements//
-        swap(twist_swap_set[a].linear.x, twist_swap_set[b].linear.x);
-        swap(twist_swap_set[a].linear.y, twist_swap_set[b].linear.y);
-        swap(twist_swap_set[a].angular.x, twist_swap_set[b].angular.x);
-        swap(twist_swap_set[a].angular.z, twist_swap_set[b].angular.z);
-      }
+      cmp_min_dist = com_dist;
+      closest_path_id = cmp;
+    }
+    else if(cmp_min_dist > com_dist)
+    {
+      cmp_min_dist = com_dist;
+      closest_path_id = cmp;
     }
   }
+  //std::cout << "closest_path_id : " << closest_path_id<<" cmp_min_dist : " << cmp_min_dist<<'\n';
+  //cout<<"--------------------------------------------- "<<endl;
+
+  //swap twist commond set basis "cmp_min_dist" from close to far
+  static int swap_count = 0;
+  static int right_path_id;
+  static int left_path_id;
+  static bool push_right_path;
+  swap_count = 0;
+  if(avoid_right_side_priority_)
+  {
+    push_right_path =true;
+  }
+  for (int swap = 0; swap < twist_set.size(); swap++)
+  {
+    if(swap == 0)
+    {
+      right_path_id = closest_path_id - 1; 
+      left_path_id = closest_path_id + 1;
+      twist_swap.linear.x = twist_set[closest_path_id].linear.x;
+      twist_swap.linear.y = com_dist;
+      twist_swap.angular.x = twist_set[closest_path_id].angular.x;
+      twist_swap.angular.z = twist_set[closest_path_id].angular.z;
+      twist_swap_set.push_back(twist_swap);
+    }else 
+    {
+      if(push_right_path && right_path_id >= 0)
+      {
+        twist_swap.linear.x = twist_set[right_path_id].linear.x;
+        twist_swap.linear.y = com_dist;
+        twist_swap.angular.x = twist_set[right_path_id].angular.x;
+        twist_swap.angular.z = twist_set[right_path_id].angular.z;
+        twist_swap_set.push_back(twist_swap);
+        right_path_id--;
+
+      }else if(left_path_id < twist_set.size())
+      {
+        twist_swap.linear.x = twist_set[left_path_id].linear.x;
+        twist_swap.linear.y = com_dist;
+        twist_swap.angular.x = twist_set[left_path_id].angular.x;
+        twist_swap.angular.z = twist_set[left_path_id].angular.z;
+        twist_swap_set.push_back(twist_swap);
+        left_path_id++;
+      }
+
+      if(right_path_id < 0)
+      {
+        push_right_path = false;
+      }else if(left_path_id > twist_set.size()-1)
+      {
+        push_right_path = true;
+      }else
+      {
+        if(swap_count < swap_path_num_)
+        {
+          swap_count++;
+        }
+        else
+        {
+          if(push_right_path)
+          {
+            push_right_path = false;
+          }else
+          {
+            push_right_path = true;
+          }
+          swap_count = 0;
+        }
+      }
+    }
+    //std::cout << "right_path_id : " << right_path_id<<" left_path_id : " << left_path_id<<" closest_path_id : " << closest_path_id<<'\n';
+  }
+  
+
+  //swap twist commond set basis "com_dist" from close to far
+
+  // for (int a = 0; a < twist_swap_set.size() - 1; a++)
+  // {
+  //   for (int b = a; b < twist_swap_set.size(); b++)
+  //   {
+  //     if (twist_swap_set[b].linear.y < twist_swap_set[a].linear.y)
+  //     {
+  //       // swap elements//
+  //       swap(twist_swap_set[a].linear.x, twist_swap_set[b].linear.x);
+  //       swap(twist_swap_set[a].linear.y, twist_swap_set[b].linear.y);
+  //       swap(twist_swap_set[a].angular.x, twist_swap_set[b].angular.x);
+  //       swap(twist_swap_set[a].angular.z, twist_swap_set[b].angular.z);
+  //     }
+  //   }
+  // }
 
   // for (int p=0; p<twist_swap_set.size(); p++) {
   //   std::cout << "p : " <<p<<" " << '\n';
@@ -557,9 +651,16 @@ void make_path()
       x_dist_path = max_dist_;
       x_dist_path_step = x_dist_path / step_count;
     }else{
-      x_dist_path = max_dist_;
-      x_dist_path_step = x_dist_path / step_count;
+
       p_angle = twist_swap_set[sw_pc].angular.z;
+      x_dist_path = max_dist_* ((rot_x_zero_vel_angle_ - abs(p_angle))/rot_x_zero_vel_angle_);
+
+      if(x_dist_path <= min_dist_)
+      {
+        x_dist_path = min_dist_;
+      }
+
+      x_dist_path_step = x_dist_path / step_count;
 
     }
     
@@ -687,7 +788,7 @@ void make_path()
       if (nPathDetectObstacle[twist_path_set.size() - 1]) //can't find safe path
       {
         ROS_ERROR("dp Planner : can't find safe path");
-        std::cout << "can't find safe path" << '\n';
+        //std::cout << "can't find safe path" << '\n';
         TwistPublish(0, 0);
         if (PathVisualize_)
         {

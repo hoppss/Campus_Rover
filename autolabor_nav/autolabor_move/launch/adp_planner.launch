@@ -5,6 +5,8 @@
   <arg name="twist_output_topic" default="/cmd_vel"/>
   <arg name="enable_path_switch_stop" default="false"/>
   <arg name="enble_costmap_obstacle" default="true"/>
+  <arg name="avoid_right_side_priority" default="true"/>
+  
 
  <!-- /////////////////////////////////////////////////////////////////////////////////// -->
  <group if="$(arg debug)">
@@ -39,20 +41,23 @@
     <param name="step_angular_z" value="0.02" /> 
     <param name="angular_velocity_p" value="1.2" /> 
   
-    <param name="max_dist" value="3.5" />
+    <param name="max_dist" value="2.5" />
+    <param name="min_dist" value="1.0" />
     <param name="vel_x_step" value="0.8" />
     <param name="rot_x_step" value="0.05" /> 
-    <param name="rot_x_zero_vel_angle" value="2.0" /> 
+    <param name="rot_x_zero_vel_angle" value="3.0" /> 
     <param name="path_resolution" value="0.1" />
+    <param name="swap_path_num" value="20" />
 
     <param name="target_point_dis" value="1.2" />
     <param name="threshold_occupied" value="10" />
 
     <param name="footprint_max_x" value="0.4" />
     <param name="footprint_min_x" value="-0.1" />
-    <param name="footprint_max_y" value="0.03" />
+    <param name="footprint_max_y" value="0.01" />
     <param name="footprint_min_y" value="-0.03" />
 
+    <param name="avoid_right_side_priority" value="$(arg avoid_right_side_priority)" />
     <param name="enable_path_switch_stop" value="$(arg enable_path_switch_stop)" />
     <param name="obstacle_path_switch_stop_time" value="1.5" />
 

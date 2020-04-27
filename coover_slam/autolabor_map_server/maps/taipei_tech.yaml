@@ -1,0 +1,10 @@
+pcd_file: 20190429_taipei_tech_1_50cm.pcd
+gps_topic:
+  topic_name: /fake_gps/fix
+  parent_frame: world
+  child_frame: local_map
+  latitude: 25.04279
+  longitude: 121.53549
+map_fix_tf:
+  child_frame: map
+  tf: [-2.5625, -18.75, 0, -3.906842493961449e-08, -1.176036425835632e-15, 0.6554594039916992, 0.7552305459976196]

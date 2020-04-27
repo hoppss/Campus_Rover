@@ -1,8 +1,0 @@
-{
-	"cloud_mqtt_broker_address": "20.48.16.26",
-	"cloud_mqtt_broker_port":1883,
-	"cloud_mqtt_broker_qos":1,
-	"cloud_mqtt_broker_user":"",
-	"cloud_mqtt_broker_passwd":"",
-	"cloud_mqtt_broker_client_id":""
-}

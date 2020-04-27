@@ -1,0 +1,10 @@
+pcd_file: taipei_tech_2f_filtered.pcd
+gps_topic:
+  topic_name: /fake_gps/fix
+  parent_frame: world
+  child_frame: local_map
+  latitude: 25.04279
+  longitude: 121.53549
+map_fix_tf:
+  child_frame: map
+  tf: [21.25, -24.25, 0, -4.166092892887718e-08, -1.048883202514617e-11, 0.6987525224685669, 0.715363621711731]

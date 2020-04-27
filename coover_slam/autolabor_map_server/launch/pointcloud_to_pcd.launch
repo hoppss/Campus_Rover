@@ -1,0 +1,35 @@
+<launch>
+
+  <arg name="input_cloud" default="/ndt_map" />
+  <arg name="file_name" default="pcd" />
+
+  <node pkg="nodelet" type="nodelet" name="pcl_manager" args="manager" output="screen" />
+
+  <!-- <node pkg="nodelet" type="nodelet" name="statistical_outlier_removal" args="load pcl/StatisticalOutlierRemoval pcl_manager" output="screen">
+    <remap from="~input" to="$(arg input_cloud)" />
+    <remap from="~output" to="/outlier_removal_output" />
+    <rosparam>
+      mean_k: 2
+      stddev: 0.0
+      negative: False
+    </rosparam>
+  </node> -->
+
+  <!-- Run a VoxelGrid filter to clean NaNs and downsample the data -->
+  <node pkg="nodelet" type="nodelet" name="voxel_grid" args="load pcl/VoxelGrid pcl_manager" output="screen">
+    <remap from="~input" to="$(arg input_cloud)" />
+    <remap from="~output" to="/voxel_grid_output" />
+    <rosparam>
+      filter_field_name: z
+      filter_limit_min: -10
+      filter_limit_max: 100
+      filter_limit_negative: False
+      leaf_size: 0.2
+    </rosparam>
+  </node>
+
+  <node pkg="pcl_ros" type="pointcloud_to_pcd" name="pointcloud_to_pcd_node"  output="screen">
+    <remap from="input" to="voxel_grid_output" />
+    <param name="prefix" value="$(env HOME)/pcd/$(arg file_name)" />
+  </node>
+</launch>

@@ -1,0 +1,18 @@
+<launch>
+  <arg name="debug" default="true" />
+  <arg name="config_file" default="$(find pev_map_server)/maps/2018_taf1.yaml" />
+
+  <node pkg="pev_map_server" type="pcd_map_loader" name="pcd_map_loader_node" output="screen">
+    <param name="config_file" type="str" value="$(arg config_file)" />
+  </node>
+  <!-- ROS 2D Map server -->
+  <node pkg="map_server" type="map_server" name="map_server_2d"
+    args="$(find pev_map_server)/maps/map2d/2018taf1.yaml"
+  >
+    <param name="frame_id" type="str" value="map" />
+  </node>
+  <node if="$(arg debug)" 
+    pkg="rviz" type="rviz" name="rviz" 
+    args="-d $(find pev_map_server)/rviz/map_server_3d.rviz">
+  </node>
+</launch>

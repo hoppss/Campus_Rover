@@ -1,0 +1,33 @@
+<!-- -*- mode: XML -*- -->
+
+<launch>
+
+  <arg name="file_name"/>
+
+  <node pkg="rosbag" name="record" type="record" output="screen"
+        args="-O $(env HOME)/bags/autolabor_bag/$(arg file_name) 
+        /gps_fix
+        /gps_time
+        /gps_vel
+        /wheel_odom
+        /encoder_data
+        /scan
+        /velodyne_points
+        /xsens_imu_odom/imu/data
+        /xsens_imu_odom/imu/mag
+        /xsens_imu_odom/imu_data_str
+        /xsens_imu_odom/time_reference
+        /xsens_imu_odom/velocity
+        /rear_wheel_encoder_data
+        /zed/depth/camera_info
+        /zed/depth/depth_registered
+        /zed/joint_states
+        /zed/rgb/image_rect_color
+        /zed/rgb/camera_info
+        /zed/odom
+        /web_cam/camera_info
+        /web_cam/image_raw
+        /gopro/image_raw
+        /gopro/camera_info " />
+
+</launch>

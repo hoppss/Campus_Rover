@@ -1,0 +1,4 @@
+arm:
+  controller_joint_names: [joint_1, joint2, joint_3, joint_4]
+gripper:
+  controller_joint_names: []

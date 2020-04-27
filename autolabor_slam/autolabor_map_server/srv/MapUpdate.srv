@@ -1,6 +1,0 @@
-float64 utm_x
-float64 utm_y
----
-float64 tf_x
-float64 tf_y
-float64 tf_yaw

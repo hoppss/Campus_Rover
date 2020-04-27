@@ -1,0 +1,11 @@
+<launch>
+  <node pkg="autolabor_path" type="path_loader" name="path_loader_node" output="screen">
+    <!-- <remap from="path_in" to="pev_odom" /> -->
+    <param name="file_path" type="str" value="$(find autolabor_path)/paths/20200402_3f.path" />
+    <param name="map_frame_id" value="map" />
+  </node>
+
+  <node name="rviz" pkg="rviz" type="rviz" required="true"
+      args="-d $(find autolabor_path)/rviz/path_saver.rviz" />
+
+</launch>

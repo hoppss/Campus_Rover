@@ -1,0 +1,11 @@
+moveit_setup_assistant_config:
+  URDF:
+    package: coover_arm_description
+    relative_path: urdf/coover_arm.urdf
+    xacro_args: "--inorder "
+  SRDF:
+    relative_path: config/coover_arm.srdf
+  CONFIG:
+    author_name: luke
+    author_email: lukeji@mit.edu
+    generated_timestamp: 1587970650

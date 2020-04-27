@@ -1,0 +1,10 @@
+pcd_file: 20200320_TT_justin_1m.pcd
+gps_topic:
+  topic_name: /fake_gps/fix
+  parent_frame: world
+  child_frame: local_map
+  latitude: 25.043642
+  longitude: 121.535343
+map_fix_tf:
+  child_frame: map
+  tf: [12.29121017456055, -147.2322387695312, 9.298324584960938e-06, -4.087630856020041e-08, -1.172117958248009e-12, 0.6856871843338013, 0.7278966903686523]

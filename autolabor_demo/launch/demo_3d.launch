@@ -38,8 +38,8 @@
   <!-- autolabor path planner -->
   <include file="$(find autolabor_move)/launch/adp_planner.launch" >
     <arg name="debug"               value="false"/>
-    <!-- <arg name="globle_path"         value="/osrm_route_path"/> -->
-    <arg name="globle_path"         value="/autolabor_route_path"/>
+    <arg name="globle_path"         value="/osrm_route_path"/>
+    <!-- <arg name="globle_path"         value="/autolabor_route_path"/> -->
     <arg name="costmap_topic"       value="/autolabor_local_costmap"/>
     <arg name="twist_output_topic"  value="/cmd_vel"/>
     <!-- <arg name="twist_output_topic"  value="/yocs_cmd_vel_mux/input/navigation"/> -->
@@ -77,11 +77,11 @@
   </include>
 
   <!-- for showing  OSM-->
-  <!-- <node pkg="tf2_ros" type="static_transform_publisher" name="world_to_earth_broadcaster"
+  <node pkg="tf2_ros" type="static_transform_publisher" name="world_to_earth_broadcaster"
         args="0 0 0 0 0 0 world earth" />
   <include file="$(find osm_cartography)/launch/viz_osm.launch">
-    <arg name="url" value="package://autolabor_map_server/osm/taipei_test_area_autolabor.osm" />
-  </include> -->
+    <arg name="url" value="package://autolabor_odom/osm/20200326_TaipeiTech.osm" />
+  </include>
 
   <!-- pev network sever-->
   <!-- <include file="$(find autolabor_network)/launch/start_network_service.launch"/> -->

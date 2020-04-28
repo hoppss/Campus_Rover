@@ -64,6 +64,20 @@
         "unordered_set": "cpp",
         "hash_set": "cpp",
         "valarray": "cpp",
-        "random": "cpp"
+        "random": "cpp",
+        "convertutf": "cpp",
+        "object": "cpp",
+        "operationthread": "cpp",
+        "stats": "cpp",
+        "animationupdatecallback": "cpp",
+        "vertexinfluence": "cpp",
+        "databasepager": "cpp",
+        "dotosgwrapper": "cpp",
+        "dynamiclibrary": "cpp",
+        "objectwrapper": "cpp",
+        "serializer": "cpp",
+        "shapeattribute": "cpp",
+        "scriptengine": "cpp",
+        "string": "cpp"
     }
 }

@@ -68,6 +68,26 @@
     </visual>
   </link>
 
+  <link name="right_camera_link">
+    <visual>
+      <origin xyz="0.0 0.0 0.0" />
+      <geometry>
+        <box size="0.035 0.035 0.015" />
+      </geometry>
+      <material name="black" />
+    </visual>
+  </link>
+
+  <link name="link_0">
+    <visual>
+      <origin xyz="0.0 0.0 0.0" />
+      <geometry>
+        <box size="0.02 0.02 0.01" />
+      </geometry>
+      <material name="black" />
+    </visual>
+  </link>
+
   <joint name="wit_imu_link_joint" type="fixed">
     <parent link="base_link" />
     <child link="wit_imu_link" />
@@ -96,6 +116,18 @@
     <parent link="base_link" />
     <child link="ydlidar_link" />
     <origin xyz="0.12 0 0.288" rpy="0 0 0" />
+  </joint>
+
+  <joint name="right_camera_link_joint" type="fixed">
+    <parent link="base_link" />
+    <child link="right_camera_link" />
+    <origin xyz="-0.23 -0.07 1.16" rpy="0 0 0" />
+  </joint>
+
+  <joint name="link_0_joint" type="fixed">
+    <parent link="base_link" />
+    <child link="link_0" />
+    <origin xyz="-0.08 -0.165 1.14" rpy="0 0 0" />
   </joint>
 
 

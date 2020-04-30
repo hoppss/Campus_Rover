@@ -78,6 +78,13 @@
         "serializer": "cpp",
         "shapeattribute": "cpp",
         "scriptengine": "cpp",
-        "string": "cpp"
+        "string": "cpp",
+        "slideshowconstructor": "cpp",
+        "pdfreader": "cpp",
+        "*.ipp": "cpp",
+        "regex": "cpp",
+        "plane": "cpp",
+        "polytope": "cpp",
+        "layer": "cpp"
     }
 }

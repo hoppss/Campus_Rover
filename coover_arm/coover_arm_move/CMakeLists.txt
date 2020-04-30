@@ -16,6 +16,11 @@ find_package(catkin REQUIRED COMPONENTS
   roscpp
   rospy
   autolabor_msgs
+  cv_bridge
+  geometry_msgs
+  image_geometry
+  image_transport
+  apriltag_ros
 )
 
 
@@ -38,5 +43,5 @@ include_directories(
 add_executable(position_moveit src/position_moveit.cpp)
 target_link_libraries(position_moveit  ${catkin_LIBRARIES})
 
-add_executable(position_moveit3 src/position_moveit3.cpp)
-target_link_libraries(position_moveit3  ${catkin_LIBRARIES})
+add_executable(apriltag_to_press src/apriltag_to_press.cpp)
+target_link_libraries(apriltag_to_press  ${catkin_LIBRARIES})

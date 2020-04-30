@@ -20,7 +20,7 @@
   </include>
 
   <!-- publish the robot state (tf transforms) -->
-  <node name="robot_state_publisher" pkg="robot_state_publisher" type="robot_state_publisher" />
+  <node name="robot_state_publisher_arm" pkg="robot_state_publisher" type="robot_state_publisher" />
 
   <include file="$(find coover_arm_moveit_config)/launch/move_group.launch">
     <arg name="publish_monitored_planning_scene" value="true" />

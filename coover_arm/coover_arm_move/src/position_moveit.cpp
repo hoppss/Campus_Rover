@@ -19,7 +19,7 @@
 using namespace std;
 
 ros::Subscriber pose_sub_;
-geometry_msgs::Pose pose_;
+geometry_msgs::PoseStamped pose_;
 
 string planning_frame_id_;
 string planning_group_name_;
@@ -28,6 +28,7 @@ string standby_pose_name_;
 double planning_time_;
 double num_planning_attempts_;
 double press_dis_;
+double gap_dis_;
 double jump_threshold_;
 double eef_step_;
 
@@ -44,6 +45,7 @@ void get_parameters(ros::NodeHandle n_private)
     n_private.param<string>("standby_pose_name", standby_pose_name_, "standby_pose");
     n_private.param<double>("planning_time", planning_time_, 5.0);
     n_private.param<double>("num_planning_attempts", num_planning_attempts_, 10.0);
+    n_private.param<double>("gate_of_touch", gap_dis_, 0.03);
     n_private.param<double>("press_dis", press_dis_, 0.05);
     n_private.param<double>("jump_threshold", jump_threshold_, 0.0);
     n_private.param<double>("eef_step", eef_step_, 0.01);
@@ -65,14 +67,18 @@ bool ServiceCallback(autolabor_msgs::ArmAction::Request  &req, autolabor_msgs::A
     static const std::string PLANNING_GROUP = planning_group_name_;
     moveit::planning_interface::MoveGroupInterface move_group(PLANNING_GROUP);
     
-    move_group.setGoalOrientationTolerance(0.005); 
-    //move_group.setGoalJointTolerance(0.01);
-    //move_group.setGoalPositionTolerance(0.01);
+    move_group.setGoalOrientationTolerance(0.1); 
+    move_group.setGoalJointTolerance(0.01);
+    move_group.setGoalPositionTolerance(0.01);
     move_group.setMaxVelocityScalingFactor(1.0);
     move_group.setMaxAccelerationScalingFactor(1.0);
     move_group.setPlanningTime(planning_time_);
     move_group.setNumPlanningAttempts(num_planning_attempts_);
     move_group.allowReplanning(allow_replanning_);
+    
+    cout << "GoalJointTolerance : " <<move_group.getGoalJointTolerance()<< endl;
+    cout << "GoalJointTolerance : " <<move_group.getGoalPositionTolerance()<< endl;
+    cout << "GoalJointTolerance : " <<move_group.getGoalOrientationTolerance()<< endl;
 
     moveit::planning_interface::PlanningSceneInterface planning_scene_interface;
     // const robot_state::JointModelGroup* joint_model_group =
@@ -89,10 +95,10 @@ bool ServiceCallback(autolabor_msgs::ArmAction::Request  &req, autolabor_msgs::A
 
     //move to standby_pose//
     bool success;
-    cout << "move to standby_pose" << endl;
+    //cout << "move to standby_pose" << endl;
     //move_group.setMaxVelocityScalingFactor(1.0);
-    success = (move_group.setNamedTarget(standby_pose_name_) == moveit::planning_interface::MoveItErrorCode::SUCCESS);
-    move_group.move();
+    //success = (move_group.setNamedTarget(standby_pose_name_) == moveit::planning_interface::MoveItErrorCode::SUCCESS);
+    //move_group.move();
 
     //ros::Duration(1.0).sleep();
     //move_group.clearPoseTarget();
@@ -101,35 +107,69 @@ bool ServiceCallback(autolabor_msgs::ArmAction::Request  &req, autolabor_msgs::A
     cout << "move to button pose" << endl;
     moveit::planning_interface::MoveGroupInterface::Plan plan;
     static geometry_msgs::Pose target_pose;
+    static geometry_msgs::PoseStamped local_pose;
     static tf2::Quaternion quat_tf;
+    static tf2_ros::Buffer tfBuffer;
+    static tf2_ros::TransformListener tfListener(tfBuffer);
 
-    double yaw = atan2(pose_.position.y,pose_.position.x);
+    cout << "Planning Frame : " <<move_group.getPlanningFrame()<<" input frame : "<<pose_.header.frame_id<< endl;
+
+    bool transformed = false;
+    if (planning_frame_id_ != pose_.header.frame_id)
+    {
+        while(!transformed)
+        {
+            try
+            {
+            tfBuffer.transform(pose_, local_pose, planning_frame_id_);
+            transformed = true;
+            }
+            catch (tf2::TransformException &ex)
+            {
+            ROS_WARN("position_move: %s",ex.what());
+            ros::Duration(1.0).sleep();
+            continue;
+            }
+        }
+        
+        pose_ = local_pose;
+    }
+    
+    
+
+    double yaw = atan2(pose_.pose.position.y,pose_.pose.position.x);
     quat_tf.setRPY( 0, 0, yaw ); 
     geometry_msgs::Quaternion quat_msg = tf2::toMsg(quat_tf);
-    target_pose.position = pose_.position;
+    target_pose.position = pose_.pose.position;
     target_pose.orientation = quat_msg;
+    target_pose.position.x -= gap_dis_;
 
-    // move_group.setPoseTarget(target_pose);
-    // success = (move_group.plan(plan) == moveit::planning_interface::MoveItErrorCode::SUCCESS);
-    // move_group.move();
+    cout << "target pose : " <<target_pose<< endl;
+
+    move_group.setPoseTarget(target_pose);
+    success = (move_group.plan(plan) == moveit::planning_interface::MoveItErrorCode::SUCCESS);
+    move_group.move();
+    ros::Duration(1.0).sleep();
 
     static std::vector<geometry_msgs::Pose> waypoints;
     waypoints.clear();
 
     waypoints.push_back(target_pose);
 
-    target_pose.position.x += press_dis_*cos(yaw);
-    target_pose.position.y += press_dis_*sin(yaw);
+    target_pose.position.x += press_dis_;
+    //target_pose.position.x += press_dis_*cos(yaw);
+    //target_pose.position.y += press_dis_*sin(yaw);
     waypoints.push_back(target_pose);  // right
 
-    target_pose.position.x -= press_dis_*cos(yaw);
-    target_pose.position.y -= press_dis_*sin(yaw);
+    target_pose.position.x -= press_dis_;
+    //target_pose.position.x -= press_dis_*cos(yaw);
+    //target_pose.position.y -= press_dis_*sin(yaw);
     waypoints.push_back(target_pose);  // up and left
 
     // Cartesian motions are frequently needed to be slower for actions such as approach and retreat
     // grasp motions. Here we demonstrate how to reduce the speed of the robot arm via a scaling factor
     // of the maxiumum speed of each joint. Note this is not the speed of the end effector point.
-    //move_group.setMaxVelocityScalingFactor(0.1);
+    move_group.setMaxVelocityScalingFactor(0.1);
 
     static moveit_msgs::RobotTrajectory trajectory;
     double fraction = move_group.computeCartesianPath(waypoints, eef_step_, jump_threshold_, trajectory);
@@ -148,7 +188,7 @@ bool ServiceCallback(autolabor_msgs::ArmAction::Request  &req, autolabor_msgs::A
 
     ros::Duration(1.0).sleep();
     cout << "move to standby_pose 2 " << endl;
-    //move_group.setMaxVelocityScalingFactor(1.0);
+    move_group.setMaxVelocityScalingFactor(1.0);
     success = (move_group.setNamedTarget("lie_pose") == moveit::planning_interface::MoveItErrorCode::SUCCESS);
     move_group.move();
 
@@ -163,7 +203,7 @@ int main(int argc, char **argv)
     ros::init(argc, argv, "position_moveit");
     ros::NodeHandle n;
     ros::NodeHandle n_private("~");
-    ros::AsyncSpinner spinner(2); // Use 4 threads
+    ros::AsyncSpinner spinner(4); // Use 4 threads
     get_parameters(n_private);
     //pose_sub_ = n.subscribe("/button_pose", 1, ButtonPoseCallback);
     ros::ServiceServer service = n.advertiseService("arm_action", ServiceCallback);

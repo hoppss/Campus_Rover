@@ -4,10 +4,10 @@
 
 int main(int argc, char **argv)
 {
-  ros::init(argc, argv, "add_two_ints_client");
+  ros::init(argc, argv, "map_load_client");
   if (argc != 4)
   {
-    ROS_INFO("usage: add_two_ints_client X Y");
+    ROS_INFO("usage: map_load_client X Y DIS");
     return 1;
   }
 

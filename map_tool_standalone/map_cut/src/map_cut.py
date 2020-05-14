@@ -45,7 +45,7 @@ class map:
                         intensity = int(d)
                         ring = int(e)
 
-                        if x + dx > self.px - self.dis and x + dx < self.px + self.dis and y + dy > self.py - self.dis and y + dy < self.py + self.dis and z > self.pz - self.dis and z < self.pz + self.dis:
+                        if x + dx > self.px - self.dis and x + dx < self.px + self.dis and y + dy > self.py - self.dis and y + dy < self.py + self.dis:
                             w.write(str(x)+' '+str(y)+' '+str(z)+' '+str(intensity)+' '+str(ring)+'\n')
                         else:
                             current += 1
@@ -71,4 +71,5 @@ if __name__ == '__main__':
         init_z = rospy.get_param('z',default = 0)
         init_d = rospy.get_param('d',default = 3)
         init_dir = rospy.get_param('dir',default = '/home/eric/Desktop/')
-        map.cut(init_x, init_y, init_z, init_d, init_dir, '100611000.pcd')
+        map_file = rospy.get_param('filename',default = '100611000.pcd')
+        map.cut(init_x, init_y, init_z, init_d, init_dir, map_file)

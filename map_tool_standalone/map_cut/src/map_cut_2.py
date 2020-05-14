@@ -13,11 +13,11 @@ class map:
 
     def cut(self, filein):
         
-        current = 0
         file = self.diction + filein
         file_array = [self.diction + 'c.pcd', self.diction + 'f.pcd', self.diction + 'b.pcd', self.diction + 'l.pcd', self.diction + 'r.pcd']
         
         for fileout in file_array:
+            current = 0
             dx = dy = 0
             if file_array.index(fileout) == 1:
                 dx = 2 * self.dis
@@ -40,7 +40,7 @@ class map:
                         intensity = int(d)
                         ring = int(e)
 
-                        if x + dx > self.px - self.dis and x + dx < self.px + self.dis and y + dy > self.py - self.dis and y + dy < self.py + self.dis and z > self.pz - self.dis and z < self.pz + self.dis:
+                        if x + dx > self.px - self.dis and x + dx < self.px + self.dis and y + dy > self.py - self.dis and y + dy < self.py + self.dis:
                             w.write(str(x)+' '+str(y)+' '+str(z)+' '+str(intensity)+' '+str(ring)+'\n')
                         else:
                             current += 1

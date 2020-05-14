@@ -13,14 +13,13 @@ class map:
 
     def cut(self, filein):
         
-        current = 0
         file = self.diction + filein
 
         with open(file,'r') as f :
             max_x = min_x = max_y = min_y = 0.0
             line = f.readlines()
             for i in range(11,len(line)-1):
-                a, b, c, d, e = line[i].split(' ',4)
+                a, b, c, d = line[i].split(' ',3)
                 if float(a) >= max_x:
                     max_x = float(a)
                 if float(b) >= max_y:
@@ -48,21 +47,22 @@ class map:
                 dx = gx * self.dis
                 dy = gy * self.dis
 
+                current = 0
                 with open(file, 'r') as f:
                     with open(fileout, 'w') as w:
                         line = f.readlines()
                         for i in range(11):
                             w.write(line[i])
                         for i in range(11,len(line)-1):
-                            a, b, c, d, e = line[i].split(' ',4)
+                            a, b, c, d = line[i].split(' ',3)
                             x = float(a)
                             y = float(b)
                             z = float(c)
                             intensity = int(d)
-                            ring = int(e)
+                            "ring = int(e)"
 
-                            if x + dx > self.px - self.dis and x + dx < self.px + self.dis and y + dy > self.py - self.dis and y + dy < self.py + self.dis and z > self.pz - self.dis and z < self.pz + self.dis:
-                                w.write(str(x)+' '+str(y)+' '+str(z + 1.25)+' '+str(intensity)+' '+str(ring)+'\n')
+                            if x + dx > self.px - self.dis and x + dx < self.px + self.dis and y + dy > self.py - self.dis and y + dy < self.py + self.dis:
+                                w.write(str(x)+' '+str(y)+' '+str(z)+' '+str(intensity)+'\n')
                             else:
                                 current += 1
 
@@ -80,7 +80,7 @@ class map:
         rospy.Rate(10).sleep()
         
 if __name__ == '__main__':
-    map = map(0, 0, 0, 3, '/home/eric/Desktop/')
+    map = map(0, 0, 0, 7, '/home/eric/Desktop/m/')
     rospy.init_node('map_cut')
     while(not rospy.is_shutdown()):
-        map.cut('100611000.pcd')
+        map.cut('0.pcd')

@@ -15,15 +15,15 @@ bool load(map_load::load::Request &req, map_load::load::Response &res)
     grid_x = req.x / req.dis;
     grid_y = req.y / req.dis;
 
-    res.a = count(grid_x,grid_y);
-    res.b = count(grid_x+1,grid_y);
-    res.c = count(grid_x-1,grid_y);
-    res.d = count(grid_x,grid_y+1);
-    res.e = count(grid_x+1,grid_y+1);
-    res.f = count(grid_x-1,grid_y+1);
-    res.g = count(grid_x,grid_y-1);
-    res.h = count(grid_x+1,grid_y-1);
-    res.i = count(grid_x-1,grid_y-1);
+    res.a = count(grid_x  , grid_y);
+    res.b = count(grid_x+1, grid_y);
+    res.c = count(grid_x-1, grid_y);
+    res.d = count(grid_x  , grid_y+1);
+    res.e = count(grid_x+1, grid_y+1);
+    res.f = count(grid_x-1, grid_y+1);
+    res.g = count(grid_x  , grid_y-1);
+    res.h = count(grid_x+1, grid_y-1);
+    res.i = count(grid_x-1, grid_y-1);
 
     return true;
 }

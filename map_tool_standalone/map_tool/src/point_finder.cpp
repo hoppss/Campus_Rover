@@ -2,10 +2,8 @@
 #include <fstream>
 #include <geometry_msgs/PoseWithCovarianceStamped.h>
 #include <yaml-cpp/yaml.h>
-#include <ros/package.h>
 using namespace std;
 string map_frame_,save_path_,file_name_,num,folder_name_;
-char a;
 double pose_x,pose_y,pose_z,orientation_x,orientation_y,orientation_z,orientation_w;
 ros::Subscriber initial_pose;
 
@@ -16,7 +14,7 @@ void getParameters(ros::NodeHandle n_private)
 }
 void writeFile(const geometry_msgs::PoseWithCovarianceStamped::ConstPtr& input)
 {
-   
+     ROS_INFO("get pose and saving ");
     pose_x = input->pose.pose.position.x;
     pose_y = input->pose.pose.position.y;
     pose_z = input->pose.pose.position.z;
@@ -52,6 +50,8 @@ void writeFile(const geometry_msgs::PoseWithCovarianceStamped::ConstPtr& input)
           out << YAML::EndMap;
         out << YAML::EndMap;
     out << YAML::EndMap;
+    ROS_INFO("save pose data to %s  ", folder_name_.c_str());
+
 }
 
 int main (int arc , char **argv)

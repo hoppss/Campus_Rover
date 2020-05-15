@@ -49,6 +49,16 @@ Visualization Manager:
           Show Axes: false
           Show Trail: false
           Value: true
+        link_0:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
+        right_camera_link:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
         velodyne:
           Alpha: 1
           Show Axes: false
@@ -131,8 +141,8 @@ Visualization Manager:
     - Alpha: 1
       Autocompute Intensity Bounds: true
       Autocompute Value Bounds:
-        Max Value: 27.7492485
-        Min Value: -2.4088974
+        Max Value: 8.49436092
+        Min Value: -4.54596758
         Value: true
       Axis: Z
       Channel Name: intensity
@@ -189,18 +199,18 @@ Visualization Manager:
       Use rainbow: true
       Value: false
     - Class: rviz/MarkerArray
-      Enabled: false
+      Enabled: true
       Marker Topic: /local_trajectories
       Name: LDP path
       Namespaces:
-        {}
+        path_array_marker: true
       Queue Size: 100
-      Value: false
+      Value: true
     - Alpha: 1
       Buffer Length: 1
       Class: rviz/Path
       Color: 85; 255; 255
-      Enabled: false
+      Enabled: true
       Head Diameter: 0.300000012
       Head Length: 0.200000003
       Length: 0.300000012
@@ -218,7 +228,7 @@ Visualization Manager:
       Shaft Length: 0.100000001
       Topic: /autolabor_route_path
       Unreliable: false
-      Value: false
+      Value: true
     - Class: rviz/MarkerArray
       Enabled: false
       Marker Topic: /visualization_marker_array
@@ -265,7 +275,7 @@ Visualization Manager:
       Buffer Length: 1
       Class: rviz/Path
       Color: 25; 255; 0
-      Enabled: true
+      Enabled: false
       Head Diameter: 0.300000012
       Head Length: 0.200000003
       Length: 0.300000012
@@ -283,7 +293,7 @@ Visualization Manager:
       Shaft Length: 0.100000001
       Topic: /osrm_route_path
       Unreliable: false
-      Value: true
+      Value: false
   Enabled: true
   Global Options:
     Background Color: 48; 48; 48
@@ -318,11 +328,11 @@ Visualization Manager:
       Invert Z Axis: false
       Name: Current View
       Near Clip Distance: 0.00999999978
-      Scale: 3.37004113
+      Scale: 18.8897171
       Target Frame: base_link
       Value: TopDownOrtho (rviz)
-      X: 6.82379293
-      Y: 25.7151413
+      X: 7.47902298
+      Y: 9.10491943
     Saved: ~
 Window Geometry:
   Displays:

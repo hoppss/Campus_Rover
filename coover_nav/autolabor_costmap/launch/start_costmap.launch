@@ -28,12 +28,12 @@
   <node name="autolabor_costmap" pkg="autolabor_costmap" type="autolabor_costmap" output="screen">
     <remap from="points2"             to="$(arg pointcloud)" />
     <param name="pcl_viz"             type="bool"   value="false" />
-    <param name="map_size_width"      type="double" value="10" />
-    <param name="map_size_height"     type="double" value="10" />
-    <param name="map_resolution"      type="double" value="0.1" />
+    <param name="map_size_width"      type="double" value="5" />
+    <param name="map_size_height"     type="double" value="5" />
+    <param name="map_resolution"      type="double" value="0.05" />
     <param name="max_obstacle_height" type="double" value="2.0" />
     <param name="min_obstacle_height" type="double" value="0.05" />
-    <param name="inflation_radius"    type="double" value="0.45" />
+    <param name="inflation_radius"    type="double" value="0.2" />
     <param name="cost_scaling_factor" type="double" value="10.0" />
   </node>
 

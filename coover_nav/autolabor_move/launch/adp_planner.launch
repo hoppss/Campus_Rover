@@ -32,7 +32,7 @@
     <remap from="cmd_vel" to="$(arg twist_output_topic)" />
     <param name="robot_frame" value="base_link" />
     <param name="arriving_range" value="1.0" />
-    <param name="max_vel_x" value="0.6" />
+    <param name="max_vel_x" value="0.4" />
     <param name="max_rot_vel" value="3.0" />
     <param name="min_rot_vel" value="-3.0" />
     <param name="min_turning_radius" value="0.0" />
@@ -41,10 +41,10 @@
     <param name="step_angular_z" value="0.02" /> 
     <param name="angular_velocity_p" value="1.2" /> 
   
-    <param name="max_dist" value="2.5" />
-    <param name="min_dist" value="1.0" />
+    <param name="max_dist" value="0.5" />
+    <param name="min_dist" value="0.5" />
     <param name="vel_x_step" value="0.8" />
-    <param name="rot_x_step" value="0.05" /> 
+    <param name="rot_x_step" value="0.02" /> 
     <param name="rot_x_zero_vel_angle" value="3.0" /> 
     <param name="path_resolution" value="0.1" />
     <param name="swap_path_num" value="20" />

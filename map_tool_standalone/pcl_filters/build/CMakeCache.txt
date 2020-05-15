@@ -244,10 +244,10 @@ FLANN_LIBRARY:FILEPATH=/usr/lib/x86_64-linux-gnu/libflann_cpp_s.a
 FLANN_LIBRARY_DEBUG:FILEPATH=/usr/lib/x86_64-linux-gnu/libflann_cpp_s.a
 
 //Path to a file.
-LIBUSB_1_INCLUDE_DIR:PATH=LIBUSB_1_INCLUDE_DIR-NOTFOUND
+LIBUSB_1_INCLUDE_DIR:PATH=/usr/include
 
 //Path to a library.
-LIBUSB_1_LIBRARY:FILEPATH=LIBUSB_1_LIBRARY-NOTFOUND
+LIBUSB_1_LIBRARY:FILEPATH=/usr/lib/x86_64-linux-gnu/libusb-1.0.so
 
 //Path to a file.
 OPENNI2_INCLUDE_DIRS:PATH=OPENNI2_INCLUDE_DIRS-NOTFOUND
@@ -700,6 +700,8 @@ FIND_PACKAGE_MESSAGE_DETAILS_PCL_VISUALIZATION:INTERNAL=[/usr/lib/x86_64-linux-g
 FIND_PACKAGE_MESSAGE_DETAILS_Threads:INTERNAL=[TRUE][v()]
 //Details about finding eigen
 FIND_PACKAGE_MESSAGE_DETAILS_eigen:INTERNAL=[/usr/include/eigen3][v()]
+//Details about finding libusb-1.0
+FIND_PACKAGE_MESSAGE_DETAILS_libusb-1.0:INTERNAL=[/usr/include][v()]
 //Details about finding openni
 FIND_PACKAGE_MESSAGE_DETAILS_openni:INTERNAL=[/usr/lib/libOpenNI.so][/usr/include/ni][v()]
 //Details about finding qhull

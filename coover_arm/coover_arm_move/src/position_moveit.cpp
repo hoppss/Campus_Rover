@@ -32,6 +32,10 @@ double gap_dis_;
 double jump_threshold_;
 double eef_step_;
 
+double shift_x_;
+double shift_y_;
+double shift_z_;
+
 bool allow_replanning_;
 bool Visualization_;
 
@@ -45,7 +49,9 @@ void get_parameters(ros::NodeHandle n_private)
     n_private.param<string>("standby_pose_name", standby_pose_name_, "standby_pose");
     n_private.param<double>("planning_time", planning_time_, 5.0);
     n_private.param<double>("num_planning_attempts", num_planning_attempts_, 10.0);
-    n_private.param<double>("gate_of_touch", gap_dis_, 0.03);
+    n_private.param<double>("shift_x", shift_x_, 0.00);
+    n_private.param<double>("shift_y", shift_y_, 0.00);
+    n_private.param<double>("shift_z", shift_z_, 0.00);
     n_private.param<double>("press_dis", press_dis_, 0.05);
     n_private.param<double>("jump_threshold", jump_threshold_, 0.0);
     n_private.param<double>("eef_step", eef_step_, 0.01);
@@ -67,7 +73,7 @@ bool ServiceCallback(autolabor_msgs::ArmAction::Request  &req, autolabor_msgs::A
     static const std::string PLANNING_GROUP = planning_group_name_;
     moveit::planning_interface::MoveGroupInterface move_group(PLANNING_GROUP);
     
-    move_group.setGoalOrientationTolerance(0.1); 
+    move_group.setGoalOrientationTolerance(0.3); 
     move_group.setGoalJointTolerance(0.01);
     move_group.setGoalPositionTolerance(0.01);
     move_group.setMaxVelocityScalingFactor(1.0);
@@ -142,7 +148,9 @@ bool ServiceCallback(autolabor_msgs::ArmAction::Request  &req, autolabor_msgs::A
     geometry_msgs::Quaternion quat_msg = tf2::toMsg(quat_tf);
     target_pose.position = pose_.pose.position;
     target_pose.orientation = quat_msg;
-    target_pose.position.x -= gap_dis_;
+    target_pose.position.x += shift_x_;
+    target_pose.position.y += shift_y_;
+    target_pose.position.z += shift_z_;
 
     cout << "target pose : " <<target_pose<< endl;
 

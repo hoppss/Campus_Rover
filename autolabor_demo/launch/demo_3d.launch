@@ -3,12 +3,12 @@
 
   <arg name="use_osrm" default="true" />
 
-  <arg name="bag_file" default="20200410_2.bag" />
-  <arg name="map_file" default="$(find autolabor_map_server)/maps/20200320_taipeitech.yaml" />
+  <arg name="bag_file" default="20200430_1f_4.bag" />
+  <arg name="map_file" default="$(find autolabor_map_server)/maps/20200402_TT_1F.yaml" />
   <arg name="map_file_2d" default="$(find autolabor_map_server)/maps/map2d/2018taf1.yaml" />
-  <arg name="path_file" default="20200320TT.path" />
+  <arg name="path_file" default="20200430_1f_1.path" />
 
-  <arg name="route" default="$(env HOME)/osrm/TaipeiTech/20200326_TaipeiTech.osrm" />
+  <arg name="route" default="$(env HOME)/osrm/20200402_3f_ndt/20200402_TaipeiTech_3f_ndt.osrm" />
   <arg name="use_avoidance" default="true" />
   <arg name="costmap_with_global_map" default="true" />
 
@@ -38,11 +38,11 @@
   <!-- autolabor path planner -->
   <include file="$(find autolabor_move)/launch/adp_planner.launch" >
     <arg name="debug"               value="false"/>
-    <arg name="globle_path"         value="/osrm_route_path"/>
-    <!-- <arg name="globle_path"         value="/autolabor_route_path"/> -->
+    <!-- <arg name="globle_path"         value="/osrm_route_path"/> -->
+    <arg name="globle_path"         value="/autolabor_route_path"/>
     <arg name="costmap_topic"       value="/autolabor_local_costmap"/>
-    <arg name="twist_output_topic"  value="/cmd_vel"/>
-    <!-- <arg name="twist_output_topic"  value="/yocs_cmd_vel_mux/input/navigation"/> -->
+    <!-- <arg name="twist_output_topic"  value="/cmd_vel"/> -->
+    <arg name="twist_output_topic"  value="/yocs_cmd_vel_mux/input/navigation"/>
   </include>
 
   <!-- Localization -->
@@ -71,16 +71,16 @@
   </node>
 
   <!-- OSRM -->
-  <include if="$(arg use_osrm)" file="$(find autolabor_routing)/launch/osrm.launch">
+  <!-- <include if="$(arg use_osrm)" file="$(find autolabor_routing)/launch/osrm.launch">
     <arg name="debug" value="false" />
     <arg name="route" value="$(arg route)" />
-  </include>
+  </include> -->
 
   <!-- for showing  OSM-->
   <node pkg="tf2_ros" type="static_transform_publisher" name="world_to_earth_broadcaster"
         args="0 0 0 0 0 0 world earth" />
   <include file="$(find osm_cartography)/launch/viz_osm.launch">
-    <arg name="url" value="package://autolabor_odom/osm/20200326_TaipeiTech.osm" />
+    <arg name="url" value="package://autolabor_odom/osm/20200402_TaipeiTech_3f.osm" />
   </include>
 
   <!-- pev network sever-->

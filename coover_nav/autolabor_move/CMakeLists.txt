@@ -63,3 +63,9 @@ target_link_libraries(adp_planner ${catkin_LIBRARIES})
 add_executable(lu_simulation src/lu_simulation.cpp)
 target_link_libraries(lu_simulation ${catkin_LIBRARIES})
 
+add_executable(elevator_position_finder src/elevator_position_finder.cpp)
+target_link_libraries(elevator_position_finder ${catkin_LIBRARIES})
+
+add_executable(elevator_pose_tf src/elevator_pose_tf.cpp)
+target_link_libraries(elevator_pose_tf ${catkin_LIBRARIES})
+

@@ -1,10 +1,10 @@
 <!-- -*- mode: XML -*- -->
 
 <launch>
-  <arg name="file_name" default="20200402_TT_3F" />
+  <arg name="file_name" default="20200402_TT_1F" />
   <arg name="fake_gps_file" default="$(arg file_name).gps" />
   <arg name="fake_gps_topic" default="/fake_gps/fix" />
-  <arg name="pcd_file" default="20200402_3f.pcd " />
+  <arg name="pcd_file" default="20200430_1f_2_10cm.pcd " />
 
   <node pkg="autolabor_map_server" type="pcd_tf_finder" name="pcd_tf_finder_node" output="log">
     <param name="world_frame" type="str" value="world" />

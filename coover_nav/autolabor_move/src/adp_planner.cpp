@@ -418,7 +418,7 @@ void make_path()
         closest_id = cp;
       }
     }
-    new_path_ = false;
+    //new_path_ = false;
   }
   else
   {
@@ -915,6 +915,11 @@ void make_twist_path(double twist_linear_x, double twist_angular_z)
 void PathCallback(const nav_msgs::PathConstPtr &path)
 {
   geometry_msgs::PoseStamped pose;
+
+  if(path->poses.size()==0)
+  {
+    return;
+  }
 
   globle_path_.header.frame_id = path->header.frame_id;
 

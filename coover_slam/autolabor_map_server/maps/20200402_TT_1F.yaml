@@ -1,0 +1,10 @@
+pcd_file: 20200430_1f_2_30cm.pcd
+gps_topic:
+  topic_name: /fake_gps/fix
+  parent_frame: world
+  child_frame: local_map
+  latitude: 25.042767
+  longitude: 121.536059
+map_fix_tf:
+  child_frame: map
+  tf: [-17.46875, 28.75, 0, -5.977186390282441e-08, 7.28372501201946e-11, 0.9997085332870483, 0.02414511516690254]

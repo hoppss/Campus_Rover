@@ -161,13 +161,14 @@ void ScanCallback(const sensor_msgs::LaserScanConstPtr &scan)
     return;
   
   scan_poses.header.stamp = ros::Time::now();
+  scan_frame_ = scan->header.frame_id;
   scan_poses.header.frame_id = scan_frame_;
   scan_poses.poses.clear();
   detect_feature_point.clear();
 
   for (int i = 0; i < scan->ranges.size(); i++)
   {
-    if(scan->intensities[i] > 1000.0)
+    if(scan->ranges[i] > 0.001)
     {
       angle = scan->angle_min + (i * scan->angle_increment);
       if(scan->ranges[i] < max_scan_range_)
@@ -861,25 +862,7 @@ void VisualizeElevatorEnterPoint(std::vector<nav_msgs::Path> paths)
   for (int i = 0; i < paths.size(); i++)
   {
     lane_waypoint_marker.points.clear();
-    if(i == 0)
-    {
-      lane_waypoint_marker.id = i;
-
-      lane_waypoint_marker.color.r = 0.0;
-      lane_waypoint_marker.color.g = 1.0;
-      lane_waypoint_marker.color.b = 0.0;
-      lane_waypoint_marker.color.a = 0.9;
-    }
-    else if(i ==1)
-    {
-      lane_waypoint_marker.id = i;
-
-      lane_waypoint_marker.color.r = 1.0;
-      lane_waypoint_marker.color.g = 0.0;
-      lane_waypoint_marker.color.b = 0.0;
-      lane_waypoint_marker.color.a = 0.9;
-    }
-    else if(i ==2)
+    //if(i == 0)
     {
       lane_waypoint_marker.id = i;
 
@@ -888,6 +871,24 @@ void VisualizeElevatorEnterPoint(std::vector<nav_msgs::Path> paths)
       lane_waypoint_marker.color.b = 1.0;
       lane_waypoint_marker.color.a = 0.9;
     }
+    // else if(i ==1)
+    // {
+    //   lane_waypoint_marker.id = i;
+
+    //   lane_waypoint_marker.color.r = 1.0;
+    //   lane_waypoint_marker.color.g = 0.0;
+    //   lane_waypoint_marker.color.b = 0.0;
+    //   lane_waypoint_marker.color.a = 0.9;
+    // }
+    // else if(i ==2)
+    // {
+    //   lane_waypoint_marker.id = i;
+
+    //   lane_waypoint_marker.color.r = 0.0;
+    //   lane_waypoint_marker.color.g = 0.0;
+    //   lane_waypoint_marker.color.b = 1.0;
+    //   lane_waypoint_marker.color.a = 0.9;
+    // }
 
     for (int j = 0; j < paths[i].poses.size(); j++)
     {

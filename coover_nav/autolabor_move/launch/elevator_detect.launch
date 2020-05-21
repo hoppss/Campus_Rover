@@ -1,7 +1,7 @@
 <launch>
     <arg name="debug"               default="false"/>
     <arg name="frame" default="ydlidar_link"/>
-    <arg name="bag_filename"        default="$(env HOME)/bags/autolabor_bag/20200507_elevator_position_dynamic_1.bag"/>
+    <arg name="bag_filename"        default="$(env HOME)/bags/autolabor_bag/20200519enter_elevatoor_1.bag"/>
     <!-- /////////////////////////////////////////////////////////////////////////////////// -->
     <group if="$(arg debug)">
 
@@ -21,35 +21,74 @@
 
     </group>
 
-    <!-- <node pkg="nodelet" type="nodelet" name="pcl_manager" args="manager" output="screen" />
-    <node pkg="nodelet" type="nodelet" name="voxel_grid" args="load pcl/VoxelGrid pcl_manager" output="screen">
-        <remap from="~input"  to="velodyne_points" />
-        <remap from="~output" to="filtered_points" />
+    <!-- run pointcloud_to_laserscan node -->
+    <node pkg="pointcloud_to_laserscan" type="pointcloud_to_laserscan_node" name="pointcloud_to_laserscan">
+
+        <remap from="cloud_in" to="velodyne_points"/>
+        <remap from="scan" to="scan2"/>
         <rosparam>
-        filter_field_name: z
-        filter_limit_min: 0
-        filter_limit_max: 0.5
-        filter_limit_negative: False
+            min_height: -1.0
+            max_height: -0.18
+
+            angle_min: -3.14 # -M_PI/2
+            angle_max: 3.14 # M_PI/2
+            angle_increment: 0.0087 # M_PI/360.0
+            scan_time: 0.3333
+            range_min: 0.45
+            range_max: 16.0
+            use_inf: true
+            inf_epsilon: 1.0
+
+            # Concurrency level, affects number of pointclouds queued for processing and number of threads used
+            # 0 : Detect number of cores
+            # 1 : Single threaded
+            # 2->inf : Parallelism level
+            concurrency_level: 1
         </rosparam>
-    </node> -->
+
+    </node>
 
     <node pkg="autolabor_move" type="elevator_position_finder" name="elevator_position_finder" output="screen">
-        <remap from="frame"    to="$(arg frame)" />
+        <remap from="scan"    to="scan2" />
         <param name="window_type" value="circular" />
         <param name="window_size" value="0.15" />
         <param name="max_scan_range" value="6.0" />
         <param name="corner_feature_threshold" value="0.0000025" />
         <param name="elevator_feature_dis_range" value="0.2" />
-        <param name="elevator_feature_d_angle_range" value="0.4" />
+        <param name="elevator_feature_d_angle_range" value="0.3" />
         
     </node>
 
-    <node pkg="autolabor_move" type="elevator_pose_tf" name="elevator_pose_tf" output="screen">
-        <param name="source_frame_id" value="odom" />
-        <param name="target_frame_id" value="base_link" />
-        <param name="pub_tf" value="true" />
-        <param name="pub_odom" value="false" />
+    <node pkg="autolabor_move" type="elevator_door_status" name="elevator_door_status" output="screen">
+        <remap from="scan"    to="scan2" />
+        <param name="door_t1" value="0.2" />
+        <param name="door_x1" value="0.34" />
+        <param name="door_y1" value="0.94" />
+        <param name="door_y2" value="0.8" />
+        <param name="door_open_threshold" value="0.2" />
         
     </node>
+
+    <node pkg="autolabor_move" type="elevator_path_generater" name="elevator_path_generater" output="screen">
+        <param name="path_frame" value="map" />
+        <param name="path_x1_dis" value="3.0" />
+        <param name="path_x2_dis" value="1.2" />
+        <param name="elevator_priority" value="2.0" />
+        <param name="path_resolution" value="0.05" />
+        <param name="pose_range_threshold" value="0.5" />
+        <param name="pose_yaw_threshold" value="0.05" />
+        <param name="avg_pose_size" value="10.0" />
+        
+        
+        
+    </node>
+
+    <!-- <node pkg="autolabor_move" type="elevator_pose_tf" name="elevator_pose_tf" output="screen">
+        <param name="source_frame_id" value="odom" />
+        <param name="target_frame_id" value="base_link" />
+        <param name="pub_tf" value="false" />
+        <param name="pub_odom" value="false" />
+        
+    </node> -->
 
 </launch>

@@ -1,5 +1,5 @@
 <launch>
-  <arg name="bag_filename" default="$(env HOME)/bags/autolabor_bag/20200402_3f_1.bag"/>
+  <arg name="bag_filename" default="$(env HOME)/bags/autolabor_bag/20200519enter_elevatoor_3.bag"/>
   <arg name="viz" default="true" />
   <arg name="geotiff_map_file_path" default="$(find autolabor_map_server)/maps"/>
 
@@ -24,11 +24,17 @@
     <arg name="scan_subscriber_queue_size" value="5"/>
     <arg name="scan_topic" value="scan"/>
     <arg name="map_size" value="2048"/>
+    <arg name="map_resolution" value="0.05"/>
+    <arg name="map_update_angle_thresh" value="0.5"/>
+    <arg name="map_update_distance_thresh" value="0.2"/>
+    <arg name="laser_z_min_value" value="-1.0"/>
+    <arg name="laser_z_max_value" value="1.5"/>
+    
   </include>
 
-  <include file="$(find hector_geotiff)/launch/geotiff_mapper.launch">
+  <!-- <include file="$(find hector_geotiff)/launch/geotiff_mapper.launch">
     <arg name="trajectory_source_frame_name" value="scanmatcher_frame"/>
     <arg name="map_file_path" value="$(arg geotiff_map_file_path)"/>
-  </include>
+  </include> -->
 
 </launch>

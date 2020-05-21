@@ -16,6 +16,12 @@ find_package(catkin REQUIRED COMPONENTS
   tf2_ros
 )
 
+## Generate messages in the 'msg' folder
+add_message_files(
+  DIRECTORY msg
+  FILES
+  DoorStatus.msg
+)
 
 ## Generate service in the 'srv' folder
 add_service_files(

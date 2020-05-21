@@ -22,6 +22,7 @@ find_package(catkin REQUIRED COMPONENTS
   message_generation
   tf2_geometry_msgs
   laser_geometry
+  autolabor_msgs
 )
 
 
@@ -69,3 +70,8 @@ target_link_libraries(elevator_position_finder ${catkin_LIBRARIES})
 add_executable(elevator_pose_tf src/elevator_pose_tf.cpp)
 target_link_libraries(elevator_pose_tf ${catkin_LIBRARIES})
 
+add_executable(elevator_door_status src/elevator_door_status.cpp)
+target_link_libraries(elevator_door_status ${catkin_LIBRARIES})
+
+add_executable(elevator_path_generater src/elevator_path_generater.cpp)
+target_link_libraries(elevator_path_generater ${catkin_LIBRARIES})

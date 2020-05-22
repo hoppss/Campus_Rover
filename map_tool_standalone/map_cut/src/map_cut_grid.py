@@ -47,7 +47,7 @@ class map:
                 dx = gx * self.dis
                 dy = gy * self.dis
 
-                current = 0
+                long current = 0
                 with open(file, 'r') as f:
                     with open(fileout, 'w') as w:
                         line = f.readlines()
@@ -80,7 +80,7 @@ class map:
         rospy.Rate(10).sleep()
         
 if __name__ == '__main__':
-    map = map(0, 0, 0, 7, '/home/eric/Desktop/m/')
+    map = map(0, 0, 0, 7, '/home/eric/Desktop/map2/')
     rospy.init_node('map_cut')
     while(not rospy.is_shutdown()):
-        map.cut('0.pcd')
+        map.cut('demo.pcd')

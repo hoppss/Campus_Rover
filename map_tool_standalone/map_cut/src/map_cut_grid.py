@@ -80,7 +80,13 @@ class map:
         rospy.Rate(10).sleep()
         
 if __name__ == '__main__':
-    map = map(0, 0, 0, 7, '/home/eric/Desktop/map2/')
     rospy.init_node('map_cut')
     while(not rospy.is_shutdown()):
+        init_x = rospy.get_param('x',default = 0)
+        init_y = rospy.get_param('y',default = 0)
+        init_z = rospy.get_param('z',default = 0)
+        init_d = rospy.get_param('d',default = 3)
+        init_dir = rospy.get_param('dir',default = '/home/eric/Desktop/map2/')
+        map_file = rospy.get_param('filename',default = 'demo.pcd')
+        map = map(init_x, init_y, init_z, init_d, init_dir)
         map.cut('demo.pcd')

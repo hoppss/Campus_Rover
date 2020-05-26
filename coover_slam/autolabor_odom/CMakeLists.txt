@@ -12,6 +12,7 @@ find_package(catkin REQUIRED COMPONENTS
   tf
   geometry_msgs
   gps_common
+  autolabor_msgs
 )
 
 catkin_package()

@@ -72,23 +72,21 @@ void DoorStatusCallback(const autolabor_msgs::DoorStatusConstPtr &doors_status)
   static double roll2, pitch2, yaw2;
   static bool first_time = true;
   static int poses_count = 0;
+  static bool door_open;
 
   if(doors_status->doors_pose.poses.size() == 0)
     return;
 
   path.poses.clear();
-
+  door_open = false;
+  
   before_pose.header.frame_id = doors_status->doors_pose.header.frame_id;
 
-  if(doors_status->doors_pose.poses.size() == 2.0)
+  if(priority_ > 0)
   {
-    if(priority_ = 1.0)
+    if(doors_status->doors_pose.poses.size() >= 2.0)
     {
-      before_pose.pose = doors_status->doors_pose.poses[0];
-    }
-    else if(priority_ = 2.0)
-    {
-      before_pose.pose = doors_status->doors_pose.poses[1];
+      before_pose.pose = doors_status->doors_pose.poses[priority_-1];
     }
     else
     {
@@ -97,8 +95,20 @@ void DoorStatusCallback(const autolabor_msgs::DoorStatusConstPtr &doors_status)
   }
   else
   {
-    before_pose.pose = doors_status->doors_pose.poses[0];
+    for(int i =0;i<doors_status->doors_status.size();i++)
+    {
+      if(doors_status->doors_status[i].data == "open")
+      {
+        before_pose.pose = doors_status->doors_pose.poses[i];
+        door_open = true;
+        break;
+      }
+    }
+    if(!door_open)
+      return;
   }
+  
+  
 
   // try
   // {

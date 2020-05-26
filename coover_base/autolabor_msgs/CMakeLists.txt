@@ -21,9 +21,12 @@ add_message_files(
   DIRECTORY msg
   FILES
   DoorStatus.msg
+  Encode.msg
+  PoseWithId.msg
+  InDemoStatus.msg
 )
 
-## Generate service in the 'srv' folder
+## Generate service in the 'srv' folder###
 add_service_files(
   FILES
   DriveStatus.srv

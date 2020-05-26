@@ -12,7 +12,7 @@
   <arg name="points_topic" default="/velodyne_points" />
 
   <node pkg="rosbag" type="play" name="rosbag_play_node"
-      args="$(env HOME)/bags/autolabor_bag/20200430_1f_3.bag --clock" >
+      args="$(env HOME)/bags/autolabor_bag/20200524_odom_1.bag --clock" >
   </node>
 
   <rosparam>

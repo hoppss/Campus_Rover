@@ -1,23 +1,31 @@
 
 <launch>
   <arg name="debug"               default="false"/>
-  <arg name="bag_filename" default="$(env HOME)/bags/autolabor_bag/20200519enter_elevatoor_1.bag"/>
+  <arg name="bag_filename" default="$(env HOME)/bags/autolabor_bag/20200524_odom_1.bag"/>
 
   <group if="$(arg debug)">
 
-      <!-- rviz -->
-      <node name="rviz" pkg="rviz" type="rviz" required="true"
-        args="-d $(find hector_slam_launch)/rviz_cfg/mapping_demo.rviz" />
+    <!-- rviz -->
+    <node name="rviz" pkg="rviz" type="rviz" required="true"
+      args="-d $(find hector_slam_launch)/rviz_cfg/mapping_demo.rviz" />
 
-      <param name="use_sim_time" value="true" />
-      <node name="playbag" pkg="rosbag" type="play"
-              args="--clock $(arg bag_filename)" />
+    <param name="use_sim_time" value="true" />
+    <node name="playbag" pkg="rosbag" type="play"
+            args="--clock $(arg bag_filename)" />
 
-      <param name="robot_description"
-          textfile="$(find autolabor_description)/urdf/autolabor.urdf" />
+    <param name="robot_description"
+        textfile="$(find autolabor_description)/urdf/autolabor.urdf" />
 
-      <node name="robot_state_publisher" pkg="robot_state_publisher"
-          type="robot_state_publisher" />
+    <node name="robot_state_publisher" pkg="robot_state_publisher"
+        type="robot_state_publisher" />
+
+    <node pkg="hector_trajectory_server" type="hector_trajectory_server" name="trajectory_node">
+      <remap from="trajectory" to="trajectory" />
+      <param name="target_frame_name" type="string" value="/map" />
+      <param name="source_frame_name" type="string" value="/base_link" />
+      <param name="trajectory_update_rate" value="10" />
+      <param name="trajectory_publish_rate" value="10" />
+    </node>
 
   </group>
 

@@ -127,8 +127,8 @@ void PoseCallback(const geometry_msgs::PoseArrayConstPtr &poses)
         }
         catch (tf2::TransformException &ex)
         {
-          ROS_WARN("elevator_path_generater : %s",ex.what());
-          ros::Duration(0.5).sleep();
+          ROS_WARN("elevator_door_status : %s",ex.what());
+          ros::Duration(0.2).sleep();
           return;
         }
         //cout<<"scan_frame_ "<<scan_frame_<<" pose_frame "<<poses->header.frame_id<<"after_pose frame "<<after_pose.header.frame_id<<'\n';

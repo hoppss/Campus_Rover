@@ -54,12 +54,16 @@
         <param name="window_size" value="0.15" />
         <param name="max_scan_range" value="6.0" />
         <param name="corner_feature_threshold" value="0.0000025" />
-        <param name="elevator_feature_dis_range" value="0.2" />
-        <param name="elevator_feature_d_angle_range" value="0.3" />
+        <param name="enter_elevator_feature_dis_range" value="0.2" />
+        <param name="enter_elevator_feature_d_angle_range" value="0.3" />
+
+        <param name="elevator_pose_filter" value="true" />
+        <param name="filter_range_dis" value="0.3" />
+        <param name="filter_range_angle" value="0.3" />
         
     </node>
 
-    <node pkg="autolabor_move" type="elevator_door_status" name="elevator_door_status" output="screen">
+    <!-- <node pkg="autolabor_move" type="elevator_door_status" name="elevator_door_status" output="screen">
         <remap from="scan"    to="scan2" />
         <param name="door_t1" value="0.2" />
         <param name="door_x1" value="0.34" />
@@ -73,15 +77,12 @@
         <param name="path_frame" value="map" />
         <param name="path_x1_dis" value="3.0" />
         <param name="path_x2_dis" value="1.2" />
-        <param name="elevator_priority" value="2.0" />
+        <param name="elevator_priority" value="0.0" />
         <param name="path_resolution" value="0.05" />
         <param name="pose_range_threshold" value="0.5" />
         <param name="pose_yaw_threshold" value="0.05" />
-        <param name="avg_pose_size" value="10.0" />
-        
-        
-        
-    </node>
+        <param name="avg_pose_size" value="3.0" />
+    </node> -->
 
     <!-- <node pkg="autolabor_move" type="elevator_pose_tf" name="elevator_pose_tf" output="screen">
         <param name="source_frame_id" value="odom" />

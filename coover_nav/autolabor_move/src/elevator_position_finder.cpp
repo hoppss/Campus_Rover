@@ -6,6 +6,8 @@
 
 #include <tf2/LinearMath/Quaternion.h>
 #include <tf2_geometry_msgs/tf2_geometry_msgs.h>
+#include <tf2_ros/transform_listener.h>
+#include <tf/transform_broadcaster.h>
 
 #include <geometry_msgs/Twist.h>
 #include <geometry_msgs/Pose.h>
@@ -29,21 +31,28 @@ ros::Subscriber scan_sub_;
 ros::Publisher pose_pub_, break_point_marker_pub_, elevator_corner_marker_pub_, featuer_point_marker_pub_, elevator_marker_pub_;
 
 string scan_frame_;
+string map_frame_;
 string window_type_;
 double window_size_;
 double max_scan_range_;
 double corner_feature_threshold;
 
-double elevator_feature_dis_range_;
-double elevator_feature_d_angle_range_;
+double enter_elevator_feature_dis_range_;
+double enter_elevator_feature_d_angle_range_;
 int elevator_num_;
 double door_gap_dis_;
 double door_x1_;
 double door_y1_;
 double door_y2_;
+double elevator_wd_;
+double filter_range_dis_;
+double filter_range_angle_;
+
+bool elevator_pose_filter_;
 
 std::vector<geometry_msgs::Point> detect_feature_point;
-std::vector<geometry_msgs::Point> elevator_feature;
+std::vector<geometry_msgs::Point> enter_elevator_feature;
+std::vector<geometry_msgs::Point> exit_elevator_feature;
 std::vector<geometry_msgs::Point> sample_elevator_feature;
 
 void VisualizeCorner(std::vector<geometry_msgs::Point> points);
@@ -52,22 +61,28 @@ void VisualizefeaturePoint(std::vector<geometry_msgs::Point> points) ;
 void FeatureMatching(std::vector<geometry_msgs::Point> points);
 void VisualizeElevatorEnterPoint(std::vector<nav_msgs::Path> paths);
 void initial_elevator_feature();
+void pose_filter(geometry_msgs::PoseArray &poses);
 
 void get_parameters(ros::NodeHandle n_private)
 {
-  n_private.param<string>("frame", scan_frame_, "ydlidar_link");
+  n_private.param<string>("map_frame", map_frame_, "map");
   n_private.param<string>("window_type", window_type_, "circular");
+  n_private.param<bool>("elevator_pose_filter", elevator_pose_filter_, true); 
   n_private.param<double>("window_size", window_size_, 0.15); 
   n_private.param<double>("max_scan_range", max_scan_range_, 4.0);
   n_private.param<double>("corner_feature_threshold", corner_feature_threshold, 0.000002);
-  n_private.param<double>("elevator_feature_dis_range", elevator_feature_dis_range_, 0.1);
-  n_private.param<double>("elevator_feature_d_angle_range", elevator_feature_d_angle_range_, 0.1);
+  n_private.param<double>("enter_elevator_feature_dis_range", enter_elevator_feature_dis_range_, 0.1);
+  n_private.param<double>("enter_elevator_feature_d_angle_range", enter_elevator_feature_d_angle_range_, 0.1);
+
+  n_private.param<double>("filter_range_dis", filter_range_dis_, 0.1);
+  n_private.param<double>("filter_range_angle", filter_range_angle_, 0.3);
 
   n_private.param<int>("elevator_num", elevator_num_, 2.0);
   n_private.param<double>("door_gap_dis", door_gap_dis_, 0.91);
   n_private.param<double>("door_x1", door_x1_, 0.34);
   n_private.param<double>("door_y1", door_y1_, 0.94);
   n_private.param<double>("door_y2", door_y2_, 0.8);
+  n_private.param<double>("elevator_wd", elevator_wd_, 0.8);
 
   initial_elevator_feature();
 }
@@ -78,8 +93,8 @@ void initial_elevator_feature()
   static double vx,vy; 
   static double last_vx,last_vy,last_angle;
   geometry_msgs::Point feature;
-  geometry_msgs::Point last_f_point;
-  
+
+  //---enter feature--------//
   for(int i=0; i < 7;i++)
   {
     if(i == 0)
@@ -141,9 +156,60 @@ void initial_elevator_feature()
     feature.y = angle;
     feature.z = dangle;
 
-    elevator_feature.push_back(feature);
+    enter_elevator_feature.push_back(feature);
     
-    cout<<"feature = "<<feature<<'\n';
+    cout<<"Enter Feature = "<<feature<<'\n';
+  }
+
+  //---exit feature--------//
+  for(int i=0; i < 4;i++)
+  {
+    if(i == 0)
+    {
+      dis = 0.0;
+      angle =0.0;
+      dangle = 0.0;
+      vx = vy =0.0;
+    }
+    else if(i == 1 )    
+    {
+      vx = -elevator_wd_;
+      vy = 0.0;
+      dis = sqrt(pow(vx,2)+pow(vy,2));
+      angle = atan2(vy,vx);
+    }
+    else if(i == 2)
+    {
+      vx = 0.0;
+      vy = -elevator_wd_;
+      dis = sqrt(pow(vx,2)+pow(vy,2));
+      angle = atan2(vy,vx);
+    }
+    else if(i == 3)
+    {
+      vx = elevator_wd_;
+      vy = 0.0;
+      dis = sqrt(pow(vx,2)+pow(vy,2));
+      angle = atan2(vy,vx);
+    }
+    dangle = last_angle - angle;
+    last_angle = angle;
+
+    if(dangle > M_PI)
+    {
+      dangle = -2*M_PI + dangle;
+    }else if(dangle < -M_PI)
+    {
+      dangle = 2*M_PI + dangle;
+    }
+
+    feature.x = dis;
+    feature.y = angle;
+    feature.z = dangle;
+
+    exit_elevator_feature.push_back(feature);
+    
+    cout<<"Exit Feature = "<<feature<<'\n';
   }
 }
 
@@ -156,6 +222,8 @@ void ScanCallback(const sensor_msgs::LaserScanConstPtr &scan)
 
   std::vector<double> range;
   std::vector<double> intensities;
+
+  //cout<<"=================================="<<'\n';
 
   if(scan->ranges.size()==0)
     return;
@@ -187,7 +255,7 @@ void ScanCallback(const sensor_msgs::LaserScanConstPtr &scan)
   //   first_time = false;
   // }
   
-  //cout<<"=================================="<<'\n';
+  
 
   static std::vector<geometry_msgs::Point> window_points ;
   static std::vector<double> v_x;
@@ -573,8 +641,8 @@ void FeatureMatching(std::vector<geometry_msgs::Point> points)
 {
   static double last_point_x,last_point_y;
   static geometry_msgs::Point find_feature_point;
-  static std::vector<geometry_msgs::Point> find_feature_points_1;
-  static std::vector<geometry_msgs::Point> find_feature_points_2;
+  static std::vector<geometry_msgs::Point> enter_feature_points;
+  static std::vector<geometry_msgs::Point> exit_feature_points;
   static double dis, angle, dangle;
   static double last_angle;
   static bool feature_1, feature_2, feature_3;
@@ -589,14 +657,21 @@ void FeatureMatching(std::vector<geometry_msgs::Point> points)
 
   paths.clear();
   path.poses.clear();
-  find_feature_points_1.clear();
-  find_feature_points_2.clear();
+  enter_feature_points.clear();
+  exit_feature_points.clear();
   elevator_poses.poses.clear();
   elevator_poses.header.frame_id = scan_frame_;
   elevator_poses.header.stamp =ros::Time::now();
 
+  //std::cout<<"points_size"<<points.size()<<'\n';
+
+  if(points.size()<3)
+    return;
+  
+
   for(int i = 0; i < points.size();i++)
   {
+    
     dis = angle = 0;
     for(int f = i; f < i+3;f++)
     {
@@ -629,35 +704,45 @@ void FeatureMatching(std::vector<geometry_msgs::Point> points)
 
       if(f == i+2)
       {
-        if(abs(dangle - elevator_feature[2].z ) <= elevator_feature_d_angle_range_)
+        if(abs(dangle - enter_elevator_feature[2].z ) <= enter_elevator_feature_d_angle_range_)
         {
           find_feature_point.x = points[i+1].x;
           find_feature_point.y = points[i+1].y;
           find_feature_point.z = i+1;
-          find_feature_points_1.push_back(find_feature_point);
-          //std::cout << " find_feature_point 1 " <<  find_feature_point <<'\n';
+          enter_feature_points.push_back(find_feature_point);
+        }
+
+        if(abs(dangle - exit_elevator_feature[2].z ) <= enter_elevator_feature_d_angle_range_)
+        {
+          find_feature_point.x = points[i+1].x;
+          find_feature_point.y = points[i+1].y;
+          find_feature_point.z = i+1;
+          exit_feature_points.push_back(find_feature_point);
         }
         
       }
       //std::cout << "dis : " << dis << " dangle " <<  dangle <<'\n';
     }
-    //std::cout<<"---------------------------------"<<'\n';
+    // std::cout<<"---------------------------------"<<'\n';
   }
-  VisualizeCorner(find_feature_points_1);
+  VisualizeCorner(exit_feature_points);
 
-  for(int f_1 = 0;f_1 < find_feature_points_1.size()-1;f_1++)
+  if(enter_feature_points.size()<2)
+    return;
+  
+  for(int f_1 = 0;f_1 < enter_feature_points.size()-1;f_1++)
   {
-    for(int f_2 = f_1+1;f_2 < find_feature_points_1.size();f_2++)
+    for(int f_2 = f_1+1;f_2 < enter_feature_points.size();f_2++)
     { 
-      if(abs(sqrt(pow(find_feature_points_1[f_1].x -find_feature_points_1[f_2].x,2)+
-                  pow(find_feature_points_1[f_1].y -find_feature_points_1[f_2].y,2))-door_y1_) <= elevator_feature_dis_range_)
+      if(abs(sqrt(pow(enter_feature_points[f_1].x -enter_feature_points[f_2].x,2)+
+                  pow(enter_feature_points[f_1].y -enter_feature_points[f_2].y,2))-door_y1_) <= enter_elevator_feature_dis_range_)
       {
 
-        double angle1 = atan2(points[find_feature_points_1[f_1].z].y - points[find_feature_points_1[f_1].z+1].y, 
-                              points[find_feature_points_1[f_1].z].x - points[find_feature_points_1[f_1].z+1].x);
+        double angle1 = atan2(points[enter_feature_points[f_1].z].y - points[enter_feature_points[f_1].z+1].y, 
+                              points[enter_feature_points[f_1].z].x - points[enter_feature_points[f_1].z+1].x);
 
-        double angle2 = atan2(points[find_feature_points_1[f_2].z-1].y - points[find_feature_points_1[f_2].z].y, 
-                              points[find_feature_points_1[f_2].z-1].x - points[find_feature_points_1[f_2].z].x);
+        double angle2 = atan2(points[enter_feature_points[f_2].z-1].y - points[enter_feature_points[f_2].z].y, 
+                              points[enter_feature_points[f_2].z-1].x - points[enter_feature_points[f_2].z].x);
         dangle = angle1 - angle2;
         if(dangle > M_PI)
         {
@@ -667,19 +752,19 @@ void FeatureMatching(std::vector<geometry_msgs::Point> points)
           dangle = 2*M_PI + dangle;
         }
         //std::cout << " dangle " <<  dangle <<'\n';
-        if(abs(dangle -elevator_feature[6].z) <= elevator_feature_d_angle_range_)
+        if(abs(dangle -enter_elevator_feature[6].z) <= enter_elevator_feature_d_angle_range_)
         {
           for(int p = 0; p < 2;p++)
           {
             if(p == 0)
             {
-              feature_pose.pose.position.x = find_feature_points_1[f_1].x;
-              feature_pose.pose.position.y = find_feature_points_1[f_1].y;
+              feature_pose.pose.position.x = enter_feature_points[f_1].x;
+              feature_pose.pose.position.y = enter_feature_points[f_1].y;
             }
             else if(p == 1)
             {
-              feature_pose.pose.position.x = find_feature_points_1[f_2].x;
-              feature_pose.pose.position.y = find_feature_points_1[f_2].y;
+              feature_pose.pose.position.x = enter_feature_points[f_2].x;
+              feature_pose.pose.position.y = enter_feature_points[f_2].y;
             }
             
             path.poses.push_back(feature_pose);
@@ -687,10 +772,10 @@ void FeatureMatching(std::vector<geometry_msgs::Point> points)
           paths.push_back(path);
           path.poses.clear();
 
-          elevator_pose.position.x = (find_feature_points_1[f_1].x +find_feature_points_1[f_2].x)/2.0;
-          elevator_pose.position.y = (find_feature_points_1[f_1].y +find_feature_points_1[f_2].y)/2.0;
-          double yaw = atan2(find_feature_points_1[f_1].y - find_feature_points_1[f_2].y, 
-                              find_feature_points_1[f_1].x - find_feature_points_1[f_2].x) + M_PI/2.0;
+          elevator_pose.position.x = (enter_feature_points[f_1].x +enter_feature_points[f_2].x)/2.0;
+          elevator_pose.position.y = (enter_feature_points[f_1].y +enter_feature_points[f_2].y)/2.0;
+          double yaw = atan2(enter_feature_points[f_1].y - enter_feature_points[f_2].y, 
+                              enter_feature_points[f_1].x - enter_feature_points[f_2].x) + M_PI/2.0;
           elevator_pose_q_tf.setRPY(0.0,0.0,yaw);
           elevator_pose_q_msg = tf2::toMsg(elevator_pose_q_tf);
           elevator_pose.orientation = elevator_pose_q_msg;
@@ -705,17 +790,165 @@ void FeatureMatching(std::vector<geometry_msgs::Point> points)
     }
   }
 
-  if(paths.size()>elevator_num_)
-  {
-    
-  }
-
   //std::cout << " elevator_num: " <<  paths.size() <<'\n';
-  VisualizeElevatorEnterPoint(paths);
+  //VisualizeElevatorEnterPoint(paths);
+
+  if(elevator_pose_filter_)
+  {
+    pose_filter(elevator_poses);
+  }
+ 
   pose_pub_.publish(elevator_poses);
+  
+  
   //std::cout<<"=================================="<<'\n';
 
 
+}
+//-----------------------------------------------------------------------------------------------
+void pose_filter(geometry_msgs::PoseArray &filter_poses)
+{
+  static bool first_time = true;
+  static geometry_msgs::PoseStamped before_pose;
+  static geometry_msgs::PoseStamped map_pose;
+  static geometry_msgs::Pose pose;
+  static std::vector<geometry_msgs::PoseStamped> poses;
+  static tf2_ros::Buffer tfBuffer;
+  static tf2_ros::TransformListener tfListener(tfBuffer);
+  static double m_roll, m_pitch, m_yaw;
+  static double roll, pitch, yaw;
+  static bool matching;
+
+  if(first_time)
+  {
+    for(int i =0;i<filter_poses.poses.size();i++)
+    {
+      before_pose.header.frame_id = filter_poses.header.frame_id;
+      before_pose.pose.position = filter_poses.poses[i].position;
+      before_pose.pose.orientation = filter_poses.poses[i].orientation;
+
+      if(filter_poses.header.frame_id != map_frame_)
+      {
+        try
+        {
+          tfBuffer.transform(before_pose, map_pose, map_frame_);
+        }
+        catch (tf2::TransformException &ex)
+        {
+          ROS_WARN("elevator point finder : %s",ex.what());
+          ros::Duration(0.5).sleep();
+          return;
+        }
+      }
+      else
+      {
+        map_pose.header.frame_id = filter_poses.header.frame_id;
+        map_pose.pose = before_pose.pose;
+      }
+
+      map_pose.pose.position.z = 2.0;
+      poses.push_back(map_pose);
+    }
+    first_time = false;
+  }
+  else
+  {
+    matching = false;
+
+    for(int i =0;i<filter_poses.poses.size();i++)
+    {
+      before_pose.header.frame_id = filter_poses.header.frame_id;
+      before_pose.pose.position = filter_poses.poses[i].position;
+      before_pose.pose.orientation = filter_poses.poses[i].orientation;
+
+      if(filter_poses.header.frame_id != map_frame_)
+      {
+        try
+        {
+          tfBuffer.transform(before_pose, map_pose, map_frame_);
+        }
+        catch (tf2::TransformException &ex)
+        {
+          ROS_WARN("elevator point finder2 : %s",ex.what());
+          ros::Duration(0.5).sleep();
+          return;
+        }
+      }
+      else
+      {
+        map_pose.header.frame_id = filter_poses.header.frame_id;
+        map_pose.pose = before_pose.pose;
+      }
+      tf::Quaternion q( map_pose.pose.orientation.x,
+                        map_pose.pose.orientation.y,
+                        map_pose.pose.orientation.z,
+                        map_pose.pose.orientation.w);
+      tf::Matrix3x3 m(q);
+      
+      m.getRPY(m_roll, m_pitch, m_yaw);
+
+      for(int j= 0;j<poses.size();j++)
+      {
+        tf::Quaternion q2( poses[j].pose.orientation.x,
+                          poses[j].pose.orientation.y,
+                          poses[j].pose.orientation.z,
+                          poses[j].pose.orientation.w);
+        tf::Matrix3x3 m2(q2);
+        m2.getRPY(roll, pitch, yaw);
+        
+        if(abs(sqrt(pow(map_pose.pose.position.x - poses[j].pose.position.x,2)+
+                    pow(map_pose.pose.position.y - poses[j].pose.position.y,2)))< filter_range_dis_
+                    && abs(m_yaw - yaw)< filter_range_angle_)
+        {
+          poses[j].pose.position.x = map_pose.pose.position.x;
+          poses[j].pose.position.y = map_pose.pose.position.y;
+          if(poses[j].pose.position.z <20.0)
+          {
+            poses[j].pose.position.z = poses[j].pose.position.z+2;
+            
+          }
+          matching =true;
+        }else
+        {
+          poses[j].pose.position.z--;
+        
+          // std::cout << " dis: " <<  sqrt(pow(map_pose.pose.position.x - poses[j].pose.position.x,2)+
+          //           pow(map_pose.pose.position.y - poses[j].pose.position.y,2)) <<'\n';
+          // std::cout << " abgle: " <<  abs(m_yaw - yaw) <<'\n';
+          // std::cout << " --------------- " << '\n';
+        }
+      }
+      if(!matching)
+      {
+        //std::cout << " add new pose!! " << '\n';
+        map_pose.pose.position.z = 2.0;
+        poses.push_back(map_pose);
+      }
+    }
+    //std::cout << " =============== " << '\n';
+  }
+
+  filter_poses.poses.clear();
+  filter_poses.header.frame_id = map_frame_;
+  for(int k =0;k<poses.size();k++)
+  {
+    if(poses[k].pose.position.z > 5.0)
+    {
+      pose.position.x = poses[k].pose.position.x;
+      pose.position.y = poses[k].pose.position.y;
+      pose.position.z = poses[k].pose.position.z;
+      pose.orientation = poses[k].pose.orientation;
+      filter_poses.poses.push_back(pose);
+    }
+    if(poses[k].pose.position.z <= 0)
+    {
+      poses.erase(poses.begin()+k);
+      //break;
+    }
+    
+  }
+  
+  
 }
 //-----------------------------------------------------------------------------------------------
 void VisualizeCorner(std::vector<geometry_msgs::Point> points) 

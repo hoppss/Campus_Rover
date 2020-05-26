@@ -1,0 +1,5 @@
+std_msgs/String status
+std_msgs/String controller
+autolabor_msgs/PoseWithId target_pose_data
+autolabor_msgs/PoseWithId current_pose_data
+autolabor_msgs/PoseWithId mid_target_pose_data

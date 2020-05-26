@@ -6,7 +6,7 @@
 #include <nav_msgs/Odometry.h>
 #include <std_msgs/Int32.h>
 #include <std_msgs/Float32.h> 
-#include <autolabor_driver/Encode.h>
+#include <autolabor_msgs/Encode.h>
 
 #include <boost/asio.hpp>
 #include <boost/asio/serial_port.hpp>
@@ -67,7 +67,7 @@ private:
   ros::Time last_twist_time_;
   nav_msgs::Odometry odom_;
 
-  autolabor_driver::Encode encode_date_;
+  autolabor_msgs::Encode encode_date_;
 
   boost::system::error_code ec_;
   boost::asio::io_service io_service_;
@@ -453,7 +453,7 @@ void ChassisDriver::run(){
 
   if (init()){
     odom_pub_ = node.advertise<nav_msgs::Odometry>("wheel_odom", 10);
-    encoder_data_pub_ = node.advertise<autolabor_driver::Encode>("encoder_data",1);
+    encoder_data_pub_ = node.advertise<autolabor_msgs::Encode>("encoder_data",1);
     battery_pub_ = node.advertise<std_msgs::Int32>("remaining_battery", 1);
     current_pub_ = node.advertise<std_msgs::Float32>("current", 1);
     voltage_pub_ = node.advertise<std_msgs::Float32>("voltage",1);

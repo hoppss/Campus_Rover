@@ -49,7 +49,7 @@
     </node>
 
     <node pkg="autolabor_move" type="elevator_position_finder" name="elevator_position_finder" output="screen">
-        <remap from="scan"    to="scan2" />
+        <param name="sub_mode" value="1.0" />  <!--1:LaserScan(Scan) 2:Pointclout(Scan2) -->
         <param name="window_type" value="circular" />
         <param name="window_size" value="0.15" />
         <param name="max_scan_range" value="6.0" />

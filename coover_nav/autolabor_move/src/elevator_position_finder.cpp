@@ -27,7 +27,7 @@ using namespace std;
 
 #define M_PI 3.14159265358979323846  /* pi */
 
-ros::Subscriber scan_sub_;
+ros::Subscriber scan_sub_, scan2_sub_;
 ros::Publisher pose_pub_, break_point_marker_pub_, elevator_corner_marker_pub_, featuer_point_marker_pub_, elevator_marker_pub_;
 
 string scan_frame_;
@@ -50,6 +50,8 @@ double filter_range_angle_;
 
 bool elevator_pose_filter_;
 
+int sub_mode_;
+
 std::vector<geometry_msgs::Point> detect_feature_point;
 std::vector<geometry_msgs::Point> enter_elevator_feature;
 std::vector<geometry_msgs::Point> exit_elevator_feature;
@@ -62,6 +64,7 @@ void FeatureMatching(std::vector<geometry_msgs::Point> points);
 void VisualizeElevatorEnterPoint(std::vector<nav_msgs::Path> paths);
 void initial_elevator_feature();
 void pose_filter(geometry_msgs::PoseArray &poses);
+void FeatureExtract(geometry_msgs::PoseArray &scan_poses);
 
 void get_parameters(ros::NodeHandle n_private)
 {
@@ -83,6 +86,8 @@ void get_parameters(ros::NodeHandle n_private)
   n_private.param<double>("door_y1", door_y1_, 0.94);
   n_private.param<double>("door_y2", door_y2_, 0.8);
   n_private.param<double>("elevator_wd", elevator_wd_, 0.8);
+
+  n_private.param<int>("sub_mode", sub_mode_, 1.0);
 
   initial_elevator_feature();
 }
@@ -218,12 +223,12 @@ void ScanCallback(const sensor_msgs::LaserScanConstPtr &scan)
   static geometry_msgs::Pose pose;
   static geometry_msgs::PoseArray scan_poses;
   static double angle;
-  static bool first_time = true;
 
   std::vector<double> range;
   std::vector<double> intensities;
 
-  //cout<<"=================================="<<'\n';
+  if(sub_mode_ != 1)
+    return;
 
   if(scan->ranges.size()==0)
     return;
@@ -232,7 +237,7 @@ void ScanCallback(const sensor_msgs::LaserScanConstPtr &scan)
   scan_frame_ = scan->header.frame_id;
   scan_poses.header.frame_id = scan_frame_;
   scan_poses.poses.clear();
-  detect_feature_point.clear();
+  
 
   for (int i = 0; i < scan->ranges.size(); i++)
   {
@@ -249,14 +254,50 @@ void ScanCallback(const sensor_msgs::LaserScanConstPtr &scan)
       }
     }
   }
-  // if(first_time)
-  // {
-  //   pose_pub_.publish(scan_poses);
-  //   first_time = false;
-  // }
+  FeatureExtract(scan_poses);
+}
+//---------------------Scan2-------------------------//
+void Scan2Callback(const sensor_msgs::LaserScanConstPtr &scan)
+{
+  static geometry_msgs::Pose pose;
+  static geometry_msgs::PoseArray scan_poses;
+  static double angle;
+
+  std::vector<double> range;
+  std::vector<double> intensities;
+
+  if(sub_mode_ != 2)
+    return;
+
+  if(scan->ranges.size()==0)
+    return;
   
+  scan_poses.header.stamp = ros::Time::now();
+  scan_frame_ = scan->header.frame_id;
+  scan_poses.header.frame_id = scan_frame_;
+  scan_poses.poses.clear();
   
 
+  for (int i = 0; i < scan->ranges.size(); i++)
+  {
+    if(scan->ranges[i] > 0.001)
+    {
+      angle = scan->angle_min + (i * scan->angle_increment);
+      if(scan->ranges[i] < max_scan_range_)
+      {
+        pose.position.x = scan->ranges[i]*cos(angle);
+        pose.position.y = scan->ranges[i]*sin(angle);
+        scan_poses.poses.push_back(pose);
+        //cout<<"scan_poses x = "<<pose.position.x<<" scan_poses y = "<<pose.position.y<<'\n';
+        //cout<<"angle = "<<angle<<'\n';
+      }
+    }
+  }
+  FeatureExtract(scan_poses);
+}
+  
+void FeatureExtract(geometry_msgs::PoseArray &scan_poses)
+{
   static std::vector<geometry_msgs::Point> window_points ;
   static std::vector<double> v_x;
   static std::vector<double> v_y;
@@ -277,6 +318,7 @@ void ScanCallback(const sensor_msgs::LaserScanConstPtr &scan)
   static std::vector<geometry_msgs::Point> avg_lambdas;
   bool group_emtry = true;
 
+  detect_feature_point.clear();
   avg_lambdas.clear();
   avg_last_point.x =avg_last_point.y =0;
 
@@ -1159,6 +1201,7 @@ int main(int argc, char **argv)
   ros::Time::init();
 
   scan_sub_ = nh.subscribe("scan", 10, ScanCallback);
+  scan2_sub_ = nh.subscribe("scan2", 10, Scan2Callback);
   //pose_sub_ = nh.subscribe("pose_topic", 10, PoseCallback);
 
   pose_pub_ = nh.advertise<geometry_msgs::PoseArray>("elevator_poses", 0.1);

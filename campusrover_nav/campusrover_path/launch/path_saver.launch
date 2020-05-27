@@ -1,0 +1,26 @@
+<launch>
+  <include file="$(find campusrover_odom)/launch/campusrover_2d_localization_v16.launch">
+    <arg name="debug" value="true"/>
+    <arg name="bag_filename" value="$(env HOME)/bags/campusrover_bag/1025_medialab_E14_1f_path.bag"/>
+    <arg name="map_filename" value="$(env HOME)/maps/1025_medialab_1f" />
+    <arg name="pub_map" value="true" />
+    <arg name="viz" value="false" />
+  </include>
+
+  <node pkg="campusrover_path" type="path_saver" name="path_saver_node" output="screen">
+    <remap from="path_in" to="campusrover_odom" />
+    <param name="file_path" type="str" value="$(find campusrover_path)/paths/" />
+  </node>
+
+  <node pkg="hector_trajectory_server" type="hector_trajectory_server" name="trajectory_node">
+    <remap from="trajectory" to="campusrover_odom" />
+    <param name="target_frame_name" type="string" value="/map" />
+    <param name="source_frame_name" type="string" value="/base_link" />
+    <param name="trajectory_update_rate" value="10" />
+    <param name="trajectory_publish_rate" value="10" />
+  </node>
+
+  <node name="rviz" pkg="rviz" type="rviz" required="true"
+      args="-d $(find campusrover_path)/rviz/path_saver.rviz" />
+
+</launch>

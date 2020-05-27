@@ -1,0 +1,9 @@
+<launch>
+  <arg name="debug" default="false"/>
+  <group if="$(arg debug)">
+    <include file="$(find campusrover_drive)/launch/campusrover_drive.launch"/>
+  </group>
+  <node pkg="campusrover_network" type="ros_bridge_mqtt.py" name="campusrover_network_service" output="screen">
+    <param name="config_folder" value="$(find campusrover_network)/scripts/config/" />
+  </node>
+</launch>

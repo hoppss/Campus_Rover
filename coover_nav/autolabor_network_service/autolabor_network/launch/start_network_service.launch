@@ -1,9 +1,0 @@
-<launch>
-  <arg name="debug" default="false"/>
-  <group if="$(arg debug)">
-    <include file="$(find autolabor_drive)/launch/autolabor_drive.launch"/>
-  </group>
-  <node pkg="autolabor_network" type="ros_bridge_mqtt.py" name="autolabor_network_service" output="screen">
-    <param name="config_folder" value="$(find autolabor_network)/scripts/config/" />
-  </node>
-</launch>

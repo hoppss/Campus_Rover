@@ -1,0 +1,30 @@
+<!-- -*- mode: XML -*- -->
+
+<launch>
+  <!-- Map server -->
+  <arg name="map_file" default="$(env HOME)/maps/20200404_3f.yaml"/>
+  <!-- <node pkg="tf2_ros" type="static_transform_publisher" name="tf_map"
+              args="0 0 0 0 0 0 /local_map /map" /> -->
+
+  <include file="$(find osm_cartography)/launch/viz_osm.launch">
+    <arg name="url" value="package://campusrover_odom/osm/20200326_TaipeiTech.osm" />
+  </include>
+
+  <node pkg="campusrover_map_server" type="map_tf_finder" name="campusrover_map_tf_finder_node" output="screen">
+    <param name="tanslation_x" type="double" value="352314.9307127929" />
+    <param name="tanslation_y" type="double" value="2770482.044740471" />
+  </node>
+
+
+  <node name="map_server" pkg="map_server" type="map_server" args="$(arg map_file)" />
+
+  <!-- Send a static GPS fix to every new subscriber. Edit latitude and longitude in launch/demo.gps to use your own position. -->
+  <node pkg="rostopic" type="rostopic" name="fake_gps_fix"
+        args="pub /fake_gps/fix sensor_msgs/NavSatFix
+              --latch
+              --file=$(find campusrover_sensors)/config/20200401_TT_3F.gps"
+        output="screen"/>
+
+  <node pkg="rviz" type="rviz" name="rviz" output="screen" args="-d $(find campusrover_map_server)/rviz/map_tf_finder.rviz" />
+
+</launch>

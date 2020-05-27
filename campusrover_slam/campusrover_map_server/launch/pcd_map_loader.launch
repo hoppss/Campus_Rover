@@ -1,0 +1,12 @@
+<!-- -*- mode: XML -*- -->
+
+<launch>
+  <arg name="config_file" default="$(find campusrover_map_server)/maps/taf.yaml" />
+
+  <node pkg="campusrover_map_server" type="pcd_map_loader" name="pcd_map_loader_node" output="screen">
+    <param name="config_file" type="str" value="$(arg config_file)" />
+  </node>
+
+  <node pkg="rviz" type="rviz" name="rviz" output="screen" args="-d $(find campusrover_map_server)/rviz/pcd_map_loader.rviz" />
+
+</launch>

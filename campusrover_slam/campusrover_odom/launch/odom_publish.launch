@@ -1,0 +1,45 @@
+<!-- -*- mode: XML -*- -->
+
+<launch>
+  <arg name="debug" default="false"/>
+  <arg name="pub_tf" default="true"/>
+  <arg name="bag_filename" default="$(env HOME)/bags/campusrover_bag/20200524_odom_1.bag" />
+
+  <group if="$(arg debug)">
+
+    <param name="use_sim_time" value="true" />
+    <node name="playbag" pkg="rosbag" type="play"
+            args="--clock $(arg bag_filename)" />
+
+    <param name="robot_description"
+        textfile="$(find campusrover_description)/urdf/campusrover.urdf" />
+
+    <node name="robot_state_publisher" pkg="robot_state_publisher"
+        type="robot_state_publisher" />
+
+    <node pkg="hector_trajectory_server" type="hector_trajectory_server" name="trajectory_node">
+      <remap from="trajectory" to="trajectory" />
+      <param name="target_frame_name" type="string" value="/odom" />
+      <param name="source_frame_name" type="string" value="/base_link" />
+      <param name="trajectory_update_rate" value="10" />
+      <param name="trajectory_publish_rate" value="10" />
+    </node>
+
+
+    <node pkg="rviz" type="rviz" name="rviz" args="-d $(find campusrover_odom)/rviz/sensors_odom.rviz" />
+
+  </group>
+
+  <node pkg="campusrover_odom" type="campusrover_odom" name="campusrover_odom" output="screen">
+    <remap from="encoder_data"       to="/encoder_data" />
+    <param name="pub_tf"             value="$(arg pub_tf)" />
+    <param name="pub_odom"           value="true" />
+    <param name="source_frame_id"    value="odom" />
+    <param name="target_frame_id"    value="base_link" />
+    <param name="encoder_resolution" value="1600" />
+    <param name="wheel_diameter"     value="0.255" />
+    <param name="wheel_base"         value="0.53" />
+    <param name="reduction_ratio"    value="1.0" />
+  </node>
+
+</launch>

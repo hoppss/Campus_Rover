@@ -1,1 +1,0 @@
-rosrun moveit_kinematics create_ikfast_moveit_plugin.py coover_arm arm coover_arm_moveit_config /home/luke/autolabor_ws/src/autolabor/coover_arm/coover_arm_moveit_config/src/coover_arm_arm_ikfast_solver.cpp

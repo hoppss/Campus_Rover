@@ -1,0 +1,23 @@
+<launch>
+  <!-- Static transtorm -->
+  <param name="robot_description"
+    textfile="$(find campusrover_description)/urdf/campusrover.urdf" />
+  <node name="robot_state_publisher_campusrover" pkg="robot_state_publisher"
+    type="state_publisher" />
+
+  <!-- AprilTag detection -->
+  <include file="$(find apriltag_ros)/launch/continuous_detection.launch" />
+
+  <!-- AprilTag client -->
+  <node pkg="campusrover_arm_move" type="apriltag_to_press" name="apriltag_to_press"  output="screen" />
+
+  <!-- arm  sever -->
+  <include file="$(find campusrover_arm_move)/launch/press_button.launch" />
+
+  <!-- Arm Control -->
+  <include file="$(find campusrover_dynamixel)/launch/arm_controller.launch" />
+
+  <!-- Moveit Execution -->
+  <include file="$(find campusrover_arm_moveit_config)/launch/moveit_planning_execution.launch" />
+
+</launch>

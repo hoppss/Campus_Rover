@@ -1,6 +1,0 @@
-<robot file="coover_arm.dae">
-        <Manipulator name="coover_arm">
-          <base>link_0</base>
-          <effector>link_6</effector>
-        </Manipulator>
-</robot>

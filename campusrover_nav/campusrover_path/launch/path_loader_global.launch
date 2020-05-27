@@ -1,0 +1,27 @@
+<launch>
+  <arg name="map_file" default="20200402_TT_3F" />
+  <arg name="path_file" default="20200402_3f_ndt" />
+
+  <node pkg="campusrover_path" type="path_loader" name="path_loader_node" output="screen">
+    <remap from="path_in" to="campusrover_odom" />
+    <param name="file_path" type="str" value="$(find campusrover_path)/paths/$(arg path_file).path" />
+    <param name="map_frame_id" value="map" />
+  </node>
+
+  <node pkg="campusrover_map_server" type="pcd_map_loader" name="pcd_map_loader_node" output="screen">
+    <param name="config_file" type="str" value="$(find campusrover_map_server)/maps/$(arg map_file).yaml" />
+    <remap from="map_cloud" to="points_map" />
+  </node>
+
+  <!-- <include file="$(find osm_cartography)/launch/viz_osm.launch">
+    <arg name="url" value="package://campusrover_map_server/osm/taipei_test_area.osm" />
+  </include>
+  <node pkg="tf2_ros" type="static_transform_publisher" name="world_to_earth_broadcaster"
+        args="0 0 0 0 0 0 world earth" /> -->
+
+  <!-- <node pkg="pev_ui_tools" type="pev_map_tool" name="pev_map_tool" output="screen"/> -->
+
+  <node name="rviz" pkg="rviz" type="rviz" required="true"
+      args="-d $(find campusrover_path)/rviz/path_loader_global.rviz" />
+
+</launch>

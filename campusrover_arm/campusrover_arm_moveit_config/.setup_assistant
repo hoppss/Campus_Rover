@@ -1,0 +1,11 @@
+moveit_setup_assistant_config:
+  URDF:
+    package: campusrover_arm_description
+    relative_path: urdf/campusrover_arm.urdf
+    xacro_args: "--inorder "
+  SRDF:
+    relative_path: config/campusrover_arm.srdf
+  CONFIG:
+    author_name: luke
+    author_email: luke@mit.edu
+    generated_timestamp: 1590571758

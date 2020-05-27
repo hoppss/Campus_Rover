@@ -1,0 +1,1 @@
+rosrun moveit_kinematics create_ikfast_moveit_plugin.py campusrover_arm arm campusrover_arm_moveit_config /home/luke/campusrover_ws/src/Campus_Rover/campusrover_arm/campusrover_arm_moveit_config/src/campusrover_arm_arm_ikfast_solver.cpp

@@ -5,6 +5,9 @@ import tty, termios
 import rospy
 from std_msgs.msg import String
 
+class BreakoutException(Exception):
+    pass
+
 def getKey():
     tty.setraw(sys.stdin.fileno())
     rlist, _, _ = select.select([sys.stdin], [], [], 0.1)
@@ -36,8 +39,6 @@ if __name__ == "__main__":
             print(msg.data)
     except BreakoutException:
         pass
-    except:
-        print('error')
     finally:
         msg.data = ''
         pub.publish(msg)

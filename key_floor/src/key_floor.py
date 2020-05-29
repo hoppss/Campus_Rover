@@ -24,14 +24,18 @@ if __name__ == "__main__":
 
     try:
         while(1):
-            key = getKey()
-            if (key == '\x03'):
-                break
-            elif key != '':
-                msg = String()
-                msg.data = key
-                pub.publish(msg)
-                print('msg pub')
+            msg = String()
+
+            while len(msg.data) != 6:
+                key = getKey()
+                if (key == '\x03'):
+                    raise BreakoutException
+                if key != '':
+                    msg.data += '_' + key
+            pub.publish(msg)
+            print(msg.data)
+    except BreakoutException:
+        pass
     except:
         print('error')
     finally:

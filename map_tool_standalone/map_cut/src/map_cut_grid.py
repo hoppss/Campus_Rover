@@ -38,16 +38,16 @@ class map:
         if grid_y % 2 == 0:
             grid_y += 1
 
-        for x in range(grid_x):
-            gx = x - ((grid_x - 1) / 2)
-            for y in range(grid_y):
-                gy = y - ((grid_y - 1) / 2)
+        for cx in range(grid_x):
+            gx = cx - ((grid_x - 1) / 2)
+            for cy in range(grid_y):
+                gy = cy - ((grid_y - 1) / 2)
                 file_array.append(self.diction + str(gx) + 'x' + str(gy) + '.pcd')
                 fileout = self.diction + str(gx) + 'x' + str(gy) + '.pcd'
                 dx = gx * self.dis
                 dy = gy * self.dis
 
-                long current = 0
+                current = 0
                 with open(file, 'r') as f:
                     with open(fileout, 'w') as w:
                         line = f.readlines()
@@ -61,7 +61,7 @@ class map:
                             intensity = int(d)
                             "ring = int(e)"
 
-                            if x + dx > self.px - self.dis and x + dx < self.px + self.dis and y + dy > self.py - self.dis and y + dy < self.py + self.dis:
+                            if x + 2 * dx > self.px - self.dis and x + 2 * dx < self.px + self.dis and y + 2 * dy > self.py - self.dis and y + 2 * dy < self.py + self.dis:
                                 w.write(str(x)+' '+str(y)+' '+str(z)+' '+str(intensity)+'\n')
                             else:
                                 current += 1
@@ -85,8 +85,8 @@ if __name__ == '__main__':
         init_x = rospy.get_param('x',default = 0)
         init_y = rospy.get_param('y',default = 0)
         init_z = rospy.get_param('z',default = 0)
-        init_d = rospy.get_param('d',default = 3)
-        init_dir = rospy.get_param('dir',default = '/home/eric/Desktop/map2/')
-        map_file = rospy.get_param('filename',default = 'demo.pcd')
+        init_d = rospy.get_param('d',default = 7)
+        init_dir = rospy.get_param('dir',default = '/home/eric/Desktop/map2/2/')
+        map_file = rospy.get_param('filename',default = '0.pcd')
         map = map(init_x, init_y, init_z, init_d, init_dir)
-        map.cut('demo.pcd')
+        map.cut(map_file)

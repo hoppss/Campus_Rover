@@ -12,8 +12,22 @@ bool load(map_load::load::Request &req, map_load::load::Response &res)
 {
 
     int grid_x, grid_y;
-    grid_x = req.x / req.dis;
-    grid_y = req.y / req.dis;
+    if (req.x >= 0.0)
+    {
+      grid_x = - ( req.x + req.dis ) / ( 2 * req.dis );
+    }
+    else if (req.x < 0.0)
+    {
+      grid_x = - ( req.x - req.dis ) / ( 2 * req.dis );
+    }
+    if (req.y >= 0.0)
+    {
+      grid_y = - ( req.y + req.dis ) / ( 2 * req.dis );
+    }
+    else if (req.y < 0.0)
+    {
+      grid_y = - ( req.y - req.dis ) / ( 2 * req.dis );
+    }
 
     res.a = count(grid_x  , grid_y);
     res.b = count(grid_x+1, grid_y);

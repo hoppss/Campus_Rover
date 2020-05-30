@@ -121,13 +121,13 @@
   <joint name="right_camera_link_joint" type="fixed">
     <parent link="base_link" />
     <child link="right_camera_link" />
-    <origin xyz="-0.23 -0.07 1.16" rpy="0 0 0" />
+    <origin xyz="-0.15 -0.035 1.244" rpy="0 0 0" />
   </joint>
 
   <joint name="link_0_joint" type="fixed">
     <parent link="base_link" />
     <child link="link_0" />
-    <origin xyz="-0.08 -0.165 1.14" rpy="0 0 0" />
+    <origin xyz="0.027 -0.17 1.1223" rpy="0 0 0" />
   </joint>
 
 

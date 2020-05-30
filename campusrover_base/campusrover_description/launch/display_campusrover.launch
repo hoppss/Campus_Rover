@@ -1,8 +1,8 @@
 <launch>
-  <arg name="model" default="$(find autolabor_description)/urdf/autolabor.urdf"/>
+  <arg name="model" default="$(find campusrover_description)/urdf/campusrover.urdf"/>
   <arg name="gui" default="true" />
 
-  <arg name="rvizconfig" default="$(find autolabor_description)/rviz/urdf.rviz" />
+  <arg name="rvizconfig" default="$(find campusrover_description)/rviz/urdf.rviz" />
 
   <param name="robot_description"
     textfile="$(arg model)" />

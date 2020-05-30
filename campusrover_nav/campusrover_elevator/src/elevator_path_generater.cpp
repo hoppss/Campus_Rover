@@ -73,6 +73,10 @@ void DoorStatusCallback(const campusrover_msgs::DoorStatusConstPtr &doors_status
   static bool first_time = true;
   static int poses_count = 0;
   static bool door_open;
+  static tf2::Quaternion path_pose_q_tf;
+  static geometry_msgs::Quaternion path_pose_q_msg;
+  static double target_yaw;
+
 
   if(doors_status->doors_pose.poses.size() == 0)
     return;
@@ -223,6 +227,12 @@ void DoorStatusCallback(const campusrover_msgs::DoorStatusConstPtr &doors_status
     {
       path_pose.pose.position.x += s_x;
       path_pose.pose.position.y += s_y;
+
+      target_yaw = atan2(path_pose.pose.position.y - path.poses[i-1].pose.position.y, path_pose.pose.position.x - path.poses[i-1].pose.position.x);
+      path_pose_q_tf.setRPY(0.0,0.0,target_yaw);
+      path_pose_q_msg = tf2::toMsg(path_pose_q_tf);
+      path_pose.pose.orientation = path_pose_q_msg;
+
     }
     path.poses.push_back(path_pose);
     

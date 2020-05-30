@@ -1,7 +1,7 @@
 <launch>
     <arg name="debug"               default="false"/>
     <arg name="frame" default="ydlidar_link"/>
-    <arg name="bag_filename"        default="$(env HOME)/bags/campusrover_bag/20200519enter_elevatoor_1.bag"/>
+    <arg name="bag_filename"        default="$(env HOME)/bags/campusrover_bag/20200529_elevator_1.bag"/>
     <!-- /////////////////////////////////////////////////////////////////////////////////// -->
     <group if="$(arg debug)">
 
@@ -17,7 +17,7 @@
 
 
         <!-- rviz -->
-        <node name="rviz" pkg="rviz" type="rviz" args="-d $(find campusrover_move)/rviz/elevator.rviz" required="true"/>
+        <node name="rviz" pkg="rviz" type="rviz" args="-d $(find campusrover_elevator)/rviz/elevator.rviz" required="true"/>
 
     </group>
 
@@ -48,8 +48,8 @@
 
     </node>
 
-    <node pkg="campusrover_move" type="elevator_position_finder" name="elevator_position_finder" output="screen">
-        <param name="sub_mode" value="1.0" />  <!--1:LaserScan(Scan) 2:Pointclout(Scan2) -->
+    <node pkg="campusrover_elevator" type="elevator_position_finder" name="elevator_position_finder" output="screen">
+        
         <param name="window_type" value="circular" />
         <param name="window_size" value="0.15" />
         <param name="max_scan_range" value="6.0" />
@@ -58,12 +58,13 @@
         <param name="enter_elevator_feature_d_angle_range" value="0.3" />
 
         <param name="elevator_pose_filter" value="true" />
-        <param name="filter_range_dis" value="0.3" />
-        <param name="filter_range_angle" value="0.3" />
-        
+        <param name="filter_range_dis" value="0.2" />
+        <param name="filter_range_angle" value="0.2" />
+
+        <param name="status" value="enter" />
     </node>
 
-    <!-- <node pkg="campusrover_move" type="elevator_door_status" name="elevator_door_status" output="screen">
+    <node pkg="campusrover_elevator" type="elevator_door_status" name="elevator_door_status" output="screen">
         <remap from="scan"    to="scan2" />
         <param name="door_t1" value="0.2" />
         <param name="door_x1" value="0.34" />
@@ -73,18 +74,18 @@
         
     </node>
 
-    <node pkg="campusrover_move" type="elevator_path_generater" name="elevator_path_generater" output="screen">
+    <node pkg="campusrover_elevator" type="elevator_path_generater" name="elevator_path_generater" output="screen">
         <param name="path_frame" value="map" />
-        <param name="path_x1_dis" value="3.0" />
-        <param name="path_x2_dis" value="1.2" />
+        <param name="path_x1_dis" value="1.5" />
+        <param name="path_x2_dis" value="1.3" />
         <param name="elevator_priority" value="0.0" />
         <param name="path_resolution" value="0.05" />
-        <param name="pose_range_threshold" value="0.5" />
+        <param name="pose_range_threshold" value="0.3" />
         <param name="pose_yaw_threshold" value="0.05" />
         <param name="avg_pose_size" value="3.0" />
-    </node> -->
+    </node>
 
-    <!-- <node pkg="campusrover_move" type="elevator_pose_tf" name="elevator_pose_tf" output="screen">
+    <!-- <node pkg="campusrover_elevator" type="elevator_pose_tf" name="elevator_pose_tf" output="screen">
         <param name="source_frame_id" value="odom" />
         <param name="target_frame_id" value="base_link" />
         <param name="pub_tf" value="false" />

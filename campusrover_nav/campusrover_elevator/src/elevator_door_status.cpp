@@ -123,7 +123,7 @@ void PoseCallback(const geometry_msgs::PoseArrayConstPtr &poses)
         before_pose.pose.orientation = poses->poses[i].orientation;
         try
         {
-          tfBuffer.transform(before_pose, after_pose, scan_frame_);
+          tfBuffer.transform(before_pose, after_pose, scan_frame_,ros::Duration(2.0));
         }
         catch (tf2::TransformException &ex)
         {

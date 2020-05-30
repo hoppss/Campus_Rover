@@ -5,7 +5,7 @@
   <arg name="file_name"/>
 
   <node pkg="rosbag" name="record" type="record" output="screen"
-        args="-O $(env HOME)/bags/autolabor_bag/$(arg file_name) 
+        args="-O $(env HOME)/bags/campusrover_bag/$(arg file_name) 
         /encoder_data
         /scan
         /velodyne_points
@@ -15,6 +15,27 @@
         /xsens_imu_odom/imu_data_str
         /xsens_imu_odom/time_reference
         /xsens_imu_odom/velocity
+        /right_camera/accel/imu_info
+        /right_camera/accel/sample
+        /right_camera/aligned_depth_to_color/camera_info
+        /right_camera/aligned_depth_to_color/image_raw
+        /right_camera/aligned_depth_to_infra1/camera_info
+        /right_camera/aligned_depth_to_infra1/image_raw
+        /right_camera/color/camera_info
+        /right_camera/color/image_raw
+        /right_camera/depth/camera_info
+        /right_camera/depth/color/points
+        /right_camera/depth/image_rect_raw
+        /right_camera/extrinsics/depth_to_color
+        /right_camera/extrinsics/depth_to_infra1
+        /right_camera/extrinsics/depth_to_infra2
+        /right_camera/gyro/imu_info
+        /right_camera/gyro/sample
+        /right_camera/infra1/camera_info
+        /right_camera/infra1/image_rect_raw
+        /right_camera/infra2/camera_info
+        /right_camera/infra2/image_rect_raw
+        /right_camera/realsense2_camera_manager/bond
         " />
 
 </launch>

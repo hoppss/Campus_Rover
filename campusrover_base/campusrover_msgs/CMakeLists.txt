@@ -31,6 +31,7 @@ add_service_files(
   FILES
   DriveStatus.srv
   ArmAction.srv
+  PlannerFunction.srv
 )
 
 ## Generate added messages and services with any dependencies listed here

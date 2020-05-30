@@ -1,8 +1,8 @@
 <launch>
   <arg name="debug" default="false"/>
-  <arg name="globle_path" default="/route_path"/>
+  <arg name="globle_path" default="/elevator_path"/>
   <arg name="costmap_topic" default="/campusrover_local_costmap"/>
-  <arg name="twist_output_topic" default="/cmd_vel"/>
+  <arg name="twist_output_topic" default="/yocs_cmd_vel_mux/input/navigation"/>
   <arg name="enable_path_switch_stop" default="false"/>
   <arg name="enble_costmap_obstacle" default="true"/>
   <arg name="avoid_right_side_priority" default="true"/>
@@ -31,7 +31,7 @@
     <remap from="costmap" to="$(arg costmap_topic)" />
     <remap from="cmd_vel" to="$(arg twist_output_topic)" />
     <param name="robot_frame" value="base_link" />
-    <param name="arriving_range" value="1.0" />
+    <param name="arriving_range" value="0.2" />
     <param name="max_vel_x" value="0.4" />
     <param name="max_rot_vel" value="3.0" />
     <param name="min_rot_vel" value="-3.0" />
@@ -41,10 +41,10 @@
     <param name="step_angular_z" value="0.02" /> 
     <param name="angular_velocity_p" value="1.2" /> 
   
-    <param name="max_dist" value="0.5" />
-    <param name="min_dist" value="0.5" />
+    <param name="max_dist" value="0.3" />
+    <param name="min_dist" value="0.3" />
     <param name="vel_x_step" value="0.8" />
-    <param name="rot_x_step" value="0.02" /> 
+    <param name="rot_x_step" value="0.01" /> 
     <param name="rot_x_zero_vel_angle" value="3.0" /> 
     <param name="path_resolution" value="0.1" />
     <param name="swap_path_num" value="20" />

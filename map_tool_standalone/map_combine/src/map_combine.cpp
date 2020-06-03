@@ -15,7 +15,7 @@
 
 float dis, leafs;
 float pose_x = 0.0, pose_y = 0.0, initial_pose_x, initial_pose_y;
-std::string dir, floors, c_status, m_status;
+std::string dir, floors, c_status;
 char cstr[9][50];
 
 ros::Subscriber controller_sub;
@@ -65,6 +65,26 @@ void pose_callback(const geometry_msgs::PoseWithCovarianceStamped& i)
     initial_pose_y = i.pose.pose.position.y;
 }
 
+std::string* service_call(float x, float y)
+{
+    srv.request.x = x;
+    srv.request.y = y;
+    srv.request.dis = dis;
+    client.call(srv);
+
+    std::string* str = new std::string[9];
+    str[0] = srv.response.a;
+    str[1] = srv.response.b;
+    str[2] = srv.response.c;
+    str[3] = srv.response.d;
+    str[4] = srv.response.e;
+    str[5] = srv.response.f;
+    str[6] = srv.response.g;
+    str[7] = srv.response.h;
+    str[8] = srv.response.i;
+    return str;
+}
+
 main (int argc, char **argv)
 {
     ros::init (argc, argv, "map_combine");
@@ -86,16 +106,9 @@ main (int argc, char **argv)
         pcl::PointCloud<pcl::PointXYZI> cloud;
         if (c_status == "elevator")
         {
-            srv.request.x = initial_pose_x;
-            srv.request.y = initial_pose_y;
-            srv.request.dis = dis;
-            client.call(srv);
+            std::string* str = service_call(initial_pose_x, initial_pose_y);
 
-            std::string str[9] = {srv.response.a, srv.response.b, srv.response.c, 
-            srv.response.d, srv.response.e, srv.response.f, 
-            srv.response.g, srv.response.h, srv.response.i};
-
-            sprintf(cstr[0], (dir + "%s").c_str(), (floors + "/" +str[0]).c_str());
+            sprintf(cstr[0], (dir + "%s").c_str(), (floors + "/" +*(str + 0)).c_str());
             pcl::io::loadPCDFile(cstr[0],cloud_n);
 
             pcl::PointCloud<pcl::PointXYZI>::Ptr cloud_ptr(new pcl::PointCloud<pcl::PointXYZI>);
@@ -108,18 +121,11 @@ main (int argc, char **argv)
         }
         else if (c_status == "planner")
         {
-            srv.request.x = pose_x;
-            srv.request.y = pose_y;
-            srv.request.dis = dis;
-            client.call(srv);
-
-            std::string str[9] = {srv.response.a, srv.response.b, srv.response.c, 
-            srv.response.d, srv.response.e, srv.response.f, 
-            srv.response.g, srv.response.h, srv.response.i};
+            std::string* str = service_call(pose_x, pose_y);
 
             for (int i = 0; i < 9; i++)
             {
-                sprintf(cstr[i], (dir + "%s").c_str(), (floors + "/" +str[i]).c_str());
+                sprintf(cstr[i], (dir + "%s").c_str(), (floors + "/" +*(str + i)).c_str());
                 pcl::io::loadPCDFile(cstr[i],cloud_n);
 
                 pcl::PointCloud<pcl::PointXYZI>::Ptr cloud_ptr(new pcl::PointCloud<pcl::PointXYZI>);

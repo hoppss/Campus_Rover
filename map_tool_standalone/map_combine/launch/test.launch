@@ -8,4 +8,6 @@
     <param name="dir" value="/home/eric/Desktop/map2/" />
   </node>
 
+  <node pkg="key_floor" type="key_floor.py" name="key" />
+
 </launch>

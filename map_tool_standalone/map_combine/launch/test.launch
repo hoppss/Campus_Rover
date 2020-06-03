@@ -1,0 +1,11 @@
+<launch>
+
+  <node pkg="map_load" type="map_load_node" name="map_load_server" />
+
+  <node pkg="map_combine" type="map_combine_node" name="map_combine">
+    <param name="grid_distant" value="7.0" />
+    <param name="leafs" value="0.2" />
+    <param name="dir" value="/home/eric/Desktop/map2/" />
+  </node>
+
+</launch>

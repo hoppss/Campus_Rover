@@ -10,7 +10,6 @@ project(map_combine)
 find_package(catkin REQUIRED COMPONENTS
   geometry_msgs
   std_msgs
-  nav_msgs
   pcl_ros
   roscpp
   rospy

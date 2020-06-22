@@ -37,12 +37,12 @@
         <param name="target_point_dis" value="0.5" />
 
         <param name="threshold_occupied" value="10" />
-        <param name="footprint_max_x" value="true" />
-        <param name="footprint_min_x" value="0.2" />
-        <param name="footprint_max_y" value="0.2" />
-        <param name="footprint_max_y" value="0.2" />
+        <param name="footprint_max_x" value="0.4" />
+        <param name="footprint_min_x" value="-0.1" />
+        <param name="footprint_max_y" value="0.01" />
+        <param name="footprint_max_y" value="-0.03" />
 
-        <param name="speed_ki" value="0.2" />
+        <param name="speed_ki" value="0.8" />
 
         <param name="enble_costmap_obstacle" value="false" />
         <param name="direction_inverse" value="false" />

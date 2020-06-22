@@ -223,7 +223,7 @@ int main(int argc, char** argv)
   path_pub_ = n.advertise<nav_msgs::Path>( "route_path", 10, true);
   if (pub_gps_position_)
   {
-    position_pub_ = n.advertise<sensor_msgs::NavSatFix>( "gps_location", 10);
+    position_pub_ = n.advertise<sensor_msgs::NavSatFix>( "campusrover_gps_location", 10);
   }
   gps_sub_ = n.subscribe("gps_destination", 10, gpsGoalCallcack);
   ros::Timer timer = n.createTimer(ros::Duration(0.05), updatePosition);

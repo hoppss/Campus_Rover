@@ -119,6 +119,7 @@
         "vec4ui": "cpp",
         "vec4us": "cpp",
         "viewport": "cpp",
-        "types": "cpp"
+        "types": "cpp",
+        "texture": "cpp"
     }
 }

@@ -49,7 +49,7 @@ bool action_flag_ = false;
 bool get_globle_path_ = false;
 bool get_costmap_data_ = false;
 bool obstacle_stop_cmd_ = false;
-bool arriving_end_point_;
+bool arriving_end_point_= false;
 bool enble_costmap_obstacle_;
 bool direction_inverse_= false;;
 
@@ -151,7 +151,7 @@ void check_arrive_goal()
 
   angle_normalize(angle_error);
 
-  cout<< "target_yaw_ : " << target_yaw_<<" robot_yaw_"<<robot_yaw_<<" angle_error"<<angle_error<<endl;
+  //cout<< "target_yaw_ : " << target_yaw_<<" robot_yaw_"<<robot_yaw_<<" angle_error"<<angle_error<<endl;
 
   if(dist < arriving_range_dis_ && abs(angle_error) < arriving_range_angle_)
   {
@@ -308,6 +308,7 @@ void moving_to_target_point()
   static double yaw_error;
   static double ang_vel;
   static double len_vel;
+  double move_robot_yaw;
 
 
   direction_yaw = atan2(target_pose.pose.position.y - robot_tf_pose_.position.y, target_pose.pose.position.x - robot_tf_pose_.position.x);
@@ -321,9 +322,9 @@ void moving_to_target_point()
   }
   else
   {
-    robot_yaw_ = robot_yaw_ - M_PI;
+    // move_robot_yaw = robot_yaw_ - M_PI;
     
-    angle_normalize(robot_yaw_);
+    // angle_normalize(move_robot_yaw);
 
     yaw_error = direction_yaw - robot_yaw_;
 
@@ -333,7 +334,7 @@ void moving_to_target_point()
     len_vel = -max_linear_velocity_;
     
   }
-  cout<< "direction_yaw : " << direction_yaw<<"robot_yaw_"<<robot_yaw_<<"yaw_error"<<yaw_error<<endl;
+  cout<< "direction_yaw : " <<direction_yaw<<" robot_yaw_"<<robot_yaw_ <<" move_robot_yaw"<<move_robot_yaw <<" yaw_error"<<yaw_error<<endl;
   
   
   TwistPublish(len_vel, ang_vel);
@@ -355,9 +356,9 @@ void moving_to_target_direction()
   }
   else
   {
-    robot_yaw_ = robot_yaw_ - M_PI;
+    // robot_yaw_ = robot_yaw_ - M_PI;
     
-    angle_normalize(robot_yaw_);
+    // angle_normalize(robot_yaw_);
 
     yaw_error = target_yaw_ - robot_yaw_;
 
@@ -542,12 +543,17 @@ bool ServiceCallback(campusrover_msgs::PlannerFunction::Request  &req, campusrov
   max_linear_velocity_ = req.speed_parameter.linear.x;
   max_angular_velocity_ = req.speed_parameter.angular.z;
 
+
   cout << "recrvie planner fuction : " << endl;
   cout << "  action_flag : " <<action_flag_<< endl;
   cout << "  direction_inverse : " <<direction_inverse_<< endl;
   cout << "  speed fuction : " <<req.speed_parameter<< endl;
-
+  //
+  res.execution_done.data = arriving_end_point_;
+  
   return true;
+
+  
 }
 //-----------------------------------------------------------------------------------------------
 int main(int argc, char **argv)
@@ -569,7 +575,7 @@ int main(int argc, char **argv)
   ros::Timer timer = nh.createTimer(ros::Duration(0.05), TimerCallback);
   ros::Timer msgs_timer = nh.createTimer(ros::Duration(2), msgs_timerCallback);
 
-  ros::ServiceServer service = nh.advertiseService("pianner_fuction", ServiceCallback);
+  ros::ServiceServer service = nh.advertiseService("planner_fuction", ServiceCallback);
 
   ros::spin();
 

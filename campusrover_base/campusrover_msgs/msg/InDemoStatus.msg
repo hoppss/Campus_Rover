@@ -1,5 +1,0 @@
-std_msgs/String status
-std_msgs/String controller
-campusrover_msgs/PoseWithId target_pose_data
-campusrover_msgs/PoseWithId current_pose_data
-campusrover_msgs/PoseWithId mid_target_pose_data

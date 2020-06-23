@@ -21,9 +21,9 @@ add_message_files(
   DIRECTORY msg
   FILES
   DoorStatus.msg
+  ElevatorControlStatus.msg
+  FloorStatus.msg
   Encode.msg
-  PoseWithId.msg
-  InDemoStatus.msg
 )
 
 ## Generate service in the 'srv' folder###
@@ -32,8 +32,11 @@ add_service_files(
   DriveStatus.srv
   ArmAction.srv
   PlannerFunction.srv
+  InitFloor.srv
+  PressButton.srv
+  ElevatorControlInterface.srv
 )
-
+#
 ## Generate added messages and services with any dependencies listed here
 generate_messages(
   DEPENDENCIES

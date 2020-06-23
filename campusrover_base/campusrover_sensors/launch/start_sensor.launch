@@ -1,7 +1,7 @@
 <launch>
 
   <!-- Common sensors -->
-  <include file="$(find campusrover_sensors)/launch/sensors/ydlidar.launch.xml" />
+  <include file="$(find campusrover_sensors)/launch/sensors/ydlidar_g6.launch.xml" />
   <include file="$(find campusrover_sensors)/launch/sensors/velodyne_VLP16.launch.xml" />
   <!-- <include file="$(find campusrover_sensors)/launch/sensors/xsens_imu_odom.launch.xml" /> -->
 

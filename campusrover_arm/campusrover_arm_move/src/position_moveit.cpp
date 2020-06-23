@@ -14,9 +14,11 @@
 #include <tf2_geometry_msgs/tf2_geometry_msgs.h>
 
 #include <campusrover_msgs/ArmAction.h>
-
+#include <campusrover_msgs/PressButton.h>
 
 using namespace std;
+
+ros::ServiceClient button_srv_client_;
 
 ros::Subscriber pose_sub_;
 geometry_msgs::PoseStamped pose_;
@@ -24,6 +26,7 @@ geometry_msgs::PoseStamped pose_;
 string planning_frame_id_;
 string planning_group_name_;
 string standby_pose_name_;
+string release_pose_name_;
 
 double planning_time_;
 double num_planning_attempts_;
@@ -38,15 +41,18 @@ double shift_z_;
 
 bool allow_replanning_;
 bool Visualization_;
+bool arm_execution_done_=false;
 
 void initialization();
 void ButtonPoseCallback(geometry_msgs::Pose Pose);
+void callService(ros::ServiceClient &client,campusrover_msgs::PressButton &srv);
 
 void get_parameters(ros::NodeHandle n_private)
 {
     n_private.param<string>("planning_frame_id", planning_frame_id_, "link_0");
     n_private.param<string>("planning_group_name", planning_group_name_, "arm");
     n_private.param<string>("standby_pose_name", standby_pose_name_, "standby_pose");
+    n_private.param<string>("release_pose_name", release_pose_name_, "standby_pose");
     n_private.param<double>("planning_time", planning_time_, 5.0);
     n_private.param<double>("num_planning_attempts", num_planning_attempts_, 10.0);
     n_private.param<double>("shift_x", shift_x_, 0.00);
@@ -66,7 +72,7 @@ void initialization()
 }
 
 //void ButtonPoseCallback(geometry_msgs::Pose pose)
-bool ServiceCallback(campusrover_msgs::ArmAction::Request  &req, campusrover_msgs::ArmAction::Response &res)
+bool ArmServiceCallback(campusrover_msgs::ArmAction::Request  &req, campusrover_msgs::ArmAction::Response &res)
 {
     pose_ = req.button_pose;
     cout << "recrvie pose : " <<pose_<< endl;
@@ -83,8 +89,8 @@ bool ServiceCallback(campusrover_msgs::ArmAction::Request  &req, campusrover_msg
     move_group.allowReplanning(allow_replanning_);
     
     cout << "GoalJointTolerance : " <<move_group.getGoalJointTolerance()<< endl;
-    cout << "GoalJointTolerance : " <<move_group.getGoalPositionTolerance()<< endl;
-    cout << "GoalJointTolerance : " <<move_group.getGoalOrientationTolerance()<< endl;
+    cout << "GoalPositionTolerance : " <<move_group.getGoalPositionTolerance()<< endl;
+    cout << "GoalOrientationTolerance : " <<move_group.getGoalOrientationTolerance()<< endl;
 
     moveit::planning_interface::PlanningSceneInterface planning_scene_interface;
     // const robot_state::JointModelGroup* joint_model_group =
@@ -101,10 +107,10 @@ bool ServiceCallback(campusrover_msgs::ArmAction::Request  &req, campusrover_msg
 
     //move to standby_pose//
     bool success;
-    //cout << "move to standby_pose" << endl;
-    //move_group.setMaxVelocityScalingFactor(1.0);
-    //success = (move_group.setNamedTarget(standby_pose_name_) == moveit::planning_interface::MoveItErrorCode::SUCCESS);
-    //move_group.move();
+    cout << "move to standby_pose" << endl;
+    move_group.setMaxVelocityScalingFactor(1.0);
+    success = (move_group.setNamedTarget(standby_pose_name_) == moveit::planning_interface::MoveItErrorCode::SUCCESS);
+    move_group.move();
 
     //ros::Duration(1.0).sleep();
     //move_group.clearPoseTarget();
@@ -195,14 +201,47 @@ bool ServiceCallback(campusrover_msgs::ArmAction::Request  &req, campusrover_msg
     move_group.execute(plan);
 
     ros::Duration(1.0).sleep();
-    cout << "move to standby_pose 2 " << endl;
+    cout << "move to standby_pose  " << endl;
     move_group.setMaxVelocityScalingFactor(1.0);
-    success = (move_group.setNamedTarget("lie_pose") == moveit::planning_interface::MoveItErrorCode::SUCCESS);
+    success = (move_group.setNamedTarget("standby_pose") == moveit::planning_interface::MoveItErrorCode::SUCCESS);
+    move_group.move();
+
+    ros::Duration(1.0).sleep();
+    cout << "move to release_pose " << endl;
+    move_group.setMaxVelocityScalingFactor(1.0);
+    success = (move_group.setNamedTarget(release_pose_name_) == moveit::planning_interface::MoveItErrorCode::SUCCESS);
     move_group.move();
 
     cout << "done" << endl;
+    arm_execution_done_ = true;
     return true;
     
+}
+//----------------------------------------------------------------------------------------------------------------------
+bool ButtonServiceCallback(campusrover_msgs::PressButton::Request  &req, campusrover_msgs::PressButton::Response &res)
+{
+    static campusrover_msgs::PressButton button_srv;
+    button_srv.request.button_type = req.button_type;
+    callService(button_srv_client_,button_srv);
+    
+    //
+    while (!arm_execution_done_)
+
+    res.execution_done.data = arm_execution_done_;  
+    arm_execution_done_= false;
+    return true;
+
+}
+//----------------------------------------------------------------------------------------------------------------------
+void callService(ros::ServiceClient &client,campusrover_msgs::PressButton &srv)
+{
+    string str = "=======arm call vision================= " ;
+    cout << "Request massage: \n" << srv.request;
+    while (!client.call(srv))
+    {
+        ROS_ERROR("Failed to call service");
+        ros::Duration(1.0).sleep();
+    }
 }
 
 
@@ -214,7 +253,9 @@ int main(int argc, char **argv)
     ros::AsyncSpinner spinner(4); // Use 4 threads
     get_parameters(n_private);
     //pose_sub_ = n.subscribe("/button_pose", 1, ButtonPoseCallback);
-    ros::ServiceServer service = n.advertiseService("arm_action", ServiceCallback);
+    ros::ServiceServer arm_service = n.advertiseService("arm_action", ArmServiceCallback);
+    ros::ServiceServer button_service = n.advertiseService("button_press", ButtonServiceCallback);
+    button_srv_client_ = n.serviceClient<campusrover_msgs::PressButton>("button_num");
     spinner.start();
     ros::waitForShutdown();
     return 0;

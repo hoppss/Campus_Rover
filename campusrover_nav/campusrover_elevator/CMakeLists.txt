@@ -33,7 +33,7 @@ catkin_package(
 #  DEPENDS system_lib
 )
 
-
+#
 ## Specify additional locations of header files
 ## Your package locations should be listed before other locations
 include_directories(
@@ -50,5 +50,11 @@ target_link_libraries(elevator_pose_tf ${catkin_LIBRARIES})
 add_executable(elevator_door_status src/elevator_door_status.cpp)
 target_link_libraries(elevator_door_status ${catkin_LIBRARIES})
 
+add_executable(elevator_floor_status src/elevator_floor_status.cpp)
+target_link_libraries(elevator_floor_status ${catkin_LIBRARIES})
+
 add_executable(elevator_path_generater src/elevator_path_generater.cpp)
 target_link_libraries(elevator_path_generater ${catkin_LIBRARIES})
+
+add_executable(elevator_status_controller src/elevator_status_controller.cpp)
+target_link_libraries(elevator_status_controller ${catkin_LIBRARIES})

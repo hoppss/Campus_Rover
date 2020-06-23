@@ -1,0 +1,4 @@
+int64 init_pressure
+int64 init_floor
+int64 current_pressure
+int64 current_floor

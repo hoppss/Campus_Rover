@@ -36,9 +36,9 @@
         <joint name="joint_3" value="0" />
         <joint name="joint_4" value="0" />
     </group_state>
-    <group_state name="laydonw" group="arm">
-        <joint name="joint_1" value="-1.5766" />
-        <joint name="joint_2" value="1.5578" />
+    <group_state name="laydown" group="arm">
+        <joint name="joint_1" value="-1.57" />
+        <joint name="joint_2" value="1.57" />
         <joint name="joint_3" value="0" />
         <joint name="joint_4" value="0" />
     </group_state>

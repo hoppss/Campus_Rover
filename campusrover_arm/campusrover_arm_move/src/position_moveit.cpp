@@ -268,7 +268,7 @@ int main(int argc, char **argv)
     //pose_sub_ = n.subscribe("/button_pose", 1, ButtonPoseCallback);
     ros::ServiceServer arm_service = n.advertiseService("arm_action", ArmServiceCallback);
     ros::ServiceServer button_service = n.advertiseService("button_press", ButtonServiceCallback);
-    button_srv_client_ = n.serviceClient<campusrover_msgs::PressButton>("button_num");
+    button_srv_client_ = n.serviceClient<campusrover_msgs::PressButton>("button_info");
     status_check_client_ = n.serviceClient<campusrover_msgs::ElevatorStatusChecker>("elevator_status_checker");
     spinner.start();
     ros::waitForShutdown();

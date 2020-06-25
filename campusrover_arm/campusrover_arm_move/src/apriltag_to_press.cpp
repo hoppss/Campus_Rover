@@ -93,7 +93,7 @@ int main(int argc, char **argv)
     get_parameters(n_private);
     tag_sub_ = n.subscribe("/tag_detections", 1, TagPoseCallback);
     action_sub_ = n.subscribe("/action_enable", 1, ActionEnableCallback);
-    ros::ServiceServer button_service = n.advertiseService("button_num", ButtonServiceCallback);
+    ros::ServiceServer button_service = n.advertiseService("button_info", ButtonServiceCallback);
     arm_srv_client_ = n.serviceClient<campusrover_msgs::ArmAction>("arm_action");
     spinner.start();
     ros::waitForShutdown();

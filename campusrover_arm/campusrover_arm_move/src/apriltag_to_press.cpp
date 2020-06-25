@@ -14,6 +14,7 @@
 #include <tf2_geometry_msgs/tf2_geometry_msgs.h>
 
 #include <campusrover_msgs/ArmAction.h>
+#include <campusrover_msgs/PressButton.h>
 #include <apriltag_ros/AprilTagDetectionArray.h>
 #include <std_msgs/Bool.h>
 
@@ -71,6 +72,18 @@ void callService(ros::ServiceClient &client,campusrover_msgs::ArmAction &srv)
     }
 }
 
+//----------------------------------------------------------------------------------------------------------------------
+bool ButtonServiceCallback(campusrover_msgs::PressButton::Request  &req, campusrover_msgs::PressButton::Response &res)
+{
+    // static campusrover_msgs::PressButton button_srv;
+    // button_srv.request.button_type = req.button_type;
+    arm_action_enable_ = true;
+    
+    //
+    return true;
+
+}
+
 int main(int argc, char **argv)
 {
     ros::init(argc, argv, "apriltag_to_press");
@@ -80,6 +93,7 @@ int main(int argc, char **argv)
     get_parameters(n_private);
     tag_sub_ = n.subscribe("/tag_detections", 1, TagPoseCallback);
     action_sub_ = n.subscribe("/action_enable", 1, ActionEnableCallback);
+    ros::ServiceServer button_service = n.advertiseService("button_num", ButtonServiceCallback);
     arm_srv_client_ = n.serviceClient<campusrover_msgs::ArmAction>("arm_action");
     spinner.start();
     ros::waitForShutdown();

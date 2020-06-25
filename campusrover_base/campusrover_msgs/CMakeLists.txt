@@ -35,6 +35,7 @@ add_service_files(
   InitFloor.srv
   PressButton.srv
   ElevatorControlInterface.srv
+  ElevatorStatusChecker.srv
 )
 #
 ## Generate added messages and services with any dependencies listed here

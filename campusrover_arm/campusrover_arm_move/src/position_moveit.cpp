@@ -15,10 +15,11 @@
 
 #include <campusrover_msgs/ArmAction.h>
 #include <campusrover_msgs/PressButton.h>
+#include <campusrover_msgs/ElevatorStatusChecker.h>
 
 using namespace std;
 
-ros::ServiceClient button_srv_client_;
+ros::ServiceClient button_srv_client_, status_check_client_;
 
 ros::Subscriber pose_sub_;
 geometry_msgs::PoseStamped pose_;
@@ -45,7 +46,8 @@ bool arm_execution_done_=false;
 
 void initialization();
 void ButtonPoseCallback(geometry_msgs::Pose Pose);
-void callService(ros::ServiceClient &client,campusrover_msgs::PressButton &srv);
+void BtnCallService(ros::ServiceClient &client,campusrover_msgs::PressButton &srv);
+void StatusCheckCallService(ros::ServiceClient &client,campusrover_msgs::ElevatorStatusChecker &srv);
 
 void get_parameters(ros::NodeHandle n_private)
 {
@@ -74,6 +76,8 @@ void initialization()
 //void ButtonPoseCallback(geometry_msgs::Pose pose)
 bool ArmServiceCallback(campusrover_msgs::ArmAction::Request  &req, campusrover_msgs::ArmAction::Response &res)
 {
+    static campusrover_msgs::ElevatorStatusChecker status_msg;
+
     pose_ = req.button_pose;
     cout << "recrvie pose : " <<pose_<< endl;
     static const std::string PLANNING_GROUP = planning_group_name_;
@@ -212,8 +216,11 @@ bool ArmServiceCallback(campusrover_msgs::ArmAction::Request  &req, campusrover_
     success = (move_group.setNamedTarget(release_pose_name_) == moveit::planning_interface::MoveItErrorCode::SUCCESS);
     move_group.move();
 
+    
+    status_msg.request.node_name.data = "arm";
+    status_msg.request.status.data = true;
+    StatusCheckCallService(status_check_client_, status_msg);
     cout << "done" << endl;
-    arm_execution_done_ = true;
     return true;
     
 }
@@ -222,18 +229,14 @@ bool ButtonServiceCallback(campusrover_msgs::PressButton::Request  &req, campusr
 {
     static campusrover_msgs::PressButton button_srv;
     button_srv.request.button_type = req.button_type;
-    callService(button_srv_client_,button_srv);
+    BtnCallService(button_srv_client_,button_srv);
     
     //
-    while (!arm_execution_done_)
-
-    res.execution_done.data = arm_execution_done_;  
-    arm_execution_done_= false;
     return true;
 
 }
 //----------------------------------------------------------------------------------------------------------------------
-void callService(ros::ServiceClient &client,campusrover_msgs::PressButton &srv)
+void BtnCallService(ros::ServiceClient &client,campusrover_msgs::PressButton &srv)
 {
     string str = "=======arm call vision================= " ;
     cout << "Request massage: \n" << srv.request;
@@ -243,7 +246,17 @@ void callService(ros::ServiceClient &client,campusrover_msgs::PressButton &srv)
         ros::Duration(1.0).sleep();
     }
 }
-
+//-----------------------------------------------------------------------------------------------
+void StatusCheckCallService(ros::ServiceClient &client,campusrover_msgs::ElevatorStatusChecker &srv)
+{
+  string str = "===========arm status check============= " ;
+  cout << "Request massage: \n" << srv.request;
+  while (!client.call(srv))
+  {
+    ROS_ERROR("arm status check : Failed to call service");
+    ros::Duration(1.0).sleep();
+  }
+}
 
 int main(int argc, char **argv)
 {
@@ -256,6 +269,7 @@ int main(int argc, char **argv)
     ros::ServiceServer arm_service = n.advertiseService("arm_action", ArmServiceCallback);
     ros::ServiceServer button_service = n.advertiseService("button_press", ButtonServiceCallback);
     button_srv_client_ = n.serviceClient<campusrover_msgs::PressButton>("button_num");
+    status_check_client_ = n.serviceClient<campusrover_msgs::ElevatorStatusChecker>("elevator_status_checker");
     spinner.start();
     ros::waitForShutdown();
     return 0;

@@ -2,4 +2,3 @@ std_msgs/Bool action
 std_msgs/Bool direction_inverse
 geometry_msgs/Twist speed_parameter
 ---
-std_msgs/Bool execution_done

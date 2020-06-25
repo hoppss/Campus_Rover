@@ -24,6 +24,7 @@
 #include <visualization_msgs/MarkerArray.h>
 
 #include <campusrover_msgs/PlannerFunction.h>
+#include <campusrover_msgs/ElevatorStatusChecker.h>
 
 #define M_PI 3.14159265358979323846  /* pi */
 using namespace std;
@@ -32,6 +33,7 @@ using namespace std;
 
 ros::Subscriber path_sub_, costmap_sub_, click_sub_;
 ros::Publisher twist_pub_, twist_path_pub_, path_marker_pub_;
+ros::ServiceClient status_check_client_;
 
 nav_msgs::Path globle_path_;
 geometry_msgs::PoseStamped target_pose_;
@@ -50,6 +52,7 @@ bool get_globle_path_ = false;
 bool get_costmap_data_ = false;
 bool obstacle_stop_cmd_ = false;
 bool arriving_end_point_= false;
+bool arriving_end_direction_= false;
 bool enble_costmap_obstacle_;
 bool direction_inverse_= false;;
 
@@ -71,6 +74,7 @@ void TwistPublish(double x, double z);
 void moving_to_target_point();
 void moving_to_target_direction();
 void angle_normalize(double &angle);
+void StatusCheckCallService(ros::ServiceClient &client,campusrover_msgs::ElevatorStatusChecker &srv);
 
 //-----------------------------------------------------------------------------------------------
 void get_parameters(ros::NodeHandle n_private)
@@ -139,26 +143,45 @@ void UpdateCampusRoverPoseFromTF()
   
 }
 //-----------------------------------------------------------------------------------------------
-void check_arrive_goal()
+void check_arrive_point()
 {
   static double dist;
-  static double angle_error;
-  static double roll, pitch, yaw;
+
   dist = sqrt(pow(target_pose_.pose.position.x - robot_tf_pose_.position.x, 2)
               + pow(target_pose_.pose.position.y - robot_tf_pose_.position.y, 2));
 
+  if(dist < arriving_range_dis_ )
+  {
+    arriving_end_point_ = true;
+  }else{
+    arriving_end_point_ = false;
+  }
+}
+//-----------------------------------------------------------------------------------------------
+void check_arrive_direction()
+{
+  static campusrover_msgs::ElevatorStatusChecker status_msg;
+  static string status_name = "planner";
+  static double angle_error;
+  static double roll, pitch, yaw;
+  
   angle_error = target_yaw_ - robot_yaw_;
 
   angle_normalize(angle_error);
 
   //cout<< "target_yaw_ : " << target_yaw_<<" robot_yaw_"<<robot_yaw_<<" angle_error"<<angle_error<<endl;
 
-  if(dist < arriving_range_dis_ && abs(angle_error) < arriving_range_angle_)
+  if(abs(angle_error) < arriving_range_angle_)
   {
-    arriving_end_point_ = true;
+    ros::Duration(0.5).sleep();
+    arriving_end_direction_ = true;
+    status_msg.request.node_name.data = status_name;
+    status_msg.request.status.data = arriving_end_direction_;
+    StatusCheckCallService(status_check_client_, status_msg);
   }else{
-    arriving_end_point_ = false;
+    arriving_end_direction_ = false;
   }
+  
 
 }
 //----------------------------------------------------------------------------------------------
@@ -178,18 +201,18 @@ void TimerCallback(const ros::TimerEvent &event)
     {
       if (get_costmap_data_ || !enble_costmap_obstacle_)
       {
-        UpdateCampusRoverPoseFromTF();
-        check_arrive_goal();
-        if(!arriving_end_point_)
+        if(!arriving_end_direction_)
         {
-          if(sqrt(pow(target_pose_.pose.position.x - robot_tf_pose_.position.x, 2)
-              + pow(target_pose_.pose.position.y - robot_tf_pose_.position.y, 2)) < arriving_range_dis_)
+          UpdateCampusRoverPoseFromTF();
+          if(!arriving_end_point_)
           {
-            moving_to_target_direction();
+            moving_to_target_point();
+            check_arrive_point(); 
           }
           else
           {
-            moving_to_target_point();
+            moving_to_target_direction();
+            check_arrive_direction();
           }
         }
         else
@@ -538,22 +561,34 @@ void CostmapCallback(const nav_msgs::OccupancyGridConstPtr &map)
 //-----------------------------------------------------------------------------------------------
 bool ServiceCallback(campusrover_msgs::PlannerFunction::Request  &req, campusrover_msgs::PlannerFunction::Response &res)
 {
+  ros::Duration(1.0).sleep();
   action_flag_ = req.action.data;
   direction_inverse_ = req.direction_inverse.data;
   max_linear_velocity_ = req.speed_parameter.linear.x;
   max_angular_velocity_ = req.speed_parameter.angular.z;
-
 
   cout << "recrvie planner fuction : " << endl;
   cout << "  action_flag : " <<action_flag_<< endl;
   cout << "  direction_inverse : " <<direction_inverse_<< endl;
   cout << "  speed fuction : " <<req.speed_parameter<< endl;
   //
-  res.execution_done.data = arriving_end_point_;
+  arriving_end_point_ = false;
+  arriving_end_direction_ = false;
   
   return true;
 
   
+}
+//-----------------------------------------------------------------------------------------------
+void StatusCheckCallService(ros::ServiceClient &client,campusrover_msgs::ElevatorStatusChecker &srv)
+{
+  string str = "===========planner status check============= " ;
+  cout << "Request massage: \n" << srv.request;
+  while (!client.call(srv))
+  {
+    ROS_ERROR("planner status check : Failed to call service");
+    ros::Duration(1.0).sleep();
+  }
 }
 //-----------------------------------------------------------------------------------------------
 int main(int argc, char **argv)
@@ -575,7 +610,8 @@ int main(int argc, char **argv)
   ros::Timer timer = nh.createTimer(ros::Duration(0.05), TimerCallback);
   ros::Timer msgs_timer = nh.createTimer(ros::Duration(2), msgs_timerCallback);
 
-  ros::ServiceServer service = nh.advertiseService("planner_fuction", ServiceCallback);
+  ros::ServiceServer service = nh.advertiseService("planner_function", ServiceCallback);
+  status_check_client_ = nh.serviceClient<campusrover_msgs::ElevatorStatusChecker>("elevator_status_checker");
 
   ros::spin();
 

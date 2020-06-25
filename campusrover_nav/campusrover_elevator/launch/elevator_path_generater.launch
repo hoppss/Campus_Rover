@@ -1,0 +1,41 @@
+
+<launch>
+    <node pkg="campusrover_elevator" type="elevator_path_generater" name="elevator_path_generater" output="screen">
+        <param name="path_frame" value="map" />
+        <param name="path_resolution" value="0.05" />
+
+        <param name="outside_button_pose_x_1" value="-2.0" />
+        <param name="outside_button_pose_y_1" value="-0.6" />
+        <param name="outside_button_pose_x_2" value="-0.25" />
+        <param name="outside_button_pose_y_2" value="-0.6" />
+        <param name="outside_button_pose_yaw" value="0.0" />
+
+        <param name="outside_standby_pose_x_1" value="0.0" />
+        <param name="outside_standby_pose_y_1" value="0.0" />
+        <param name="outside_standby_pose_x_2" value="-2.0" />
+        <param name="outside_standby_pose_y_2" value="0.0" />
+        <param name="outside_standby_pose_yaw" value="3.14" />
+
+        <param name="enter_path_1_dis" value="3.0" />
+        <param name="enter_path_2_dis" value="0.8" />
+
+        <param name="inside_button_pose_x_1" value="0.3" />
+        <param name="inside_button_pose_y_1" value="0.3" />
+        <param name="inside_button_pose_x_2" value="0.3" />
+        <param name="inside_button_pose_y_2" value="0.3" />
+        <param name="inside_button_pose_yaw" value="0.3" />
+
+        <param name="inside_standby_pose_x_1" value="0.3" />
+        <param name="inside_standby_pose_y_1" value="0.3" />
+        <param name="inside_standby_pose_x_2" value="0.3" />
+        <param name="inside_standby_pose_y_2" value="0.3" />
+        <param name="inside_standby_pose_yaw" value="0.3" />
+
+        <param name="leave_path_1_dis" value="0.8" />
+        <param name="leave_path_2_dis" value="1.5" />
+
+        <param name="pose_range_threshold" value="0.3" />
+        <param name="pose_yaw_threshold" value="0.05" />
+        <param name="avg_pose_size" value="3.0" />
+    </node>
+</launch>

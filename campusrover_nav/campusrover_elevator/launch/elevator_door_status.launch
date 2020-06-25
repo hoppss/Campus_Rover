@@ -1,0 +1,11 @@
+<launch>
+    <node pkg="campusrover_elevator" type="elevator_door_status" name="elevator_door_status" output="screen">
+        <remap from="scan"    to="scan2" />
+        <param name="door_t1" value="0.2" />
+        <param name="door_x1" value="0.34" />
+        <param name="door_y1" value="0.94" />
+        <param name="door_y2" value="0.8" />
+        <param name="door_open_threshold" value="0.2" />
+        
+    </node>
+</launch>

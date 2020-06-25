@@ -1,0 +1,6 @@
+<launch>
+    <node pkg="campusrover_elevator" type="elevator_floor_status" name="elevator_floor_status" output="screen">
+        
+        
+    </node>
+</launch>

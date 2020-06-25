@@ -21,6 +21,8 @@
 
 #include <campusrover_msgs/DoorStatus.h>
 #include <campusrover_msgs/ElevatorControlStatus.h>
+#include <campusrover_msgs/ElevatorStatusChecker.h>
+
 
 using namespace std;
 
@@ -28,6 +30,7 @@ using namespace std;
 
 ros::Subscriber elevator_pose_sub_, control_status_sub_;
 ros::Publisher path_pub_;
+ros::ServiceClient status_check_client_;
 
 
 geometry_msgs::PoseStamped pose_ ;
@@ -54,12 +57,16 @@ double outside_standby_pose_yaw_;
 double enter_path_1_dis_;
 double enter_path_2_dis_;
 
-double inside_button_pose_x_;
-double inside_button_pose_y_;
+double inside_button_pose_x_1_;
+double inside_button_pose_y_1_;
+double inside_button_pose_x_2_;
+double inside_button_pose_y_2_;
 double inside_button_pose_yaw_;
 
-double inside_standby_pose_x_;
-double inside_standby_pose_y_;
+double inside_standby_pose_x_1_;
+double inside_standby_pose_y_1_;
+double inside_standby_pose_x_2_;
+double inside_standby_pose_y_2_;
 double inside_standby_pose_yaw_;
 
 double leave_path_1_dis_;
@@ -74,6 +81,8 @@ void MoveToBtnPath_Inside(geometry_msgs::PoseStamped &input_pose , nav_msgs::Pat
 void MoveToStandbyPositionPath_Inside(geometry_msgs::PoseStamped &input_pose , nav_msgs::Path &path, double &yaw);
 void LeaveElevatorPath(geometry_msgs::PoseStamped &input_pose , nav_msgs::Path &path, double &yaw);
 
+void StatusCheckCallService(ros::ServiceClient &client,campusrover_msgs::ElevatorStatusChecker &srv);
+
 void get_parameters(ros::NodeHandle n_private)
 {
   n_private.param<string>("path_frame", path_frame_, "map");
@@ -87,20 +96,19 @@ void get_parameters(ros::NodeHandle n_private)
 
   //MoveToBtnPath_Outside step 1
   n_private.param<double>("outside_button_pose_x_1", outside_button_pose_x_1_, -1.3);
-  n_private.param<double>("outside_button_pose_y_2", outside_button_pose_y_1_, -0.6);
+  n_private.param<double>("outside_button_pose_y_1", outside_button_pose_y_1_, -0.6);
 
-  n_private.param<double>("outside_button_pose_x", outside_button_pose_x_2_, -0.25);
-  n_private.param<double>("outside_button_pose_y", outside_button_pose_y_2_, -0.6);
+  n_private.param<double>("outside_button_pose_x_2", outside_button_pose_x_2_, -0.25);
+  n_private.param<double>("outside_button_pose_y_2", outside_button_pose_y_2_, -0.6);
   n_private.param<double>("outside_button_pose_yaw", outside_button_pose_yaw_, 0.0);
 
   
-
   //MoveToStandbyPositionPath_Outside step 3
-  n_private.param<double>("outside_standby_pose_x", outside_standby_pose_x_1_, 0.0);
-  n_private.param<double>("outside_standby_pose_y", outside_standby_pose_y_1_, 0.0);
+  n_private.param<double>("outside_standby_pose_x_1", outside_standby_pose_x_1_, 0.0);
+  n_private.param<double>("outside_standby_pose_y_1", outside_standby_pose_y_1_, 0.0);
 
-  n_private.param<double>("outside_standby_pose_x", outside_standby_pose_x_2_, -2.0);
-  n_private.param<double>("outside_standby_pose_y", outside_standby_pose_y_2_, 0.0);
+  n_private.param<double>("outside_standby_pose_x_2", outside_standby_pose_x_2_, -2.0);
+  n_private.param<double>("outside_standby_pose_y_2", outside_standby_pose_y_2_, 0.0);
   n_private.param<double>("outside_standby_pose_yaw", outside_standby_pose_yaw_, 0.0);
 
   //EnterElevatorPath step 5
@@ -108,13 +116,17 @@ void get_parameters(ros::NodeHandle n_private)
   n_private.param<double>("enter_path_2_dis", enter_path_2_dis_, 0.8);
 
   //MoveToBtnPath_Inside step 6
-  n_private.param<double>("inside_button_pose_x", inside_button_pose_x_, 1.0);
-  n_private.param<double>("inside_button_pose_y", inside_button_pose_y_, 0.8);
+  n_private.param<double>("inside_button_pose_x_1", inside_button_pose_x_1_, 1.0);
+  n_private.param<double>("inside_button_pose_y_1", inside_button_pose_y_1_, 0.8);
+  n_private.param<double>("inside_button_pose_x_2", inside_button_pose_x_2_, 1.0);
+  n_private.param<double>("inside_button_pose_y_2", inside_button_pose_y_2_, 0.8);
   n_private.param<double>("inside_button_pose_yaw", inside_button_pose_yaw_, 0.8);
 
   //MoveToStandbyPositionPath_Inside step 8
-  n_private.param<double>("inside_standby_pose_x", inside_standby_pose_x_, 1.0);
-  n_private.param<double>("inside_standby_pose_y", inside_standby_pose_y_, 0.8);
+  n_private.param<double>("inside_standby_pose_x_1", inside_standby_pose_x_1_, 1.0);
+  n_private.param<double>("inside_standby_pose_y_1", inside_standby_pose_y_1_, 0.8);
+  n_private.param<double>("inside_standby_pose_x_2", inside_standby_pose_x_2_, 1.0);
+  n_private.param<double>("inside_standby_pose_y_2", inside_standby_pose_y_2_, 0.8);
   n_private.param<double>("inside_standby_pose_yaw", inside_standby_pose_yaw_, 0.8);
   
   //LeaveElevatorPath step 7
@@ -124,6 +136,9 @@ void get_parameters(ros::NodeHandle n_private)
 
 void PoseCallback(const geometry_msgs::PoseArrayConstPtr &elevator_poses)
 {
+  static campusrover_msgs::ElevatorStatusChecker status_msg;
+  static int current_status;
+  static int last_status =0;
   static nav_msgs::Path path;
   static geometry_msgs::PoseStamped path_frame_pose ;
   static geometry_msgs::PoseStamped before_pose ;
@@ -137,6 +152,7 @@ void PoseCallback(const geometry_msgs::PoseArrayConstPtr &elevator_poses)
   if(control_status_ != 1 && control_status_ != 3 &&control_status_ != 5 &&control_status_ != 6 && control_status_ != 8 && control_status_ != 11 )
     return;
 
+  
 
   if(elevator_poses->poses.size() == 0)
     return;
@@ -175,7 +191,7 @@ void PoseCallback(const geometry_msgs::PoseArrayConstPtr &elevator_poses)
   m.getRPY(roll, pitch, yaw);
 
 
-  std::cout << " control_status_ "  <<control_status_<<'\n';
+  //std::cout << " control_status_ "  <<control_status_<<'\n';
   if(control_status_ == 1.0) /////step 1 /////////////////////////////////////////////////////////
   {
     MoveToBtnPath_Outside(path_frame_pose, path, yaw);
@@ -203,6 +219,18 @@ void PoseCallback(const geometry_msgs::PoseArrayConstPtr &elevator_poses)
   
 
   path_pub_.publish(path);
+
+  current_status = control_status_;
+
+  if(last_status != current_status)
+  {
+    status_msg.request.node_name.data = "path_generater";;
+    status_msg.request.status.data = true;
+    StatusCheckCallService(status_check_client_, status_msg);
+    last_status = current_status;
+  }
+
+  
   
 
 }
@@ -221,11 +249,11 @@ void MoveToBtnPath_Outside(geometry_msgs::PoseStamped &input_pose , nav_msgs::Pa
   static geometry_msgs::Quaternion path_pose_q_msg;
   static double target_yaw;
 
-  x1_point.x = input_pose.pose.position.x + outside_button_pose_x_1_*cos(yaw + outside_button_pose_yaw_) - outside_button_pose_y_1_*sin(yaw + outside_button_pose_yaw_);
-  x1_point.y = input_pose.pose.position.y + outside_button_pose_x_1_*sin(yaw + outside_button_pose_yaw_) + outside_button_pose_y_1_*cos(yaw + outside_button_pose_yaw_);
+  x1_point.x = input_pose.pose.position.x + outside_button_pose_x_1_*cos(yaw) - outside_button_pose_y_1_*sin(yaw);
+  x1_point.y = input_pose.pose.position.y + outside_button_pose_x_1_*sin(yaw) + outside_button_pose_y_1_*cos(yaw);
 
-  x2_point.x = input_pose.pose.position.x + outside_button_pose_x_2_*cos(yaw + outside_button_pose_yaw_) - outside_button_pose_y_2_*sin(yaw + outside_button_pose_yaw_);
-  x2_point.y = input_pose.pose.position.y + outside_button_pose_x_2_*sin(yaw + outside_button_pose_yaw_) + outside_button_pose_y_2_*cos(yaw + outside_button_pose_yaw_);
+  x2_point.x = input_pose.pose.position.x + outside_button_pose_x_2_*cos(yaw) - outside_button_pose_y_2_*sin(yaw);
+  x2_point.y = input_pose.pose.position.y + outside_button_pose_x_2_*sin(yaw) + outside_button_pose_y_2_*cos(yaw);
 
   int step_count = int (sqrt(pow(x1_point.x - x2_point.x,2) + pow(x1_point.y - x2_point.y, 2))/path_resolution_);
   double s_x = double ((x2_point.x - x1_point.x)/step_count);
@@ -245,7 +273,15 @@ void MoveToBtnPath_Outside(geometry_msgs::PoseStamped &input_pose , nav_msgs::Pa
       path_pose.pose.position.x += s_x;
       path_pose.pose.position.y += s_y;
 
-      target_yaw = atan2(path_pose.pose.position.y - path.poses[i-1].pose.position.y, path_pose.pose.position.x - path.poses[i-1].pose.position.x);
+      if(i >= step_count-1)
+      {
+        target_yaw = outside_button_pose_yaw_ + yaw;
+      }
+      else
+      {
+        target_yaw = atan2(path_pose.pose.position.y - path.poses[i-1].pose.position.y, path_pose.pose.position.x - path.poses[i-1].pose.position.x);
+      }
+      
       path_pose_q_tf.setRPY(0.0,0.0,target_yaw);
       path_pose_q_msg = tf2::toMsg(path_pose_q_tf);
       path_pose.pose.orientation = path_pose_q_msg;
@@ -267,11 +303,11 @@ void MoveToStandbyPositionPath_Outside(geometry_msgs::PoseStamped &input_pose , 
   static geometry_msgs::Quaternion path_pose_q_msg;
   static double target_yaw;
 
-  x1_point.x = input_pose.pose.position.x + outside_standby_pose_x_1_*cos(yaw + outside_standby_pose_yaw_) - outside_standby_pose_y_1_*sin(yaw + outside_standby_pose_yaw_);
-  x1_point.y = input_pose.pose.position.y + outside_standby_pose_x_1_*sin(yaw + outside_standby_pose_yaw_) + outside_standby_pose_y_1_*cos(yaw + outside_standby_pose_yaw_);
+  x1_point.x = input_pose.pose.position.x + outside_standby_pose_x_1_*cos(yaw ) - outside_standby_pose_y_1_*sin(yaw );
+  x1_point.y = input_pose.pose.position.y + outside_standby_pose_x_1_*sin(yaw ) + outside_standby_pose_y_1_*cos(yaw );
 
-  x2_point.x = input_pose.pose.position.x + outside_standby_pose_x_2_*cos(yaw + outside_standby_pose_yaw_) - outside_standby_pose_y_2_*sin(yaw + outside_standby_pose_yaw_);
-  x2_point.y = input_pose.pose.position.y + outside_standby_pose_x_2_*sin(yaw + outside_standby_pose_yaw_) + outside_standby_pose_y_2_*cos(yaw + outside_standby_pose_yaw_);
+  x2_point.x = input_pose.pose.position.x + outside_standby_pose_x_2_*cos(yaw ) - outside_standby_pose_y_2_*sin(yaw );
+  x2_point.y = input_pose.pose.position.y + outside_standby_pose_x_2_*sin(yaw ) + outside_standby_pose_y_2_*cos(yaw );
 
   int step_count = int (sqrt(pow(x1_point.x - x2_point.x,2) + pow(x1_point.y - x2_point.y, 2))/path_resolution_);
   double s_x = double ((x2_point.x - x1_point.x)/step_count);
@@ -291,7 +327,14 @@ void MoveToStandbyPositionPath_Outside(geometry_msgs::PoseStamped &input_pose , 
       path_pose.pose.position.x += s_x;
       path_pose.pose.position.y += s_y;
 
-      target_yaw = atan2(path_pose.pose.position.y - path.poses[i-1].pose.position.y, path_pose.pose.position.x - path.poses[i-1].pose.position.x);
+      if(i >= step_count-1)
+      {
+        target_yaw = outside_standby_pose_yaw_ + yaw;
+      }
+      else
+      {
+        target_yaw = atan2(path_pose.pose.position.y - path.poses[i-1].pose.position.y, path_pose.pose.position.x - path.poses[i-1].pose.position.x);
+      }
       path_pose_q_tf.setRPY(0.0,0.0,target_yaw);
       path_pose_q_msg = tf2::toMsg(path_pose_q_tf);
       path_pose.pose.orientation = path_pose_q_msg;
@@ -414,6 +457,17 @@ void LeaveElevatorPath(geometry_msgs::PoseStamped &input_pose , nav_msgs::Path &
 }
 //--------------------------------------------------------------------
 
+void StatusCheckCallService(ros::ServiceClient &client,campusrover_msgs::ElevatorStatusChecker &srv)
+{
+  string str = "===========path generater status check============= " ;
+  cout << "Request massage: \n" << srv.request;
+  while (!client.call(srv))
+  {
+    ROS_ERROR("path generater status check : Failed to call service");
+    ros::Duration(1.0).sleep();
+  }
+}
+//-----------------------------------------------------------------------------------------------
 int main(int argc, char **argv)
 {
   ros::init(argc, argv, "elevator_path_generater");
@@ -426,6 +480,8 @@ int main(int argc, char **argv)
   elevator_pose_sub_ = nh.subscribe("elevator_poses", 10, PoseCallback);
 
   path_pub_ = nh.advertise<nav_msgs::Path> ("elevator_path", 10);
+
+  status_check_client_ = nh.serviceClient<campusrover_msgs::ElevatorStatusChecker>("elevator_status_checker");
 
   ros::spin();
 

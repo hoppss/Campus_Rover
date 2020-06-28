@@ -210,6 +210,10 @@ bool ArmServiceCallback(campusrover_msgs::ArmAction::Request  &req, campusrover_
     success = (move_group.setNamedTarget("standby_pose") == moveit::planning_interface::MoveItErrorCode::SUCCESS);
     move_group.move();
 
+    status_msg.request.node_name.data = "arm";
+    status_msg.request.status.data = true;
+    StatusCheckCallService(status_check_client_, status_msg);
+
     ros::Duration(1.0).sleep();
     cout << "move to release_pose " << endl;
     move_group.setMaxVelocityScalingFactor(1.0);
@@ -217,9 +221,7 @@ bool ArmServiceCallback(campusrover_msgs::ArmAction::Request  &req, campusrover_
     move_group.move();
 
     
-    status_msg.request.node_name.data = "arm";
-    status_msg.request.status.data = true;
-    StatusCheckCallService(status_check_client_, status_msg);
+    
     cout << "done" << endl;
     return true;
     

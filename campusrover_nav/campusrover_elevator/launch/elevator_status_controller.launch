@@ -1,6 +1,6 @@
 <launch>
     <arg name="debug"               default="false"/>
-    <arg name="bag_filename"        default="$(env HOME)/bags/campusrover_bag/20200529_elevator_1.bag"/>
+    <arg name="bag_filename"        default="$(env HOME)/bags/campusrover_bag/20200629_ele_enter_and_leave_1.bag"/>
     <!-- /////////////////////////////////////////////////////////////////////////////////// -->
     <group if="$(arg debug)">
 
@@ -47,9 +47,9 @@
 
     </node>
 
-    <node pkg="campusrover_elevator" type="elevator_status_controller" name="elevator_status_controller" output="screen">
+    <node pkg="campusrover_elevator" type="elevator_status_controller" name="elevator_status_controller" output="screen"/>
         <!-- ... -->
-    </node>
+    <!-- </node> -->
 
     <!-- elevator door status -->
     <include file="$(find campusrover_elevator)/launch/elevator_door_status.launch" />

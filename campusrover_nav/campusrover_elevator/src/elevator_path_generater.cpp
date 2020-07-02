@@ -56,6 +56,7 @@ double outside_standby_pose_yaw_;
 
 double enter_path_1_dis_;
 double enter_path_2_dis_;
+double enter_pose_yaw_;
 
 double inside_button_pose_x_1_;
 double inside_button_pose_y_1_;
@@ -71,6 +72,7 @@ double inside_standby_pose_yaw_;
 
 double leave_path_1_dis_;
 double leave_path_2_dis_;
+double leave_pose_yaw_;
 
 int control_status_ ;
 
@@ -114,6 +116,7 @@ void get_parameters(ros::NodeHandle n_private)
   //EnterElevatorPath step 5
   n_private.param<double>("enter_path_1_dis", enter_path_1_dis_, 3.0);
   n_private.param<double>("enter_path_2_dis", enter_path_2_dis_, 0.8);
+  n_private.param<double>("enter_pose_yaw", enter_pose_yaw_, -1.57);
 
   //MoveToBtnPath_Inside step 6
   n_private.param<double>("inside_button_pose_x_1", inside_button_pose_x_1_, 1.0);
@@ -132,6 +135,7 @@ void get_parameters(ros::NodeHandle n_private)
   //LeaveElevatorPath step 7
   n_private.param<double>("leave_path_1_dis", leave_path_1_dis_, 0.8);
   n_private.param<double>("leave_path_2_dis", leave_path_2_dis_, 1.5);
+  n_private.param<double>("leave_pose_yaw", leave_pose_yaw_, 0.0);
 }
 
 void PoseCallback(const geometry_msgs::PoseArrayConstPtr &elevator_poses)
@@ -430,7 +434,15 @@ void EnterElevatorPath(geometry_msgs::PoseStamped &input_pose , nav_msgs::Path &
       path_pose.pose.position.x += s_x;
       path_pose.pose.position.y += s_y;
 
-      target_yaw = atan2(path_pose.pose.position.y - path.poses[i-1].pose.position.y, path_pose.pose.position.x - path.poses[i-1].pose.position.x);
+      
+      if(i >= step_count-1)
+      {
+        target_yaw = enter_pose_yaw_ + avg_yaw;
+      }
+      else
+      {
+        target_yaw = atan2(path_pose.pose.position.y - path.poses[i-1].pose.position.y, path_pose.pose.position.x - path.poses[i-1].pose.position.x);
+      }
       path_pose_q_tf.setRPY(0.0,0.0,target_yaw);
       path_pose_q_msg = tf2::toMsg(path_pose_q_tf);
       path_pose.pose.orientation = path_pose_q_msg;
@@ -443,16 +455,211 @@ void EnterElevatorPath(geometry_msgs::PoseStamped &input_pose , nav_msgs::Path &
 //--------------------------------------------------------------------
 void MoveToBtnPath_Inside(geometry_msgs::PoseStamped &input_pose , nav_msgs::Path &path, double &yaw)
 {
+  static geometry_msgs::Point x1_point;
+  static geometry_msgs::Point x2_point;
+  static geometry_msgs::PoseStamped path_pose ;
+  static tf2::Quaternion path_pose_q_tf;
+  static geometry_msgs::Quaternion path_pose_q_msg;
+  static double target_yaw;
+
+  x1_point.x = input_pose.pose.position.x + inside_button_pose_x_1_*cos(yaw) - inside_button_pose_y_1_*sin(yaw);
+  x1_point.y = input_pose.pose.position.y + inside_button_pose_x_1_*sin(yaw) + inside_button_pose_y_1_*cos(yaw);
+
+  x2_point.x = input_pose.pose.position.x + inside_button_pose_x_2_*cos(yaw) - inside_button_pose_y_2_*sin(yaw);
+  x2_point.y = input_pose.pose.position.y + inside_button_pose_x_2_*sin(yaw) + inside_button_pose_y_2_*cos(yaw);
+
+  int step_count = int (sqrt(pow(x1_point.x - x2_point.x,2) + pow(x1_point.y - x2_point.y, 2))/path_resolution_);
+  double s_x = double ((x2_point.x - x1_point.x)/step_count);
+  double s_y = double ((x2_point.y - x1_point.y)/step_count);
+
+  path_pose.header.frame_id = path_frame_;
+  path.header.frame_id = path_frame_;
+  for(int i = 0;i < step_count;i++)
+  {
+    if(i ==0)
+    {
+      path_pose.pose.position.x = x1_point.x;
+      path_pose.pose.position.y = x1_point.y;
+    }
+    else
+    {
+      path_pose.pose.position.x += s_x;
+      path_pose.pose.position.y += s_y;
+
+      if(i >= step_count-1)
+      {
+        target_yaw = inside_button_pose_yaw_ + yaw;
+      }
+      else
+      {
+        target_yaw = atan2(path_pose.pose.position.y - path.poses[i-1].pose.position.y, path_pose.pose.position.x - path.poses[i-1].pose.position.x);
+      }
+      
+      path_pose_q_tf.setRPY(0.0,0.0,target_yaw);
+      path_pose_q_msg = tf2::toMsg(path_pose_q_tf);
+      path_pose.pose.orientation = path_pose_q_msg;
+
+    }
+    path.poses.push_back(path_pose);
+    
+  }
+  
 
 }
 //--------------------------------------------------------------------
 void MoveToStandbyPositionPath_Inside(geometry_msgs::PoseStamped &input_pose , nav_msgs::Path &path, double &yaw)
 {
+  static geometry_msgs::Point x1_point;
+  static geometry_msgs::Point x2_point;
+  static geometry_msgs::PoseStamped path_pose ;
+  static tf2::Quaternion path_pose_q_tf;
+  static geometry_msgs::Quaternion path_pose_q_msg;
+  static double target_yaw;
+
+  x1_point.x = input_pose.pose.position.x + inside_standby_pose_x_1_*cos(yaw ) - inside_standby_pose_y_1_*sin(yaw );
+  x1_point.y = input_pose.pose.position.y + inside_standby_pose_x_1_*sin(yaw ) + inside_standby_pose_y_1_*cos(yaw );
+
+  x2_point.x = input_pose.pose.position.x + inside_standby_pose_x_2_*cos(yaw ) - inside_standby_pose_y_2_*sin(yaw );
+  x2_point.y = input_pose.pose.position.y + inside_standby_pose_x_2_*sin(yaw ) + inside_standby_pose_y_2_*cos(yaw );
+
+  int step_count = int (sqrt(pow(x1_point.x - x2_point.x,2) + pow(x1_point.y - x2_point.y, 2))/path_resolution_);
+  double s_x = double ((x2_point.x - x1_point.x)/step_count);
+  double s_y = double ((x2_point.y - x1_point.y)/step_count);
+
+  path_pose.header.frame_id = path_frame_;
+  path.header.frame_id = path_frame_;
+  for(int i = 0;i < step_count;i++)
+  {
+    if(i ==0)
+    {
+      path_pose.pose.position.x = x1_point.x;
+      path_pose.pose.position.y = x1_point.y;
+    }
+    else
+    {
+      path_pose.pose.position.x += s_x;
+      path_pose.pose.position.y += s_y;
+
+      if(i >= step_count-1)
+      {
+        target_yaw = inside_standby_pose_yaw_ + yaw;
+      }
+      else
+      {
+        target_yaw = atan2(path_pose.pose.position.y - path.poses[i-1].pose.position.y, path_pose.pose.position.x - path.poses[i-1].pose.position.x);
+      }
+      path_pose_q_tf.setRPY(0.0,0.0,target_yaw);
+      path_pose_q_msg = tf2::toMsg(path_pose_q_tf);
+      path_pose.pose.orientation = path_pose_q_msg;
+
+    }
+    path.poses.push_back(path_pose);
+    
+  }
 
 }
 //--------------------------------------------------------------------
 void LeaveElevatorPath(geometry_msgs::PoseStamped &input_pose , nav_msgs::Path &path, double &yaw)
 {
+
+  static std::vector<geometry_msgs::PoseStamped> avg_poses ;
+  static geometry_msgs::Point x1_point;
+  static geometry_msgs::Point x2_point;
+  static int poses_count = 0;
+  static tf2::Quaternion path_pose_q_tf;
+  static geometry_msgs::Quaternion path_pose_q_msg;
+  static geometry_msgs::PoseStamped path_pose ;
+  static double target_yaw;
+  double roll2, pitch2, yaw2;
+  double sum_x=0,sum_y=0,sum_yaw=0;
+  double avg_x=0,avg_y=0,avg_yaw=0;
+
+  if(avg_poses.size() >= avg_pose_size_)
+  {    
+    for(int i = 0;i < avg_poses.size();i++)
+    {
+      sum_x += avg_poses[i].pose.position.x;
+      sum_y += avg_poses[i].pose.position.y;
+
+      tf::Quaternion q2( avg_poses[i].pose.orientation.x,
+                        avg_poses[i].pose.orientation.y,
+                        avg_poses[i].pose.orientation.z,
+                        avg_poses[i].pose.orientation.w);
+      tf::Matrix3x3 m2(q2);
+  
+      m2.getRPY(roll2, pitch2, yaw2);
+
+      sum_yaw += yaw2;
+    }
+    avg_x = sum_x/avg_poses.size();
+    avg_y = sum_y/avg_poses.size();
+    avg_yaw = sum_yaw/avg_poses.size();
+    //std::cout << " dis "  <<sqrt(pow(avg_x -input_pose.pose.position.x,2)+pow(avg_y-input_pose.pose.position.y,2))<<'\n';
+    //std::cout << " avg_yaw "  <<avg_yaw<< " yaw "  <<yaw<<'\n';
+    if(sqrt(pow(avg_x -input_pose.pose.position.x,2)+pow(avg_y-input_pose.pose.position.y,2))< pose_range_threshold_)
+    {
+      if(abs(avg_yaw - yaw) < pose_yaw_threshold_)
+      {
+        avg_poses[poses_count]=input_pose ;
+        poses_count++;
+        if(poses_count > avg_pose_size_-1)
+        {
+          poses_count =0;
+        }
+      }
+      
+    }
+    
+  }else
+  {
+    avg_poses.push_back(input_pose) ;
+    return;
+  }
+  
+  // std::cout << " size "  <<avg_poses.size()<< " sum_x "  <<sum_x<< " sum_y "  <<sum_x<<'\n';
+
+  
+  x1_point.x = avg_x + leave_path_1_dis_*cos(avg_yaw-M_PI);
+  x1_point.y = avg_y + leave_path_1_dis_*sin(avg_yaw-M_PI);
+
+  x2_point.x = avg_x + leave_path_2_dis_*cos(avg_yaw);
+  x2_point.y = avg_y + leave_path_2_dis_*sin(avg_yaw);
+
+  int step_count = int (sqrt(pow(x1_point.x - x2_point.x,2) + pow(x1_point.y - x2_point.y, 2))/path_resolution_);
+  double s_x = double ((x2_point.x - x1_point.x)/step_count);
+  double s_y = double ((x2_point.y - x1_point.y)/step_count);
+
+  path_pose.header.frame_id = path_frame_;
+  path.header.frame_id = path_frame_;
+  for(int i = 0;i < step_count;i++)
+  {
+    if(i ==0)
+    {
+      path_pose.pose.position.x = x1_point.x;
+      path_pose.pose.position.y = x1_point.y;
+    }
+    else
+    {
+      path_pose.pose.position.x += s_x;
+      path_pose.pose.position.y += s_y;
+
+      
+      if(i >= step_count-1)
+      {
+        target_yaw = enter_pose_yaw_ + avg_yaw;
+      }
+      else
+      {
+        target_yaw = atan2(path_pose.pose.position.y - path.poses[i-1].pose.position.y, path_pose.pose.position.x - path.poses[i-1].pose.position.x);
+      }
+      path_pose_q_tf.setRPY(0.0,0.0,target_yaw);
+      path_pose_q_msg = tf2::toMsg(path_pose_q_tf);
+      path_pose.pose.orientation = path_pose_q_msg;
+
+    }
+    path.poses.push_back(path_pose);
+    
+  }
   
 }
 //--------------------------------------------------------------------

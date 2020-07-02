@@ -9,7 +9,6 @@
         /encoder_data
         /scan
         /velodyne_points
-        /wheel_odom
         /xsens_imu_odom/imu/data
         /xsens_imu_odom/imu/mag
         /xsens_imu_odom/imu_data_str

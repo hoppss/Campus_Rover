@@ -15,11 +15,13 @@
 
 #include <campusrover_msgs/ArmAction.h>
 #include <campusrover_msgs/PressButton.h>
-#include <campusrover_msgs/ElevatorStatusChecker.h>
+#include <campusrover_msgs/ElevatorStatusChecker.h> 
+#include <campusrover_msgs/ArmStandby.h> 
+#include <dynamixel_controllers/SetComplianceSlope.h>
 
 using namespace std;
 
-ros::ServiceClient button_srv_client_, status_check_client_;
+ros::ServiceClient button_srv_client_, status_check_client_, joint_1_slope_client_, joint_2_slope_client_, joint_3_slope_client_;
 
 ros::Subscriber pose_sub_;
 geometry_msgs::PoseStamped pose_;
@@ -42,12 +44,14 @@ double shift_z_;
 
 bool allow_replanning_;
 bool Visualization_;
-bool arm_execution_done_=false;
+bool arm_execution_done_= false;
+bool standby_pose_ready_ = false;
 
 void initialization();
 void ButtonPoseCallback(geometry_msgs::Pose Pose);
 void BtnCallService(ros::ServiceClient &client,campusrover_msgs::PressButton &srv);
 void StatusCheckCallService(ros::ServiceClient &client,campusrover_msgs::ElevatorStatusChecker &srv);
+void SetComplianceSlopeCallService(ros::ServiceClient &client,dynamixel_controllers::SetComplianceSlope &srv);
 
 void get_parameters(ros::NodeHandle n_private)
 {
@@ -77,6 +81,7 @@ void initialization()
 bool ArmServiceCallback(campusrover_msgs::ArmAction::Request  &req, campusrover_msgs::ArmAction::Response &res)
 {
     static campusrover_msgs::ElevatorStatusChecker status_msg;
+    static dynamixel_controllers::SetComplianceSlope slope_msg;
 
     pose_ = req.button_pose;
     cout << "recrvie pose : " <<pose_<< endl;
@@ -91,6 +96,11 @@ bool ArmServiceCallback(campusrover_msgs::ArmAction::Request  &req, campusrover_
     move_group.setPlanningTime(planning_time_);
     move_group.setNumPlanningAttempts(num_planning_attempts_);
     move_group.allowReplanning(allow_replanning_);
+
+    slope_msg.request.slope = 35;
+    SetComplianceSlopeCallService(joint_1_slope_client_, slope_msg);
+    SetComplianceSlopeCallService(joint_2_slope_client_, slope_msg);
+    SetComplianceSlopeCallService(joint_3_slope_client_, slope_msg);
     
     cout << "GoalJointTolerance : " <<move_group.getGoalJointTolerance()<< endl;
     cout << "GoalPositionTolerance : " <<move_group.getGoalPositionTolerance()<< endl;
@@ -111,10 +121,15 @@ bool ArmServiceCallback(campusrover_msgs::ArmAction::Request  &req, campusrover_
 
     //move to standby_pose//
     bool success;
-    cout << "move to standby_pose" << endl;
-    move_group.setMaxVelocityScalingFactor(1.0);
-    success = (move_group.setNamedTarget(standby_pose_name_) == moveit::planning_interface::MoveItErrorCode::SUCCESS);
-    move_group.move();
+    if(!standby_pose_ready_)
+    {
+      cout << "move to standby_pose" << endl;
+      move_group.setMaxVelocityScalingFactor(1.0);
+      success = (move_group.setNamedTarget(standby_pose_name_) == moveit::planning_interface::MoveItErrorCode::SUCCESS);
+      move_group.move();
+      standby_pose_ready_ = true;
+    }
+
 
     //ros::Duration(1.0).sleep();
     //move_group.clearPoseTarget();
@@ -167,7 +182,7 @@ bool ArmServiceCallback(campusrover_msgs::ArmAction::Request  &req, campusrover_
     move_group.setPoseTarget(target_pose);
     success = (move_group.plan(plan) == moveit::planning_interface::MoveItErrorCode::SUCCESS);
     move_group.move();
-    ros::Duration(1.0).sleep();
+    ros::Duration(0.5).sleep();
 
     static std::vector<geometry_msgs::Pose> waypoints;
     waypoints.clear();
@@ -187,7 +202,7 @@ bool ArmServiceCallback(campusrover_msgs::ArmAction::Request  &req, campusrover_
     // Cartesian motions are frequently needed to be slower for actions such as approach and retreat
     // grasp motions. Here we demonstrate how to reduce the speed of the robot arm via a scaling factor
     // of the maxiumum speed of each joint. Note this is not the speed of the end effector point.
-    move_group.setMaxVelocityScalingFactor(0.1);
+    move_group.setMaxVelocityScalingFactor(1.0);
 
     static moveit_msgs::RobotTrajectory trajectory;
     double fraction = move_group.computeCartesianPath(waypoints, eef_step_, jump_threshold_, trajectory);
@@ -204,23 +219,29 @@ bool ArmServiceCallback(campusrover_msgs::ArmAction::Request  &req, campusrover_
     plan.trajectory_ = trajectory;
     move_group.execute(plan);
 
-    ros::Duration(1.0).sleep();
-    cout << "move to standby_pose  " << endl;
-    move_group.setMaxVelocityScalingFactor(1.0);
-    success = (move_group.setNamedTarget("standby_pose") == moveit::planning_interface::MoveItErrorCode::SUCCESS);
-    move_group.move();
+    ros::Duration(0.5).sleep();
+
+    slope_msg.request.slope = 70;
+    SetComplianceSlopeCallService(joint_1_slope_client_, slope_msg);
+    SetComplianceSlopeCallService(joint_2_slope_client_, slope_msg);
+    SetComplianceSlopeCallService(joint_3_slope_client_, slope_msg);
 
     status_msg.request.node_name.data = "arm";
     status_msg.request.status.data = true;
     StatusCheckCallService(status_check_client_, status_msg);
 
-    ros::Duration(1.0).sleep();
+    cout << "move to standby_pose  " << endl;
+    move_group.setMaxVelocityScalingFactor(1.0);
+    success = (move_group.setNamedTarget("standby_pose") == moveit::planning_interface::MoveItErrorCode::SUCCESS);
+    move_group.move();
+
+    ros::Duration(0.5).sleep();
     cout << "move to release_pose " << endl;
     move_group.setMaxVelocityScalingFactor(1.0);
     success = (move_group.setNamedTarget(release_pose_name_) == moveit::planning_interface::MoveItErrorCode::SUCCESS);
     move_group.move();
 
-    
+    standby_pose_ready_ = false;
     
     cout << "done" << endl;
     return true;
@@ -232,9 +253,40 @@ bool ButtonServiceCallback(campusrover_msgs::PressButton::Request  &req, campusr
     static campusrover_msgs::PressButton button_srv;
     button_srv.request.button_type = req.button_type;
     BtnCallService(button_srv_client_,button_srv);
+
     
     //
     return true;
+
+}
+//----------------------------------------------------------------------------------------------------------------------
+bool MoveToStandbyPoseServiceCallback(campusrover_msgs::ArmStandby::Request  &req, campusrover_msgs::ArmStandby::Response &res)
+{
+  static dynamixel_controllers::SetComplianceSlope slope_msg;
+  static moveit::planning_interface::MoveGroupInterface standby_pose_move_group(planning_group_name_);
+  
+  standby_pose_move_group.setGoalOrientationTolerance(0.3); 
+  standby_pose_move_group.setGoalJointTolerance(0.01);
+  standby_pose_move_group.setGoalPositionTolerance(0.01);
+  standby_pose_move_group.setMaxVelocityScalingFactor(1.0);
+  standby_pose_move_group.setMaxAccelerationScalingFactor(1.0);
+  standby_pose_move_group.setPlanningTime(planning_time_);
+  standby_pose_move_group.setNumPlanningAttempts(num_planning_attempts_);
+  standby_pose_move_group.allowReplanning(allow_replanning_);
+
+  slope_msg.request.slope = 35;
+  SetComplianceSlopeCallService(joint_1_slope_client_, slope_msg);
+  SetComplianceSlopeCallService(joint_2_slope_client_, slope_msg);
+  SetComplianceSlopeCallService(joint_3_slope_client_, slope_msg);
+
+  cout << "move to standby_pose" << endl;
+  bool success = (standby_pose_move_group.setNamedTarget(standby_pose_name_) == moveit::planning_interface::MoveItErrorCode::SUCCESS);
+  standby_pose_move_group.move();
+  
+  standby_pose_ready_ = success;
+  
+  //
+  return success;
 
 }
 //----------------------------------------------------------------------------------------------------------------------
@@ -259,6 +311,17 @@ void StatusCheckCallService(ros::ServiceClient &client,campusrover_msgs::Elevato
     ros::Duration(1.0).sleep();
   }
 }
+//-----------------------------------------------------------------------------------------------
+void SetComplianceSlopeCallService(ros::ServiceClient &client,dynamixel_controllers::SetComplianceSlope &srv)
+{
+  string str = "===========set slope============= " ;
+  cout << "Request massage: \n" << srv.request;
+  while (!client.call(srv))
+  {
+    ROS_ERROR("joint set slope : Failed to call service");
+    ros::Duration(1.0).sleep();
+  }
+}
 
 int main(int argc, char **argv)
 {
@@ -270,8 +333,15 @@ int main(int argc, char **argv)
     //pose_sub_ = n.subscribe("/button_pose", 1, ButtonPoseCallback);
     ros::ServiceServer arm_service = n.advertiseService("arm_action", ArmServiceCallback);
     ros::ServiceServer button_service = n.advertiseService("button_press", ButtonServiceCallback);
+    ros::ServiceServer arm_move_to_standby_pose_button_service = n.advertiseService("arm_move_to_standby_pose", MoveToStandbyPoseServiceCallback);
+
     button_srv_client_ = n.serviceClient<campusrover_msgs::PressButton>("button_info");
     status_check_client_ = n.serviceClient<campusrover_msgs::ElevatorStatusChecker>("elevator_status_checker");
+
+    joint_1_slope_client_ = n.serviceClient<dynamixel_controllers::SetComplianceSlope>("/joint_1/set_compliance_slope");
+    joint_2_slope_client_ = n.serviceClient<dynamixel_controllers::SetComplianceSlope>("/joint_2/set_compliance_slope");
+    joint_3_slope_client_ = n.serviceClient<dynamixel_controllers::SetComplianceSlope>("/joint_3/set_compliance_slope");
+
     spinner.start();
     ros::waitForShutdown();
     return 0;

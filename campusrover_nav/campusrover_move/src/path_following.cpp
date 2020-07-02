@@ -42,6 +42,10 @@ nav_msgs::OccupancyGrid costmap_data_;
 geometry_msgs::Pose robot_tf_pose_;
 geometry_msgs::PoseArray obstacle_poses_;
 
+campusrover_msgs::ElevatorStatusChecker status_checker_msg_;
+
+
+
 string robot_frame_;
 int status_msg_;
 double arriving_range_dis_;
@@ -105,6 +109,7 @@ void UpdateCampusRoverPoseFromTF()
   static tf2_ros::TransformListener tfListener(tfBuffer);
   static geometry_msgs::TransformStamped transformStamped;
   static double roll, pitch, yaw;
+  static double pre_yaw;
 
   try
   {
@@ -132,14 +137,14 @@ void UpdateCampusRoverPoseFromTF()
   m.getRPY(roll, pitch, yaw);
   if(!direction_inverse_)
   {
-    robot_yaw_ = yaw;
+    pre_yaw = yaw;
   }
   else
   {
-    robot_yaw_ = yaw+M_PI;
-    angle_normalize(robot_yaw_);
+    pre_yaw = yaw+M_PI;
+    angle_normalize(pre_yaw);
   }
-  
+  robot_yaw_ = pre_yaw;
   
 }
 //-----------------------------------------------------------------------------------------------
@@ -160,8 +165,6 @@ void check_arrive_point()
 //-----------------------------------------------------------------------------------------------
 void check_arrive_direction()
 {
-  static campusrover_msgs::ElevatorStatusChecker status_msg;
-  static string status_name = "planner";
   static double angle_error;
   static double roll, pitch, yaw;
   
@@ -173,11 +176,10 @@ void check_arrive_direction()
 
   if(abs(angle_error) < arriving_range_angle_)
   {
-    ros::Duration(0.5).sleep();
     arriving_end_direction_ = true;
-    status_msg.request.node_name.data = status_name;
-    status_msg.request.status.data = arriving_end_direction_;
-    StatusCheckCallService(status_check_client_, status_msg);
+    status_checker_msg_.request.node_name.data = "planner";
+    status_checker_msg_.request.status.data = arriving_end_direction_;
+    StatusCheckCallService(status_check_client_, status_checker_msg_);
   }else{
     arriving_end_direction_ = false;
   }
@@ -201,9 +203,10 @@ void TimerCallback(const ros::TimerEvent &event)
     {
       if (get_costmap_data_ || !enble_costmap_obstacle_)
       {
+        UpdateCampusRoverPoseFromTF();
         if(!arriving_end_direction_)
         {
-          UpdateCampusRoverPoseFromTF();
+          
           if(!arriving_end_point_)
           {
             moving_to_target_point();
@@ -219,6 +222,7 @@ void TimerCallback(const ros::TimerEvent &event)
         {
           status_msg_ = 4;
           TwistPublish(0.0, 0.0);
+          
         }
       }
       else
@@ -331,33 +335,27 @@ void moving_to_target_point()
   static double yaw_error;
   static double ang_vel;
   static double len_vel;
-  double move_robot_yaw;
 
 
   direction_yaw = atan2(target_pose.pose.position.y - robot_tf_pose_.position.y, target_pose.pose.position.x - robot_tf_pose_.position.x);
   
+  yaw_error = direction_yaw - robot_yaw_;
+  angle_normalize(yaw_error);
 
-  if(!direction_inverse_)
+  ang_vel = yaw_error*speed_ki_;
+
+  if(direction_inverse_)
   {
-    yaw_error = direction_yaw - robot_yaw_;
-    ang_vel = yaw_error*speed_ki_;
-    len_vel = max_linear_velocity_;
+    len_vel = -max_linear_velocity_;
   }
   else
   {
-    // move_robot_yaw = robot_yaw_ - M_PI;
-    
-    // angle_normalize(move_robot_yaw);
-
-    yaw_error = direction_yaw - robot_yaw_;
-
-    angle_normalize(yaw_error);
-
-    ang_vel = yaw_error*speed_ki_;
-    len_vel = -max_linear_velocity_;
-    
+    len_vel = max_linear_velocity_;
   }
-  cout<< "direction_yaw : " <<direction_yaw<<" robot_yaw_"<<robot_yaw_ <<" move_robot_yaw"<<move_robot_yaw <<" yaw_error"<<yaw_error<<endl;
+  
+  
+  
+  //cout<< "direction_yaw : " <<direction_yaw<<" robot_yaw_"<<robot_yaw_ <<" robot_direction_yaw"<<robot_direction_yaw <<" yaw_error"<<yaw_error<<endl;
   
   
   TwistPublish(len_vel, ang_vel);
@@ -365,31 +363,15 @@ void moving_to_target_point()
 //-----------------------------------------------------------------------------------------------
 void moving_to_target_direction()
 {
-  static double direction_yaw;
   static double yaw_error;
   static double ang_vel;
 
+  yaw_error = target_yaw_ - robot_yaw_;
+  angle_normalize(yaw_error);
 
-  if(!direction_inverse_)
-  {
-    yaw_error = target_yaw_ - robot_yaw_;
-    angle_normalize(yaw_error);
-
-    ang_vel = yaw_error*speed_ki_;
-  }
-  else
-  {
-    // robot_yaw_ = robot_yaw_ - M_PI;
-    
-    // angle_normalize(robot_yaw_);
-
-    yaw_error = target_yaw_ - robot_yaw_;
-
-    angle_normalize(yaw_error);
-
-    ang_vel = yaw_error*speed_ki_;
-    
-  }
+  ang_vel = yaw_error*speed_ki_;
+  
+  
 
   TwistPublish(0.0, ang_vel);
 }
@@ -398,14 +380,19 @@ void TwistPublish(double x, double z)
 {
   static geometry_msgs::Twist pub_twist;
 
-  if(abs(z) > max_angular_velocity_)
+  if(z > max_angular_velocity_)
   {
     pub_twist.angular.z =max_angular_velocity_;
+  }
+  else if(z < -max_angular_velocity_)
+  {
+    pub_twist.angular.z = -max_angular_velocity_;
   }
   else
   {
     pub_twist.angular.z = z;
   }
+  
 
     pub_twist.linear.x = x;
     
@@ -561,7 +548,7 @@ void CostmapCallback(const nav_msgs::OccupancyGridConstPtr &map)
 //-----------------------------------------------------------------------------------------------
 bool ServiceCallback(campusrover_msgs::PlannerFunction::Request  &req, campusrover_msgs::PlannerFunction::Response &res)
 {
-  ros::Duration(1.0).sleep();
+  //ros::Duration(1.0).sleep();
   action_flag_ = req.action.data;
   direction_inverse_ = req.direction_inverse.data;
   max_linear_velocity_ = req.speed_parameter.linear.x;

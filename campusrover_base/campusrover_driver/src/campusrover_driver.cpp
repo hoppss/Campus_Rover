@@ -85,6 +85,9 @@ private:
 
   std::string odom_frame_, base_frame_;
 
+  bool pub_wheel_odom_;
+  bool pub_wheel_odom_tf_;
+
   int control_rate_, sensor_rate_;
 
   double maximum_encoding_;
@@ -303,36 +306,44 @@ void ChassisDriver::handle_speed_msg(uint8_t* buffer_data){
     accumulation_y_ += (sin(accumulation_th_) * delta_x + cos(accumulation_th_) * delta_y);
     accumulation_th_ += delta_theta;
 
-    transformStamped_.header.stamp = ros::Time::now();
-    transformStamped_.header.frame_id = odom_frame_;
-    transformStamped_.child_frame_id = base_frame_;
-    transformStamped_.transform.translation.x = accumulation_x_;
-    transformStamped_.transform.translation.y = accumulation_y_;
-    transformStamped_.transform.translation.z = 0.0;
     tf2::Quaternion q;
-    q.setRPY(0, 0, accumulation_th_);
-    transformStamped_.transform.rotation.x = q.x();
-    transformStamped_.transform.rotation.y = q.y();
-    transformStamped_.transform.rotation.z = q.z();
-    transformStamped_.transform.rotation.w = q.w();
 
-    br_.sendTransform(transformStamped_);
+    if(pub_wheel_odom_tf_)
+    {
+      transformStamped_.header.stamp = ros::Time::now();
+      transformStamped_.header.frame_id = odom_frame_;
+      transformStamped_.child_frame_id = base_frame_;
+      transformStamped_.transform.translation.x = accumulation_x_;
+      transformStamped_.transform.translation.y = accumulation_y_;
+      transformStamped_.transform.translation.z = 0.0;
+      q.setRPY(0, 0, accumulation_th_);
+      transformStamped_.transform.rotation.x = q.x();
+      transformStamped_.transform.rotation.y = q.y();
+      transformStamped_.transform.rotation.z = q.z();
+      transformStamped_.transform.rotation.w = q.w();
 
-    odom_.header.frame_id = odom_frame_;
-    odom_.child_frame_id = base_frame_;
-    odom_.header.stamp = now_;
-    odom_.pose.pose.position.x = accumulation_x_;
-    odom_.pose.pose.position.y = accumulation_y_;
-    odom_.pose.pose.position.z = 0;
-    odom_.pose.pose.orientation.x = q.getX();
-    odom_.pose.pose.orientation.y = q.getY();
-    odom_.pose.pose.orientation.z = q.getZ();
-    odom_.pose.pose.orientation.w = q.getW();
-    odom_.twist.twist.linear.x = v_dis;
-    odom_.twist.twist.linear.y = 0;
-    odom_.twist.twist.angular.z = v_theta;
+      br_.sendTransform(transformStamped_);
+    }
 
-    odom_pub_.publish(odom_);
+    
+    if(pub_wheel_odom_)
+    {
+      odom_.header.frame_id = odom_frame_;
+      odom_.child_frame_id = base_frame_;
+      odom_.header.stamp = now_;
+      odom_.pose.pose.position.x = accumulation_x_;
+      odom_.pose.pose.position.y = accumulation_y_;
+      odom_.pose.pose.position.z = 0;
+      odom_.pose.pose.orientation.x = q.getX();
+      odom_.pose.pose.orientation.y = q.getY();
+      odom_.pose.pose.orientation.z = q.getZ();
+      odom_.pose.pose.orientation.w = q.getW();
+      odom_.twist.twist.linear.x = v_dis;
+      odom_.twist.twist.linear.y = 0;
+      odom_.twist.twist.angular.z = v_theta;
+
+      odom_pub_.publish(odom_);
+    }
 
     ROS_DEBUG_STREAM("accumulation_x: " << accumulation_x_ << "; accumulation_y: " << accumulation_y_ <<"; accumulation_th: " << accumulation_th_);
   }
@@ -434,6 +445,9 @@ void ChassisDriver::run(){
   private_node.param<std::string>("port_name", port_name_, std::string("/dev/ttyUSB0"));
   private_node.param<std::string>("odom_frame", odom_frame_, std::string("odom"));
   private_node.param<std::string>("base_frame", base_frame_, std::string("base_link"));
+
+  private_node.param<bool>("pub_wheel_odom", pub_wheel_odom_, false);
+  private_node.param<bool>("pub_wheel_odom_tf", pub_wheel_odom_tf_, false);
 
   private_node.param<int>("baud_rate", baud_rate_, 115200);
   private_node.param<int>("control_rate", control_rate_, 10);

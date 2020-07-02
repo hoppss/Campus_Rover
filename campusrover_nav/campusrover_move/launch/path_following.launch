@@ -29,7 +29,7 @@
         <remap from="cmd_vel"    to="$(arg cmd_vel)" />
         <param name="robot_frame" value="base_link" />
 
-        <param name="arriving_range_dis" value="0.2" />
+        <param name="arriving_range_dis" value="0.15" />
         <param name="arriving_range_angle" value="0.2" />
         
         <param name="max_linear_velocity" value="0.5" />
@@ -42,7 +42,7 @@
         <param name="footprint_max_y" value="0.01" />
         <param name="footprint_max_y" value="-0.03" />
 
-        <param name="speed_ki" value="0.6" />
+        <param name="speed_ki" value="0.5" />
 
         <param name="enble_costmap_obstacle" value="false" />
         <param name="direction_inverse" value="false" />

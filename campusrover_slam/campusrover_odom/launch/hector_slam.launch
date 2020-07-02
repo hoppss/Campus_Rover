@@ -39,5 +39,11 @@
     <arg name="map_size" value="2048"/>
   </include>
 
+  <!-- <include file="$(find campusrover_odom)/launch/odom_publish.launch">
+    <arg name="debug" value="false" />
+    <arg name="pub_tf" value="true" />
+    
+  </include> -->
+
 
 </launch>

@@ -1,7 +1,7 @@
 <launch>
     <arg name="debug"               default="false"/>
     <arg name="frame" default="ydlidar_link"/>
-    <arg name="bag_filename"        default="$(env HOME)/bags/campusrover_bag/20200529_elevator_1.bag"/>
+    <arg name="bag_filename"        default="$(env HOME)/bags/campusrover_bag/20200629_ele_enter_and_leave_1.bag"/>
     <!-- /////////////////////////////////////////////////////////////////////////////////// -->
     <group if="$(arg debug)">
 
@@ -50,17 +50,33 @@
 
     <node pkg="campusrover_elevator" type="elevator_position_finder" name="elevator_position_finder" output="screen">
         
-        <param name="window_type" value="circular" />
-        <param name="window_size" value="0.15" />
-        <param name="max_scan_range" value="6.0" />
-        <param name="corner_feature_threshold" value="0.0000025" />
-        <param name="enter_elevator_feature_dis_range" value="0.2" />
-        <param name="enter_elevator_feature_d_angle_range" value="0.3" />
+        <param name="max_scan_range" value="2.5" />
+
+        <param name="enter_feature_point_neighborhood_dis" value="0.065" />
+        <param name="enter_break_point_neighborhood_dis" value="0.25" />
+        <param name="enter_window_size" value="0.15" />
+        <param name="enter_corner_feature_threshold" value="0.0000025" />
+
+        <param name="exit_feature_point_neighborhood_dis" value="0.02" />
+        <param name="exit_break_point_neighborhood_dis" value="0.05" />
+        <param name="exit_window_size" value="0.05" />
+        <param name="exit_corner_feature_threshold" value="0.00000005" />
+
+        <param name="elevator_feature_dis_range" value="0.2" />
+        <param name="elevator_feature_d_angle_range" value="0.35" />
 
         <param name="elevator_pose_filter" value="true" />
         <param name="filter_range_dis" value="0.2" />
         <param name="filter_range_angle" value="0.2" />
 
-        <param name="status" value="enter" />
+        <param name="enter_door_x1" value="0.34" />
+        <param name="enter_door_y1" value="0.94" />
+        <param name="enter_door_y2" value="0.8" />
+        
+        <param name="exit_door_x1" value="0.085" />
+        <param name="exit_door_y1" value="0.8" />
+        <param name="exit_door_y2" value="0.8" />
+        <param name="elevator_wd" value="0.08" />
+
     </node>
 </launch>

@@ -26,6 +26,7 @@
 #include <campusrover_msgs/PressButton.h> 
 #include <campusrover_msgs/ElevatorControlInterface.h>
 #include <campusrover_msgs/ElevatorStatusChecker.h>
+#include <campusrover_msgs/ArmStandby.h>
 //campus rover msgs
 #include <campusrover_msgs/ElevatorControlStatus.h>
 #include <campusrover_msgs/DoorStatus.h>
@@ -37,7 +38,7 @@ using namespace std;
 
 ros::Subscriber door_status_sub_,floor_status_sub_;
 ros::Publisher control_status_pub_;
-ros::ServiceClient init_floor_srv_client_, button_srv_client_, planner_srv_client_;
+ros::ServiceClient init_floor_srv_client_, button_srv_client_, planner_srv_client_, arm_standby_srv_client_;
 
 geometry_msgs::Twist twist_param_0_, twist_param_1_, twist_param_2_;
 
@@ -55,6 +56,8 @@ bool arrive_target_floor_ = false;
 void InitFloorCallService(ros::ServiceClient &client,campusrover_msgs::InitFloor &srv) ;
 void PressButtonCallService(ros::ServiceClient &client,campusrover_msgs::PressButton &srv) ;
 void PlannerFunctionCallService(ros::ServiceClient &client,campusrover_msgs::PlannerFunction &srv) ;
+void ArmStandybyFunctionCallService(ros::ServiceClient &client,campusrover_msgs::ArmStandby &srv);
+
 //-----------------------------------------------------------------------------------------------
 void get_parameters(ros::NodeHandle n_private)
 {
@@ -77,6 +80,7 @@ void TimerCallback(const ros::TimerEvent &event)
   static campusrover_msgs::PlannerFunction planner_param;
   static campusrover_msgs::InitFloor init_param;
   static campusrover_msgs::PressButton button_param;
+  static campusrover_msgs::ArmStandby arm_standby_msg;;
 
   status.control_status = control_status_;
   control_status_pub_.publish(status);
@@ -94,6 +98,9 @@ void TimerCallback(const ros::TimerEvent &event)
       planner_param.request.direction_inverse.data = false;
       planner_param.request.speed_parameter = twist_param_1_;
       PlannerFunctionCallService(planner_srv_client_, planner_param);
+      //Arm Standby pose 
+      arm_standby_msg.request.status.data = true;
+      ArmStandybyFunctionCallService(arm_standby_srv_client_, arm_standby_msg);
       first_time = false;
     }
   
@@ -151,7 +158,7 @@ void TimerCallback(const ros::TimerEvent &event)
     if(planner_check_done_)
     {
       planner_param.request.action.data = false;
-      planner_param.request.direction_inverse.data = false;
+      planner_param.request.direction_inverse.data = true;
       planner_param.request.speed_parameter = twist_param_0_;
       PlannerFunctionCallService(planner_srv_client_, planner_param);
       planner_check_done_ = false;
@@ -159,6 +166,8 @@ void TimerCallback(const ros::TimerEvent &event)
       first_time = true;
       control_status_++;
     }
+
+    //
     
     
   }else if(control_status_ == 4)// waiting door open
@@ -181,9 +190,9 @@ void TimerCallback(const ros::TimerEvent &event)
         first_time = false;
       }
     }
-    else if(door_status_ == "close")
+    else if(!first_time && door_status_ == "close")
     {
-      planner_param.request.action.data = false;
+      planner_param.request.action.data = true;
       planner_param.request.direction_inverse.data = false;
       planner_param.request.speed_parameter = twist_param_0_;
       PlannerFunctionCallService(planner_srv_client_, planner_param);
@@ -201,7 +210,7 @@ void TimerCallback(const ros::TimerEvent &event)
       planner_check_done_ = false;
       path_generater_check_done_ = false;
       first_time = true;
-      control_status_ = 0;
+      control_status_ =0;
       
     }
     
@@ -220,7 +229,7 @@ void TimerCallback(const ros::TimerEvent &event)
     if(planner_check_done_)
     {
       planner_param.request.action.data = false;
-      planner_param.request.direction_inverse.data = false;
+      planner_param.request.direction_inverse.data = true;
       planner_param.request.speed_parameter = twist_param_0_;
       PlannerFunctionCallService(planner_srv_client_, planner_param);
       planner_check_done_ = false;
@@ -233,6 +242,9 @@ void TimerCallback(const ros::TimerEvent &event)
   {
     if(first_time)
     {
+      //Arm Standby pose 
+      arm_standby_msg.request.status.data = true;
+      ArmStandybyFunctionCallService(arm_standby_srv_client_, arm_standby_msg);
 
       button_param.request.button_type.data = to_string(target_floor_);
       PressButtonCallService(button_srv_client_,button_param);
@@ -376,6 +388,17 @@ void PlannerFunctionCallService(ros::ServiceClient &client,campusrover_msgs::Pla
     ros::Duration(1.0).sleep();
   }
 }
+//-----------------------------------------------------------------------------------------------
+void ArmStandybyFunctionCallService(ros::ServiceClient &client,campusrover_msgs::ArmStandby &srv)
+{
+  string str = "===========arm_move_to_standby_pose function============= " ;
+  cout << "Request massage: \n" << srv.request;
+  while (!client.call(srv))
+  {
+    ROS_ERROR("arm_move_to_standby_pose function : Failed to call service");
+    ros::Duration(1.0).sleep();
+  }
+}
 
 //-----------------------------------------------------------------------------------------------
 bool ControlServiceCallback(campusrover_msgs::ElevatorControlInterface::Request  &req, campusrover_msgs::ElevatorControlInterface::Response &res)
@@ -405,6 +428,9 @@ bool ControlServiceCallback(campusrover_msgs::ElevatorControlInterface::Request 
 //-----------------------------------------------------------------------------------------------
 bool StatusCheckServiceCallback(campusrover_msgs::ElevatorStatusChecker::Request  &req, campusrover_msgs::ElevatorStatusChecker::Response &res)
 {
+  cout << "  ==============" << endl;
+  cout << "  node_name : " <<req.node_name.data<< endl;
+  cout << "  data : " <<req.status.data<< endl;
   if(req.node_name.data == "planner")
   {
     planner_check_done_ = req.status.data;
@@ -445,6 +471,7 @@ int main(int argc, char **argv)
   init_floor_srv_client_ = nh.serviceClient<campusrover_msgs::InitFloor>("init_floor");
   button_srv_client_ = nh.serviceClient<campusrover_msgs::PressButton>("button_press");
   planner_srv_client_ = nh.serviceClient<campusrover_msgs::PlannerFunction>("planner_function");
+  arm_standby_srv_client_ = nh.serviceClient<campusrover_msgs::ArmStandby>("arm_move_to_standby_pose");
 
   ros::ServiceServer control_service = nh.advertiseService("elevator_controller", ControlServiceCallback);
   ros::ServiceServer status_check_service = nh.advertiseService("elevator_status_checker", StatusCheckServiceCallback);

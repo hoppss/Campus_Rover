@@ -31,6 +31,7 @@ add_service_files(
   FILES
   DriveStatus.srv
   ArmAction.srv
+  ArmStandby.srv
   PlannerFunction.srv
   InitFloor.srv
   PressButton.srv

@@ -72,16 +72,24 @@ double feature_point_neighborhood_dis_;
 double break_point_neighborhood_dis_;
 
 bool elevator_pose_filter_;
+bool avg_pose_filter_;
 bool enable_mode_ = false;
 bool enter_done_ = false;
 bool exit_done_ = false;
 
+bool pose_filter_first_time_ = true;
+bool matching_success_;
+
 int sub_mode_;
+
+int avg_pose_size_ ;
 
 std::vector<geometry_msgs::Point> detect_feature_point;
 std::vector<geometry_msgs::Point> enter_elevator_feature;
 std::vector<geometry_msgs::Point> exit_elevator_feature;
 std::vector<geometry_msgs::Point> sample_elevator_feature;
+
+geometry_msgs::PoseArray hold_poses_;
 
 void VisualizeCorner(std::vector<geometry_msgs::Point> points);
 void VisualizeBreakPoint(std::vector<geometry_msgs::Point> points);
@@ -91,13 +99,16 @@ void VisualizeElevatorEnterPoint(std::vector<nav_msgs::Path> paths);
 void initial_elevator_feature();
 void pose_filter(geometry_msgs::PoseArray &poses);
 void FeatureExtract(geometry_msgs::PoseArray &scan_poses);
+void avg_pose(geometry_msgs::Pose &input_pose);
 
 void get_parameters(ros::NodeHandle n_private)
 {
   n_private.param<string>("map_frame", map_frame_, "map");
   n_private.param<string>("window_type", window_type_, "circular");
   n_private.param<bool>("elevator_pose_filter", elevator_pose_filter_, true); 
+  n_private.param<bool>("elevator_avg_pose_filter", avg_pose_filter_, true); 
   n_private.param<double>("max_scan_range", max_scan_range_, 4.0);
+  n_private.param<int>("avg_pose_size", avg_pose_size_, 8.0);
 
   n_private.param<double>("enter_feature_point_neighborhood_dis", enter_feature_point_neighborhood_dis_, 0.065);
   n_private.param<double>("enter_break_point_neighborhood_dis", enter_break_point_neighborhood_dis_, 0.25);
@@ -320,7 +331,12 @@ void ScanCallback(const sensor_msgs::LaserScanConstPtr &scan)
       }
     }
   }
+  matching_success_ = true;
   FeatureExtract(scan_poses);
+  if(!matching_success_)
+  {
+    pose_pub_.publish(hold_poses_);
+  }
 }
 //---------------------Scan2-------------------------//
 void Scan2Callback(const sensor_msgs::LaserScanConstPtr &scan)
@@ -359,7 +375,12 @@ void Scan2Callback(const sensor_msgs::LaserScanConstPtr &scan)
       }
     }
   }
+  matching_success_ = true;
   FeatureExtract(scan_poses);
+  if(!matching_success_)
+  {
+    pose_pub_.publish(hold_poses_);
+  }
 }
 //--------------------------------------------------------------------
 
@@ -380,20 +401,28 @@ void ControlStatusCallback(const campusrover_msgs::ElevatorControlStatusConstPtr
     status_ = "enter";
     exit_done_ = false;
   }
+  else if(control_status_ > 0 && control_status_ < 6 && enter_done_)
+  {
+    enable_mode_ = false;
+    pose_pub_.publish(hold_poses_);
+  }
   else if (control_status_ > 5 && control_status_ < 12 && !exit_done_)
   {
-    enable_mode_ = true;
-    sub_mode_ = 1.0; //LaserScan
-    feature_point_neighborhood_dis_ = exit_feature_point_neighborhood_dis_; //
-    break_point_neighborhood_dis_ = exit_break_point_neighborhood_dis_; //
-    window_size_ = exit_window_size_; //
-    corner_feature_threshold= exit_corner_feature_threshold_; //
-    status_ = "exit";
+  //   enable_mode_ = true;
+  //   sub_mode_ = 1.0; //LaserScan
+  //   feature_point_neighborhood_dis_ = exit_feature_point_neighborhood_dis_; //
+  //   break_point_neighborhood_dis_ = exit_break_point_neighborhood_dis_; //
+  //   window_size_ = exit_window_size_; //
+  //   corner_feature_threshold= exit_corner_feature_threshold_; //
+  //   status_ = "exit";
+    enable_mode_ = false;
     enter_done_ = false;
+    pose_pub_.publish(hold_poses_);
   }
   else
   {
     enable_mode_ = false;
+    pose_filter_first_time_ = true;
   }
 
   // if(enter_done_ || exit_done_)
@@ -592,7 +621,7 @@ void FeatureExtract(geometry_msgs::PoseArray &scan_poses)
     
 
   }
-  VisualizeCorner(up_th_d_lambdas);
+  //VisualizeCorner(up_th_d_lambdas);
   // VisualizeBreakPoint(break_points);
   VisualizefeaturePoint(detect_feature_point);
 
@@ -639,7 +668,11 @@ void FeatureMatching(std::vector<geometry_msgs::Point> points)
   //std::cout<<"points_size"<<points.size()<<'\n';
 
   if(points.size()<3)
+  {
+    matching_success_ = false;
     return;
+  }
+    
   
   if(status_ == "enter")
   {
@@ -654,16 +687,16 @@ void FeatureMatching(std::vector<geometry_msgs::Point> points)
     door_corner_dangle = exit_elevator_feature[6].z;
   }
 
-  for(int i = 0; i < points.size();i++)
+  for(int i = 0; i < points.size()-2;i++)
   {
     
-    dis = angle = 0;
+    dis = angle = dangle =0;
     for(int f = i; f < i+3;f++)
     {
-      if(f == points.size()-1)
-      {
-        break;
-      }
+      // if(f >= points.size()-3)
+      // {
+      //   break;
+      // }
       if(f == i)
       {
         last_point_x = points[f].x;
@@ -713,20 +746,23 @@ void FeatureMatching(std::vector<geometry_msgs::Point> points)
       }
       
     }
-    //std::cout << " dangle " <<  dangle <<'\n';
+    // std::cout << " dangle " <<  dangle <<'\n';
     
   }
-  //std::cout<<"---------------------------------"<<'\n';
-  //VisualizeCorner(elevator_feature_points);
+  // std::cout<<"---------------------------------"<<'\n';
+  VisualizeCorner(elevator_feature_points);
 
   if(elevator_feature_points.size()<2)
+  {
+    matching_success_ = false;
     return;
+  }
   
   
 
-  for(int f_1 = 0;f_1 < elevator_feature_points.size()-1;f_1++)
+  for(int f_1 = 0;f_1 < elevator_feature_points.size();f_1++)
   {
-    for(int f_2 = f_1+1;f_2 < elevator_feature_points.size();f_2++)
+    for(int f_2 = 0;f_2 < elevator_feature_points.size();f_2++)
     { 
       if(abs(sqrt(pow(elevator_feature_points[f_1].x -elevator_feature_points[f_2].x,2)+
                   pow(elevator_feature_points[f_1].y -elevator_feature_points[f_2].y,2))-door_corner_dis) <= elevator_feature_dis_range_)
@@ -796,9 +832,15 @@ void FeatureMatching(std::vector<geometry_msgs::Point> points)
       }
     }
   }
-  //std::cout << " ==================== "  <<'\n';
-  //std::cout << " elevator_num: " <<  paths.size() <<'\n';
+  // std::cout << " ==================== "  <<'\n';
+  // std::cout << " elevator_poses.poses: " <<  elevator_poses.poses.size() <<'\n';
   //VisualizeElevatorEnterPoint(paths);
+
+  if(elevator_poses.poses.size() < 1)
+  {
+    matching_success_ = false;
+    return;
+  }
 
   shortest_dis = -1.0;
   find_shortest_dis_first_time = true;
@@ -819,7 +861,7 @@ void FeatureMatching(std::vector<geometry_msgs::Point> points)
       }
     }
   }
-// 
+// //
   if(shortest_dis != -1.0 && status_ == "enter")
   {
     if(shortest_dis <  0.5)
@@ -827,22 +869,28 @@ void FeatureMatching(std::vector<geometry_msgs::Point> points)
       enter_done_ = true;
     }
 
-  }else if(shortest_dis != -1.0 && status_ == "exit")
-  {
-    if(shortest_dis <  0.1)
-    {
-      exit_done_ = true;
-    }
   }
+  // else if(shortest_dis != -1.0 && status_ == "exit")
+  // {
+  //   if(shortest_dis <  0.1)
+  //   {
+  //     exit_done_ = true;
+  //   }
+  // }
 
-  //std::cout << " shortest_dis: " <<  shortest_dis << " enter_done_: " <<  enter_done_ << " exit_done_: " <<  exit_done_ << " enable_mode_: " <<  enable_mode_ <<'\n';
+  // std::cout << " shortest_dis: " <<  shortest_dis << " enter_done_: " <<  enter_done_ << " exit_done_: " <<  exit_done_ << " enable_mode_: " <<  enable_mode_ <<'\n';
 
-  if(elevator_pose_filter_)
+  if(elevator_pose_filter_ )
   {
     pose_filter(elevator_poses);
   }
- 
+
   pose_pub_.publish(elevator_poses);
+  
+  
+  
+ 
+  
 
   
   
@@ -875,7 +923,6 @@ void FeatureMatching(std::vector<geometry_msgs::Point> points)
 //-----------------------------------------------------------------------------------------------
 void pose_filter(geometry_msgs::PoseArray &filter_poses)
 {
-  static bool first_time = true;
   static geometry_msgs::PoseStamped before_pose;
   static geometry_msgs::PoseStamped map_pose;
   static geometry_msgs::Pose pose;
@@ -890,20 +937,18 @@ void pose_filter(geometry_msgs::PoseArray &filter_poses)
 
   
 
-  if(first_time)
+  if(pose_filter_first_time_)
   {
     if(filter_poses.poses.size() == 0)
       return;
+
+    poses.clear();
 
     for(int i =0;i<filter_poses.poses.size();i++)
     {
       before_pose.header.frame_id = filter_poses.header.frame_id;
       before_pose.pose.position = filter_poses.poses[i].position;
       before_pose.pose.orientation = filter_poses.poses[i].orientation;
-
-      local_pose.header.frame_id = filter_poses.header.frame_id;
-      local_pose.pose.position = filter_poses.poses[i].position;
-      local_pose.pose.orientation = filter_poses.poses[i].orientation;
 
       if(filter_poses.header.frame_id != map_frame_)
       {
@@ -926,9 +971,8 @@ void pose_filter(geometry_msgs::PoseArray &filter_poses)
 
       map_pose.pose.position.z = 2.0;
       poses.push_back(map_pose);
-      local_poses.push_back(local_pose);
     }
-    first_time = false;
+    pose_filter_first_time_ = false;
   }
   else
   {
@@ -939,10 +983,6 @@ void pose_filter(geometry_msgs::PoseArray &filter_poses)
       before_pose.header.frame_id = filter_poses.header.frame_id;
       before_pose.pose.position = filter_poses.poses[i].position;
       before_pose.pose.orientation = filter_poses.poses[i].orientation;
-
-      local_pose.header.frame_id = filter_poses.header.frame_id;
-      local_pose.pose.position = filter_poses.poses[i].position;
-      local_pose.pose.orientation = filter_poses.poses[i].orientation;
 
       if(filter_poses.header.frame_id != map_frame_)
       {
@@ -986,9 +1026,7 @@ void pose_filter(geometry_msgs::PoseArray &filter_poses)
           poses[j].pose.position.x = map_pose.pose.position.x;
           poses[j].pose.position.y = map_pose.pose.position.y;
           poses[j].pose.orientation = map_pose.pose.orientation;
-          local_poses[j].pose.position.x = local_pose.pose.position.x;
-          local_poses[j].pose.position.y = local_pose.pose.position.y;
-          local_poses[j].pose.orientation = local_pose.pose.orientation;
+
           if(poses[j].pose.position.z <30.0)
           {
             poses[j].pose.position.z = poses[j].pose.position.z+2;
@@ -1010,7 +1048,6 @@ void pose_filter(geometry_msgs::PoseArray &filter_poses)
         //std::cout << " add new pose!! " << '\n';
         map_pose.pose.position.z = 2.0;
         poses.push_back(map_pose);
-        local_poses.push_back(local_pose);
       }
     }
     //std::cout << " =============== " << '\n';
@@ -1043,27 +1080,90 @@ void pose_filter(geometry_msgs::PoseArray &filter_poses)
     //   pose.position.z = poses[k].pose.position.z;
     //   pose.orientation = poses[k].pose.orientation;
       
-    //   // pose.position.x = local_poses[k].pose.position.x;
-    //   // pose.position.y = local_poses[k].pose.position.y;
-    //   // pose.position.z = local_poses[k].pose.position.z;
-    //   // pose.orientation = local_poses[k].pose.orientation;
     //   filter_poses.poses.push_back(pose);
     // }
     
 
     if(poses[k].pose.position.z <= 0)
     {
-      poses.erase(poses.begin()+k);
-      local_poses.erase(local_poses.begin()+k);
-      //break;
+      if(poses.size() > 1)
+      {
+        poses.erase(poses.begin()+k);
+        //break;
+      }
     }
-    
   }
+
+  
   pose.position.x = poses[max_matching_pose_id].pose.position.x;
   pose.position.y = poses[max_matching_pose_id].pose.position.y;
   pose.position.z = poses[max_matching_pose_id].pose.position.z;
   pose.orientation = poses[max_matching_pose_id].pose.orientation;
+  if(avg_pose_filter_)
+  {
+    avg_pose(pose);
+  }
+  
   filter_poses.poses.push_back(pose);
+
+  hold_poses_.poses.clear();
+  hold_poses_.header.frame_id = map_frame_;
+  hold_poses_.poses.push_back(pose);
+}
+//-----------------------------------------------------------------------------------------------
+void avg_pose(geometry_msgs::Pose &input_pose)
+{
+  static std::vector<geometry_msgs::Pose> avg_poses ;
+  static tf2::Quaternion avg_pose_q_tf;
+  static geometry_msgs::Quaternion avg_pose_q_msg;
+  
+  static int poses_count = 0;
+  static double roll, pitch, yaw;
+  double sum_x=0,sum_y=0,sum_yaw=0;
+  double avg_x=0,avg_y=0,avg_yaw=0;
+
+  if(avg_poses.size() >= avg_pose_size_)
+  {    
+    for(int i = 0;i < avg_poses.size();i++)
+    {
+      sum_x += avg_poses[i].position.x;
+      sum_y += avg_poses[i].position.y;
+
+      tf::Quaternion q2( avg_poses[i].orientation.x,
+                        avg_poses[i].orientation.y,
+                        avg_poses[i].orientation.z,
+                        avg_poses[i].orientation.w);
+      tf::Matrix3x3 m2(q2);
+  
+      m2.getRPY(roll, pitch, yaw);
+
+      sum_yaw += yaw;
+    }
+    avg_x = sum_x/avg_poses.size();
+    avg_y = sum_y/avg_poses.size();
+    avg_yaw = sum_yaw/avg_poses.size();
+
+    avg_poses[poses_count]=input_pose ;
+    poses_count++;
+    if(poses_count > avg_pose_size_-1)
+    {
+      poses_count =0;
+    }
+
+    
+  }else
+  {
+    avg_poses.push_back(input_pose) ;
+    return;
+  }
+//
+  avg_pose_q_tf.setRPY(0.0,0.0,avg_yaw);
+  avg_pose_q_msg = tf2::toMsg(avg_pose_q_tf);
+
+  input_pose.position.x = avg_x;
+  input_pose.position.y = avg_y;
+  input_pose.orientation = avg_pose_q_msg;
+
 }
 //-----------------------------------------------------------------------------------------------
 void VisualizeCorner(std::vector<geometry_msgs::Point> points) 

@@ -1,7 +1,7 @@
 <launch>
     <arg name="debug"               default="false"/>
     <arg name="frame" default="ydlidar_link"/>
-    <arg name="bag_filename"        default="$(env HOME)/bags/campusrover_bag/20200629_ele_enter_and_leave_1.bag"/>
+    <arg name="bag_filename"        default="$(env HOME)/bags/campusrover_bag/20200704elevator_test_4_180trun.bag"/>
     <!-- /////////////////////////////////////////////////////////////////////////////////// -->
     <group if="$(arg debug)">
 
@@ -65,7 +65,8 @@
         <param name="elevator_feature_dis_range" value="0.2" />
         <param name="elevator_feature_d_angle_range" value="0.35" />
 
-        <param name="elevator_pose_filter" value="true" />
+        <param name="elevator_pose_filter" value="true" /> 
+        <param name="elevator_avg_pose_filter" value="true" /> 
         <param name="filter_range_dis" value="0.2" />
         <param name="filter_range_angle" value="0.2" />
 

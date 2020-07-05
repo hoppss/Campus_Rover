@@ -1,6 +1,6 @@
 <launch>
     <arg name="debug"               default="false"/>
-    <arg name="bag_filename"        default="$(env HOME)/bags/campusrover_bag/20200629_ele_enter_and_leave_1.bag"/>
+    <arg name="bag_filename"        default="$(env HOME)/bags/campusrover_bag/20200704elevator_test_4_180trun.bag"/>
     <!-- /////////////////////////////////////////////////////////////////////////////////// -->
     <group if="$(arg debug)">
 

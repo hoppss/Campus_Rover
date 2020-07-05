@@ -54,8 +54,10 @@ double outside_standby_pose_x_2_;
 double outside_standby_pose_y_2_;
 double outside_standby_pose_yaw_;
 
-double enter_path_1_dis_;
-double enter_path_2_dis_;
+double enter_path_pose_x_1_;
+double enter_path_pose_y_1_;
+double enter_path_pose_x_2_;
+double enter_path_pose_y_2_;
 double enter_pose_yaw_;
 
 double inside_button_pose_x_1_;
@@ -70,8 +72,10 @@ double inside_standby_pose_x_2_;
 double inside_standby_pose_y_2_;
 double inside_standby_pose_yaw_;
 
-double leave_path_1_dis_;
-double leave_path_2_dis_;
+double leave_path_pose_x_1_;
+double leave_path_pose_y_1_;
+double leave_path_pose_x_2_;
+double leave_path_pose_y_2_;
 double leave_pose_yaw_;
 
 int control_status_ ;
@@ -114,8 +118,10 @@ void get_parameters(ros::NodeHandle n_private)
   n_private.param<double>("outside_standby_pose_yaw", outside_standby_pose_yaw_, 0.0);
 
   //EnterElevatorPath step 5
-  n_private.param<double>("enter_path_1_dis", enter_path_1_dis_, 3.0);
-  n_private.param<double>("enter_path_2_dis", enter_path_2_dis_, 0.8);
+  n_private.param<double>("enter_path_pose_x_1", enter_path_pose_x_1_, 3.0);
+  n_private.param<double>("enter_path_pose_y_1", enter_path_pose_y_1_, 0.8);
+  n_private.param<double>("enter_path_pose_x_2", enter_path_pose_x_2_, 3.0);
+  n_private.param<double>("enter_path_pose_y_2", enter_path_pose_y_2_, 0.8);
   n_private.param<double>("enter_pose_yaw", enter_pose_yaw_, -1.57);
 
   //MoveToBtnPath_Inside step 6
@@ -133,8 +139,10 @@ void get_parameters(ros::NodeHandle n_private)
   n_private.param<double>("inside_standby_pose_yaw", inside_standby_pose_yaw_, 0.8);
   
   //LeaveElevatorPath step 7
-  n_private.param<double>("leave_path_1_dis", leave_path_1_dis_, 0.8);
-  n_private.param<double>("leave_path_2_dis", leave_path_2_dis_, 1.5);
+  n_private.param<double>("leave_path_pose_x_1", leave_path_pose_x_1_, 3.0);
+  n_private.param<double>("leave_path_pose_y_1", leave_path_pose_y_1_, 0.8);
+  n_private.param<double>("leave_path_pose_x_2", leave_path_pose_x_2_, 3.0);
+  n_private.param<double>("leave_path_pose_y_2", leave_path_pose_y_2_, 0.8);
   n_private.param<double>("leave_pose_yaw", leave_pose_yaw_, 0.0);
 }
 
@@ -230,7 +238,7 @@ void PoseCallback(const geometry_msgs::PoseArrayConstPtr &elevator_poses)
   {
     status_msg.request.node_name.data = "path_generater";;
     status_msg.request.status.data = true;
-    StatusCheckCallService(status_check_client_, status_msg);
+    //StatusCheckCallService(status_check_client_, status_msg);
     last_status = current_status;
   }
 
@@ -409,12 +417,11 @@ void EnterElevatorPath(geometry_msgs::PoseStamped &input_pose , nav_msgs::Path &
   
   // std::cout << " size "  <<avg_poses.size()<< " sum_x "  <<sum_x<< " sum_y "  <<sum_x<<'\n';
 
-  
-  x1_point.x = avg_x + enter_path_1_dis_*cos(avg_yaw-M_PI);
-  x1_point.y = avg_y + enter_path_1_dis_*sin(avg_yaw-M_PI);
+  x1_point.x = input_pose.pose.position.x + enter_path_pose_x_1_*cos(avg_yaw) - enter_path_pose_y_1_*sin(avg_yaw);
+  x1_point.y = input_pose.pose.position.y + enter_path_pose_x_1_*sin(avg_yaw) + enter_path_pose_y_1_*cos(avg_yaw);
 
-  x2_point.x = avg_x + enter_path_2_dis_*cos(avg_yaw);
-  x2_point.y = avg_y + enter_path_2_dis_*sin(avg_yaw);
+  x2_point.x = input_pose.pose.position.x + enter_path_pose_x_2_*cos(avg_yaw) - enter_path_pose_y_2_*sin(avg_yaw);
+  x2_point.y = input_pose.pose.position.y + enter_path_pose_x_2_*sin(avg_yaw) + enter_path_pose_y_2_*cos(avg_yaw);
 
   int step_count = int (sqrt(pow(x1_point.x - x2_point.x,2) + pow(x1_point.y - x2_point.y, 2))/path_resolution_);
   double s_x = double ((x2_point.x - x1_point.x)/step_count);
@@ -619,11 +626,11 @@ void LeaveElevatorPath(geometry_msgs::PoseStamped &input_pose , nav_msgs::Path &
   // std::cout << " size "  <<avg_poses.size()<< " sum_x "  <<sum_x<< " sum_y "  <<sum_x<<'\n';
 
   
-  x1_point.x = avg_x + leave_path_1_dis_*cos(avg_yaw-M_PI);
-  x1_point.y = avg_y + leave_path_1_dis_*sin(avg_yaw-M_PI);
+  x1_point.x = input_pose.pose.position.x + leave_path_pose_x_1_*cos(avg_yaw) - leave_path_pose_y_1_*sin(avg_yaw);
+  x1_point.y = input_pose.pose.position.y + leave_path_pose_x_1_*sin(avg_yaw) + leave_path_pose_y_1_*cos(avg_yaw);
 
-  x2_point.x = avg_x + leave_path_2_dis_*cos(avg_yaw);
-  x2_point.y = avg_y + leave_path_2_dis_*sin(avg_yaw);
+  x2_point.x = input_pose.pose.position.x + leave_path_pose_x_2_*cos(avg_yaw) - leave_path_pose_y_2_*sin(avg_yaw);
+  x2_point.y = input_pose.pose.position.y + leave_path_pose_x_2_*sin(avg_yaw) + leave_path_pose_y_2_*cos(avg_yaw);
 
   int step_count = int (sqrt(pow(x1_point.x - x2_point.x,2) + pow(x1_point.y - x2_point.y, 2))/path_resolution_);
   double s_x = double ((x2_point.x - x1_point.x)/step_count);

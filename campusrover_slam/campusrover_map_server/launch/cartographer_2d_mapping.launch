@@ -1,5 +1,5 @@
 <launch>
-  <arg name="bag_filename" default="$(env HOME)/bags/campusrover_bag/20200402_3f_1.bag"/>
+  <arg name="bag_filename" default="$(env HOME)/bags/campusrover_bag/20200704elevator_test_4_180trun.bag"/>
 
     <param name="use_sim_time" value="true" />
 

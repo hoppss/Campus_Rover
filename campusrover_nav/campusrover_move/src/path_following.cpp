@@ -145,6 +145,8 @@ void UpdateCampusRoverPoseFromTF()
     angle_normalize(pre_yaw);
   }
   robot_yaw_ = pre_yaw;
+
+  std::cout << "arriving_end_point_ : " << arriving_end_point_<< " arriving_end_dir : "<< arriving_end_direction_<<'\n';
   
 }
 //-----------------------------------------------------------------------------------------------
@@ -180,6 +182,8 @@ void check_arrive_direction()
     status_checker_msg_.request.node_name.data = "planner";
     status_checker_msg_.request.status.data = arriving_end_direction_;
     StatusCheckCallService(status_check_client_, status_checker_msg_);
+    TwistPublish(0.0, 0.0);
+    TwistPublish(0.0, 0.0);
   }else{
     arriving_end_direction_ = false;
   }
@@ -209,13 +213,13 @@ void TimerCallback(const ros::TimerEvent &event)
           
           if(!arriving_end_point_)
           {
+            check_arrive_point();
             moving_to_target_point();
-            check_arrive_point(); 
           }
           else
           {
-            moving_to_target_direction();
             check_arrive_direction();
+            moving_to_target_direction();
           }
         }
         else
@@ -559,8 +563,13 @@ bool ServiceCallback(campusrover_msgs::PlannerFunction::Request  &req, campusrov
   cout << "  direction_inverse : " <<direction_inverse_<< endl;
   cout << "  speed fuction : " <<req.speed_parameter<< endl;
   //
-  arriving_end_point_ = false;
-  arriving_end_direction_ = false;
+  if(action_flag_)
+  {
+    arriving_end_point_ = false;
+    arriving_end_direction_ = false;
+    get_globle_path_ = false;
+  }
+  
   
   return true;
 
@@ -569,6 +578,7 @@ bool ServiceCallback(campusrover_msgs::PlannerFunction::Request  &req, campusrov
 //-----------------------------------------------------------------------------------------------
 void StatusCheckCallService(ros::ServiceClient &client,campusrover_msgs::ElevatorStatusChecker &srv)
 {
+  ros::Duration(0.5).sleep();
   string str = "===========planner status check============= " ;
   cout << "Request massage: \n" << srv.request;
   while (!client.call(srv))

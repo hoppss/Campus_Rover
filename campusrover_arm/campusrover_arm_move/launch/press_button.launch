@@ -7,7 +7,7 @@
         <param name="planning_time" value="5.0"/>
         <param name="num_planning_attempts" value="10"/>
         <param name="shift_x" value="-0.04"/>
-        <param name="shift_y" value="0.02"/>
+        <param name="shift_y" value="0.03"/>
         <param name="shift_z" value="0.055"/>
         <param name="press_dis" value="0.06"/>
         <param name="jump_threshold" value="0.0"/>

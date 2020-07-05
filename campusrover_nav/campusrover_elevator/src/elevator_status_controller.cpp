@@ -210,7 +210,7 @@ void TimerCallback(const ros::TimerEvent &event)
       planner_check_done_ = false;
       path_generater_check_done_ = false;
       first_time = true;
-      control_status_ =0;
+      control_status_ ++;
       
     }
     
@@ -220,7 +220,7 @@ void TimerCallback(const ros::TimerEvent &event)
     if(first_time && path_generater_check_done_)
     {
       planner_param.request.action.data = true;
-      planner_param.request.direction_inverse.data = true;
+      planner_param.request.direction_inverse.data = false;
       planner_param.request.speed_parameter = twist_param_1_;
       PlannerFunctionCallService(planner_srv_client_, planner_param);
       first_time = false;
@@ -229,7 +229,7 @@ void TimerCallback(const ros::TimerEvent &event)
     if(planner_check_done_)
     {
       planner_param.request.action.data = false;
-      planner_param.request.direction_inverse.data = true;
+      planner_param.request.direction_inverse.data = false;
       planner_param.request.speed_parameter = twist_param_0_;
       PlannerFunctionCallService(planner_srv_client_, planner_param);
       planner_check_done_ = false;
@@ -273,7 +273,7 @@ void TimerCallback(const ros::TimerEvent &event)
     if(planner_check_done_)
     {
       planner_param.request.action.data = false;
-      planner_param.request.direction_inverse.data = false;
+      planner_param.request.direction_inverse.data = true;
       planner_param.request.speed_parameter = twist_param_0_;
       PlannerFunctionCallService(planner_srv_client_, planner_param);
       planner_check_done_ = false;

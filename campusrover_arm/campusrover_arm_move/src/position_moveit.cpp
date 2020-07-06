@@ -24,6 +24,7 @@ using namespace std;
 ros::ServiceClient button_srv_client_, status_check_client_, joint_1_slope_client_, joint_2_slope_client_, joint_3_slope_client_;
 
 ros::Subscriber pose_sub_;
+ros::Publisher button_info_pub_;
 geometry_msgs::PoseStamped pose_;
 
 string planning_frame_id_;
@@ -250,9 +251,10 @@ bool ArmServiceCallback(campusrover_msgs::ArmAction::Request  &req, campusrover_
 //----------------------------------------------------------------------------------------------------------------------
 bool ButtonServiceCallback(campusrover_msgs::PressButton::Request  &req, campusrover_msgs::PressButton::Response &res)
 {
-    static campusrover_msgs::PressButton button_srv;
-    button_srv.request.button_type = req.button_type;
-    BtnCallService(button_srv_client_,button_srv);
+    static std_msgs::String button_info;
+    button_info.data = req.button_type.data;
+
+    button_info_pub_.publish(button_info);
 
     
     //
@@ -289,17 +291,6 @@ bool MoveToStandbyPoseServiceCallback(campusrover_msgs::ArmStandby::Request  &re
   return success;
 
 }
-//----------------------------------------------------------------------------------------------------------------------
-void BtnCallService(ros::ServiceClient &client,campusrover_msgs::PressButton &srv)
-{
-    string str = "=======arm call vision================= " ;
-    cout << "Request massage: \n" << srv.request;
-    while (!client.call(srv))
-    {
-        ROS_ERROR("Failed to call service");
-        ros::Duration(1.0).sleep();
-    }
-}
 //-----------------------------------------------------------------------------------------------
 void StatusCheckCallService(ros::ServiceClient &client,campusrover_msgs::ElevatorStatusChecker &srv)
 {
@@ -334,6 +325,8 @@ int main(int argc, char **argv)
     ros::ServiceServer arm_service = n.advertiseService("arm_action", ArmServiceCallback);
     ros::ServiceServer button_service = n.advertiseService("button_press", ButtonServiceCallback);
     ros::ServiceServer arm_move_to_standby_pose_button_service = n.advertiseService("arm_move_to_standby_pose", MoveToStandbyPoseServiceCallback);
+
+    button_info_pub_ = n.advertise<std_msgs::String>("button_info", 50);
 
     button_srv_client_ = n.serviceClient<campusrover_msgs::PressButton>("button_info");
     status_check_client_ = n.serviceClient<campusrover_msgs::ElevatorStatusChecker>("elevator_status_checker");

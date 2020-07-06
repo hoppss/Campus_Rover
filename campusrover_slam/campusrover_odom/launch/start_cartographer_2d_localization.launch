@@ -1,0 +1,12 @@
+<launch>
+
+  <node name="cartographer_start_trajectory" pkg="cartographer_ros"
+      type="cartographer_start_trajectory" args="
+          -configuration_directory $(find campusrover_odom)/launch/cartographer_Oct_2017
+          -configuration_basename revo_lds.lua
+          -initial_pose {to_trajectory_id=0,relative_pose={translation={0.0,0.0,0.},rotation={0.,0.,0.,}}}"
+      output="screen">
+    
+  </node>
+
+</launch>

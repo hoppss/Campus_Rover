@@ -1,7 +1,7 @@
 <launch>
     <node name="campusrover_driver" pkg="campusrover_driver" type="campusrover_driver" output="screen">
-      <remap from="/cmd_vel" to="/yocs_cmd_vel_mux/output/cmd_vel" />
-      <param name="port_name" value="/dev/motor_driver" />
+      <remap from="/cmd_vel" to="/output/cmd_vel" />
+      <param name="port_name" value="/dev/campusrover_driver" />
       <param name="odom_frame" value="odom" />
       <param name="base_frame" value="base_link" />
 

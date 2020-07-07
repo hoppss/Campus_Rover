@@ -1,5 +1,27 @@
 <launch>
+    <!-- <arg name="config_file" value="$(find campusrover_driver)/param/yocs_cmd_vel_mux.yaml"/> -->
+    <arg name="joy_cmd_vel_topic"     default="/input/joy_cmd_vel"/>
+
     <include file="$(find campusrover_driver)/launch/driver.launch"/>
-    <include file="$(find yocs_cmd_vel_mux)/launch/standalone.launch"/>
-    <include file="$(find demo_pioneer)/launch/pioneer-teleop.launch"/>
+    <!-- <include file="$(find yocs_cmd_vel_mux)/launch/standalone.launch"/> -->
+    <!-- <include file="$(find yocs_cmd_vel_mux)/launch/cmd_vel_mux.launch">
+        <arg name="config_file"           value="$(arg config_file)"/>
+    </include> -->
+
+    <node pkg="campusrover_driver" name="joy_to_twist" type="joy_to_twist">
+        <remap from="cmd_vel" to="$(arg joy_cmd_vel_topic)"/>
+        <param name="scale_linear" value="1.0" />
+        <param name="scale_angular" value="1.0" />
+        <param name="axis_linear" value="1.0" />
+        <param name="axis_angular" value="3.0" />
+    </node>
+
+    <node pkg="campusrover_driver" name="luke_cmd_vel_mux" type="luke_cmd_vel_mux">
+        <remap from="cmd_vel" to="$(arg joy_cmd_vel_topic)"/>
+        <param name="joy_mode_button" value="7.0" />
+        <param name="nav_mode_button" value="0.0" />
+        <param name="stop_mode_button" value="1.0" />
+        <param name="release_mode_button" value="3.0" />
+    </node>
+    
 </launch>  

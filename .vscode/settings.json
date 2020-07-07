@@ -120,6 +120,12 @@
         "vec4us": "cpp",
         "viewport": "cpp",
         "types": "cpp",
-        "texture": "cpp"
+        "texture": "cpp",
+        "image": "cpp",
+        "mixinvector": "cpp",
+        "fast_back_stack": "cpp",
+        "forward_list": "cpp",
+        "any": "cpp",
+        "variant": "cpp"
     }
 }

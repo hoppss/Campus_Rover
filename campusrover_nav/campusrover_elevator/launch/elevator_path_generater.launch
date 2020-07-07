@@ -4,40 +4,40 @@
         <param name="path_frame" value="map" />
         <param name="path_resolution" value="0.05" />
 
-        <param name="outside_button_pose_x_1" value="-2.0" />
+        <param name="outside_button_pose_x_1" value="-2.4" />
         <param name="outside_button_pose_y_1" value="-0.5" />
-        <param name="outside_button_pose_x_2" value="-0.30" />
+        <param name="outside_button_pose_x_2" value="-0.7" />
         <param name="outside_button_pose_y_2" value="-0.5" />
         <param name="outside_button_pose_yaw" value="0.0" />
 
-        <param name="outside_standby_pose_x_1" value="0.0" />
+        <param name="outside_standby_pose_x_1" value="-0.4" />
         <param name="outside_standby_pose_y_1" value="0.0" />
-        <param name="outside_standby_pose_x_2" value="-1.0" />
+        <param name="outside_standby_pose_x_2" value="-1.4" />
         <param name="outside_standby_pose_y_2" value="0.0" />
         <param name="outside_standby_pose_yaw" value="3.14" />
 
-        <param name="enter_path_pose_x_1" value="-2.0" />
+        <param name="enter_path_pose_x_1" value="-2.4" />
         <param name="enter_path_pose_y_1" value="0.02" />
-        <param name="enter_path_pose_x_2" value="1.3" />
+        <param name="enter_path_pose_x_2" value="0.9" />
         <param name="enter_path_pose_y_2" value="0.02" />
         <param name="enter_pose_yaw" value="-1.57" />
 
-        <param name="inside_button_pose_x_1" value="1.3" />
+        <param name="inside_button_pose_x_1" value="-0.9" />
         <param name="inside_button_pose_y_1" value="0.0" />
-        <param name="inside_button_pose_x_2" value="1.3" />
-        <param name="inside_button_pose_y_2" value="-0.45" />
+        <param name="inside_button_pose_x_2" value="-0.9" />
+        <param name="inside_button_pose_y_2" value="0.45" />
         <param name="inside_button_pose_yaw" value="1.57" />
 
-        <param name="inside_standby_pose_x_1" value="1.2" />
-        <param name="inside_standby_pose_y_1" value="-0.45" />
-        <param name="inside_standby_pose_x_2" value="1.2" />
+        <param name="inside_standby_pose_x_1" value="-0.8" />
+        <param name="inside_standby_pose_y_1" value="0.45" />
+        <param name="inside_standby_pose_x_2" value="-0.8" />
         <param name="inside_standby_pose_y_2" value="0.0" />
         <param name="inside_standby_pose_yaw" value="0.0" />
 
-        <param name="leave_path_pose_x_1" value="1.0" />
-        <param name="leave_path_pose_y_1" value="0.02" />
-        <param name="leave_path_pose_x_2" value="-1.8" />
-        <param name="leave_path_pose_y_2" value="0.02" />
+        <param name="leave_path_pose_x_1" value="-0.6" />
+        <param name="leave_path_pose_y_1" value="-0.02" />
+        <param name="leave_path_pose_x_2" value="2.0" />
+        <param name="leave_path_pose_y_2" value="-0.02" />
         <param name="leave_pose_yaw" value="0.0" />
         
 

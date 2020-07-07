@@ -71,6 +71,8 @@ double control_status_;
 double feature_point_neighborhood_dis_;
 double break_point_neighborhood_dis_;
 
+double shift_x_,shift_y_;
+
 bool elevator_pose_filter_;
 bool avg_pose_filter_;
 bool enable_mode_ = false;
@@ -137,6 +139,9 @@ void get_parameters(ros::NodeHandle n_private)
   n_private.param<double>("exit_door_y1", exit_door_y1_, 0.94);
   n_private.param<double>("exit_door_y2", exit_door_y2_, 0.8);
   n_private.param<double>("elevator_wd", elevator_wd_, 0.8);
+
+  n_private.param<double>("shift_x", shift_x_, 0.4);
+  n_private.param<double>("shift_y", shift_y_, 0.0);
 
   n_private.param<int>("sub_mode", sub_mode_, 2.0);
 
@@ -386,9 +391,13 @@ void Scan2Callback(const sensor_msgs::LaserScanConstPtr &scan)
 
 void ControlStatusCallback(const campusrover_msgs::ElevatorControlStatusConstPtr &con_status)
 {
+  geometry_msgs::Pose prosses_pose;
+  geometry_msgs::PoseArray prosses_poses;
+
+  prosses_poses.header.frame_id = map_frame_;
+  prosses_poses.poses.clear();
+
   control_status_ = con_status->control_status;
-
-
 
   if(control_status_ > 0 && control_status_ < 6 && !enter_done_)
   {
@@ -408,16 +417,39 @@ void ControlStatusCallback(const campusrover_msgs::ElevatorControlStatusConstPtr
   }
   else if (control_status_ > 5 && control_status_ < 12 && !exit_done_)
   {
+    status_ = "exit";
+    enable_mode_ = false;
+    enter_done_ = false;
+
+    double roll, pitch, yaw;
+
+    tf::Quaternion q( hold_poses_.poses[0].orientation.x,
+                      hold_poses_.poses[0].orientation.y,
+                      hold_poses_.poses[0].orientation.z,
+                      hold_poses_.poses[0].orientation.w);
+    tf::Matrix3x3 m(q);
+    
+    m.getRPY(roll, pitch, yaw);
+
+    tf2::Quaternion elevator_pose_q_tf;
+    geometry_msgs::Quaternion elevator_pose_q_msg;
+
+    elevator_pose_q_tf.setRPY(0.0,0.0,yaw+M_PI);
+    elevator_pose_q_msg = tf2::toMsg(elevator_pose_q_tf);
+
+    prosses_pose.position = hold_poses_.poses[0].position;
+    prosses_pose.orientation = elevator_pose_q_msg;
+
+    prosses_poses.poses.push_back(prosses_pose);
+    
+    pose_pub_.publish(prosses_poses);
+    
   //   enable_mode_ = true;
   //   sub_mode_ = 1.0; //LaserScan
   //   feature_point_neighborhood_dis_ = exit_feature_point_neighborhood_dis_; //
   //   break_point_neighborhood_dis_ = exit_break_point_neighborhood_dis_; //
   //   window_size_ = exit_window_size_; //
   //   corner_feature_threshold= exit_corner_feature_threshold_; //
-  //   status_ = "exit";
-    enable_mode_ = false;
-    enter_done_ = false;
-    pose_pub_.publish(hold_poses_);
   }
   else
   {
@@ -820,7 +852,7 @@ void FeatureMatching(std::vector<geometry_msgs::Point> points)
           elevator_pose.position.x = ((elevator_feature_points[f_1].x +elevator_feature_points[f_2].x)/2.0);
           elevator_pose.position.y = (elevator_feature_points[f_1].y +elevator_feature_points[f_2].y)/2.0;
           double yaw = atan2(elevator_feature_points[f_1].y - elevator_feature_points[f_2].y, 
-                              elevator_feature_points[f_1].x - elevator_feature_points[f_2].x) + M_PI/2.0;
+                              elevator_feature_points[f_1].x - elevator_feature_points[f_2].x);
           elevator_pose_q_tf.setRPY(0.0,0.0,yaw);
           elevator_pose_q_msg = tf2::toMsg(elevator_pose_q_tf);
           elevator_pose.orientation = elevator_pose_q_msg;
@@ -885,8 +917,29 @@ void FeatureMatching(std::vector<geometry_msgs::Point> points)
     pose_filter(elevator_poses);
   }
 
-  pose_pub_.publish(elevator_poses);
+  double shift_roll, shift_pitch, shift_yaw;
+
+  tf::Quaternion sq( elevator_poses.poses[0].orientation.x,
+                    elevator_poses.poses[0].orientation.y,
+                    elevator_poses.poses[0].orientation.z,
+                    elevator_poses.poses[0].orientation.w);
+  tf::Matrix3x3 sm(sq);
   
+  sm.getRPY(shift_roll, shift_pitch, shift_yaw);
+
+  elevator_poses.poses[0].position.x = elevator_poses.poses[0].position.x + shift_x_*cos(shift_yaw+M_PI/2.0) - shift_y_*sin(shift_yaw+M_PI/2.0);
+  elevator_poses.poses[0].position.y = elevator_poses.poses[0].position.y + shift_x_*sin(shift_yaw+M_PI/2.0) + shift_y_*cos(shift_yaw+M_PI/2.0);
+
+  elevator_pose_q_tf.setRPY(0.0,0.0,shift_yaw+M_PI/2.0);
+  elevator_pose_q_msg = tf2::toMsg(elevator_pose_q_tf);
+  elevator_poses.poses[0].orientation = elevator_pose_q_msg;
+
+  hold_poses_.poses.clear();
+  hold_poses_.header.frame_id = map_frame_;
+  hold_poses_.poses.push_back(elevator_poses.poses[0]);
+
+  pose_pub_.publish(elevator_poses);
+  // 
   
   
  
@@ -1106,9 +1159,7 @@ void pose_filter(geometry_msgs::PoseArray &filter_poses)
   
   filter_poses.poses.push_back(pose);
 
-  hold_poses_.poses.clear();
-  hold_poses_.header.frame_id = map_frame_;
-  hold_poses_.poses.push_back(pose);
+  
 }
 //-----------------------------------------------------------------------------------------------
 void avg_pose(geometry_msgs::Pose &input_pose)

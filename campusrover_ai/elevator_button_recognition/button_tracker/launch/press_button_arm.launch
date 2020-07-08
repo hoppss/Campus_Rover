@@ -1,0 +1,20 @@
+<launch>
+  <!-- camper rover urdf -->
+  <!--include file="$(find autolabor_description)/launch/display_autolabor.launch" /-->
+
+  <!-- button tracker -->
+  <include file="$(find button_tracker)/launch/button_tracker.launch" />
+
+  <!-- open intel camera d435i -->
+  <!--include file="$(find autolabor_sensors)/launch/start_camera.launch" /-->
+
+  <!-- arm  sever -->
+  <include file="$(find coover_arm_move)/launch/press_button.launch" />
+
+  <!-- Arm Control -->
+  <include file="$(find autolabor_dynamixel)/launch/arm_controller.launch" />
+
+  <!-- Moveit Execution -->
+  <include file="$(find coover_arm_moveit_config)/launch/moveit_planning_execution.launch" />
+
+</launch>

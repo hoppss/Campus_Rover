@@ -1,0 +1,8 @@
+<?xml version="1.0"?>
+<launch>
+  <node pkg="button_tracker" type="button_tracker.py" name="button_tracker" output="screen">
+  </node>
+  <node pkg="button_recognition" type="recognition_service.py" name="button_recognition" output="screen">
+  </node>
+  <node name="rviz" pkg="rviz" type="rviz" args="-d $(find button_tracker)/rviz/ocr_rcnn_v2.rviz" />
+</launch>

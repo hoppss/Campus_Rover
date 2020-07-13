@@ -84,12 +84,14 @@ class read_video_and_recognize:
     self.y_biase=0
     self.button_info=''
     self.presecheck=False
+    self.frame_id=''
 
   def read_and_recognize(self,Image):
 # initialize tracking process
     bridge = CvBridge()
     cv_image = bridge.imgmsg_to_cv2(Image, 'bgr8') 
     frame = cv_image
+    self.frame_id=Image.header.frame_id
     button_tracker = ButtonTracker()
     print (self.check)
     if self.check == True:  
@@ -145,7 +147,7 @@ class read_video_and_recognize:
     goal = PoseStamped()
     goal.header.seq = 1
     goal.header.stamp = rospy.Time.now()
-    goal.header.frame_id = "right_camera_aligned_depth_to_color_frame"
+    goal.header.frame_id = self.frame_id
     goal.pose.position.x = self.pixel_depth_ros
     goal.pose.position.y = self.x_biase*-1
     goal.pose.position.z = self.y_biase*-1

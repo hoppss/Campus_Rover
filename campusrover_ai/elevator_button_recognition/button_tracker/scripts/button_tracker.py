@@ -65,15 +65,7 @@ class ButtonTracker:
     font_pose = int(0.5*(box[0]+box[2]) - 0.5 * text_len * font_size), int(0.5*(box[1]+box[3]) + 0.5 * font_size)
     # font_pose is the bottom_left of the text
     cv2.putText(frame, text, font_pose, cv2.FONT_HERSHEY_SIMPLEX, 0.6, thickness=2, color=(255, 0, 255))
-  # def resize_to_480x680(img):
-  #   if img.shape != (480, 640):
-  #     img_pil = Image.fromarray(img)
-  #     img_thumbnail = img_pil.thumbnail((640, 480), Image.ANTIALIAS)
-  #     delta_w, delta_h= 640 - img_pil.size[0], 480 - img_pil.size[1]
-  #     padding = (delta_w // 2, delta_h // 2, delta_w - (delta_w // 2), delta_h - (delta_h // 2))
-  #     new_im = ImageOps.expand(img_pil, padding)
-  #     img = np.copy(np.asarray(new_im))
-  #   return img
+
 class read_video_and_recognize:
   def __init__(self):
     self.boxes=[]
@@ -114,7 +106,7 @@ class read_video_and_recognize:
       if text==self.button_info:
         box=self.boxes[i]
         presstext=text
-        i=i+1
+        break
       else:
         i=i+1
       if i==len(self.texts):
@@ -122,12 +114,11 @@ class read_video_and_recognize:
     point_x = (box[2] + box[0]) / 2.0 
     point_y = (box[3] + box[1]) / 2.0
     pixel_depth=cv_depth_image[int(point_y),int(point_x)]
-    # if pixel_depth==0:
-      # pixel_depth=1
-    # depth_fov=67.006/2+math.degrees(math.atan(math.tan(math.radians(67.006/2))-50/float(pixel_depth)))
+   
     self.pixel_depth_ros=float(pixel_depth)/1000
     pixel_diff_y=int(point_y)-239.967
     pixel_diff_x=int(point_x)-325.548
+
     # calculation each pixel angle
     # each_pixel_angle_x=math.radians(float(55)/float(640))
     # each_pixel_angle_y=math.radians(float(43)/float(480))
@@ -171,9 +162,6 @@ class read_video_and_recognize:
       return response_ans
     except rospy.ServiceException(f):
       print("arm service failed: {}".format(f))
-
-  # def check_flag(self,pressenable):
-  #   self.check=pressenable
   
 
 if __name__ == '__main__':
@@ -184,5 +172,4 @@ if __name__ == '__main__':
   rospy.Subscriber('/aligned_depth_image_raw',Image,read.depth_image)
   rospy.Subscriber("/color_image_raw", Image,read.read_and_recognize)
   rospy.Subscriber('button_info', String,read.button_info_enable)
-  # rospy.Subscriber('elevator_control',Bool,read.check_flag)
   rospy.spin()

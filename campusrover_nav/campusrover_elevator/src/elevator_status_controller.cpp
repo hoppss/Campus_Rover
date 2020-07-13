@@ -49,7 +49,8 @@ int target_floor_;
 string door_status_;
 
 bool planner_check_done_ = false;
-bool arm_check_done_ = false;
+bool arm_return_status_ = false;
+bool arm_return_checker_ = false;
 bool path_generater_check_done_ = false;
 bool arrive_target_floor_ = false;
 
@@ -119,28 +120,31 @@ void TimerCallback(const ros::TimerEvent &event)
 
   }else if(control_status_ == 2) //press button (outside)
   {
-    
+    // 
     if(first_time)
     {
       if(target_floor_ - init_floor_> 0)
       {
-        button_param.request.button_type.data="up";
+        button_param.request.button_type.data="(";
       }
       else
       {
-        button_param.request.button_type.data="down";
+        button_param.request.button_type.data=")";
       }
 
       PressButtonCallService(button_srv_client_,button_param);
       first_time = false;
     }
   
-    if(arm_check_done_)
+    if(arm_return_checker_)
     {
-      arm_check_done_ = false;
+      
       first_time = true;
+      arm_return_checker_ = false;
       control_status_++;
+
     }
+    
 
   }else if(control_status_ == 3)// move to standby position
   {
@@ -164,12 +168,19 @@ void TimerCallback(const ros::TimerEvent &event)
       planner_check_done_ = false;
       path_generater_check_done_ = false;
       first_time = true;
-      control_status_++;
+
+      if(arm_return_status_)
+      {
+        control_status_++;
+      }
+      else
+      {
+        control_status_ = 1;
+      }
+      
+      
     }
 
-    //
-    
-    
   }else if(control_status_ == 4)// waiting door open
   {
     if(door_status_ == "open")
@@ -210,7 +221,7 @@ void TimerCallback(const ros::TimerEvent &event)
       planner_check_done_ = false;
       path_generater_check_done_ = false;
       first_time = true;
-      control_status_ ++;
+      control_status_ = 7;
       
     }
     
@@ -251,11 +262,14 @@ void TimerCallback(const ros::TimerEvent &event)
       first_time = false;
     }
   
-    if(arm_check_done_)
+
+    if(arm_return_checker_)
     {
-      arm_check_done_ = false;
+      
       first_time = true;
+      arm_return_checker_ = false;
       control_status_++;
+
     }
     
   }
@@ -279,7 +293,15 @@ void TimerCallback(const ros::TimerEvent &event)
       planner_check_done_ = false;
       path_generater_check_done_ = false;
       first_time = true;
-      control_status_++;
+
+      if(arm_return_status_)
+      {
+        control_status_++;
+      }
+      else
+      {
+        control_status_ = 6;
+      }
     }
   }
   else if(control_status_ == 9)//waiting arrive target floor
@@ -438,7 +460,8 @@ bool StatusCheckServiceCallback(campusrover_msgs::ElevatorStatusChecker::Request
   }
   else if(req.node_name.data == "arm")
   {
-    arm_check_done_ = req.status.data;
+    arm_return_status_ = req.status.data;
+    arm_return_checker_ = true;
     return true;
   }
   else if(req.node_name.data == "path_generater")

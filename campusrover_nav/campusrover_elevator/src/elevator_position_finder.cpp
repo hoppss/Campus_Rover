@@ -413,7 +413,10 @@ void ControlStatusCallback(const campusrover_msgs::ElevatorControlStatusConstPtr
   else if(control_status_ > 0 && control_status_ < 6 && enter_done_)
   {
     enable_mode_ = false;
-    pose_pub_.publish(hold_poses_);
+    prosses_pose = hold_poses_.poses[0];
+    prosses_pose.position.z = -1;
+    prosses_poses.poses.push_back(prosses_pose);
+    pose_pub_.publish(prosses_poses);
   }
   else if (control_status_ > 5 && control_status_ < 12 && !exit_done_)
   {

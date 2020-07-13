@@ -16,6 +16,7 @@
         /xsens_imu_odom/velocity
         /right_camera/color/camera_info
         /right_camera/color/image_raw
+        /right_camera/aligned_depth_to_color/image_raw
 
         " />
 

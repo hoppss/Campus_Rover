@@ -78,6 +78,16 @@
     </visual>
   </link>
 
+  <link name="left_camera_link">
+    <visual>
+      <origin xyz="0.0 0.0 0.0" />
+      <geometry>
+        <box size="0.035 0.035 0.015" />
+      </geometry>
+      <material name="black" />
+    </visual>
+  </link>
+
   <link name="link_0">
     <visual>
       <origin xyz="0.0 0.0 0.0" />
@@ -122,6 +132,12 @@
     <parent link="base_link" />
     <child link="right_camera_link" />
     <origin xyz="-0.05 -0.315 0.985" rpy="0 0 0" />
+  </joint>
+
+  <joint name="left_camera_link_joint" type="fixed">
+    <parent link="base_link" />
+    <child link="left_camera_link" />
+    <origin xyz="-0.1 -0.34 0.985" rpy="0 0 -1.57" />
   </joint>
 
   <joint name="link_0_joint" type="fixed">

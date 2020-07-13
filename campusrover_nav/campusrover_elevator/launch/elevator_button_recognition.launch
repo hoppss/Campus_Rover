@@ -1,0 +1,28 @@
+<launch>
+  <arg name="debug"               default="false"/>
+  <arg name="bag_filename"        default="$(env HOME)/bags/campusrover_bag/20200708_elevator_button_40_center.bag"/>
+  <!-- /////////////////////////////////////////////////////////////////////////////////// -->
+  <group if="$(arg debug)">
+
+      <param name="use_sim_time" value="true" />
+      <node name="playbag" pkg="rosbag" type="play"
+              args="--clock $(arg bag_filename)" />
+
+      <param name="robot_description"
+          textfile="$(find campusrover_description)/urdf/campusrover.urdf" />
+
+      <node name="robot_state_publisher" pkg="robot_state_publisher"
+          type="robot_state_publisher" />
+
+
+      <!-- rviz -->
+      <node name="rviz" pkg="rviz" type="rviz" args="-d $(find button_tracker)/rviz/ocr_rcnn_v2.rviz" />
+
+  </group>
+
+  <include file="$(find button_tracker)/launch/button_tracker.launch" />
+
+  <include file="$(find button_recognition)/launch/button_recognizer.launch" />
+
+  
+</launch>

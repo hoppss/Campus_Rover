@@ -67,7 +67,7 @@ double footprint_max_y_;
 double footprint_min_y_;
 
 double robot_yaw_;
-double speed_ki_;
+double speed_pid_k_;
 double target_yaw_;
 
 double max_linear_velocity_;
@@ -96,7 +96,7 @@ void get_parameters(ros::NodeHandle n_private)
   n_private.param<double>("footprint_min_x", footprint_min_x_, -0.5);
   n_private.param<double>("footprint_max_y", footprint_max_y_, 0.6);
   n_private.param<double>("footprint_min_y", footprint_min_y_, -0.6);
-  n_private.param<double>("speed_ki", speed_ki_, 0.06);
+  n_private.param<double>("speed_pid_k", speed_pid_k_, 0.06);
 
   n_private.param<bool>("enble_costmap_obstacle", enble_costmap_obstacle_, false);
   n_private.param<bool>("direction_inverse", direction_inverse_, false);
@@ -346,7 +346,7 @@ void moving_to_target_point()
   yaw_error = direction_yaw - robot_yaw_;
   angle_normalize(yaw_error);
 
-  ang_vel = yaw_error*speed_ki_;
+  ang_vel = yaw_error*speed_pid_k_;
 
   if(direction_inverse_)
   {
@@ -373,7 +373,7 @@ void moving_to_target_direction()
   yaw_error = target_yaw_ - robot_yaw_;
   angle_normalize(yaw_error);
 
-  ang_vel = yaw_error*speed_ki_;
+  ang_vel = yaw_error*speed_pid_k_;
   
   
 

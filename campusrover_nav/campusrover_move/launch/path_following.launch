@@ -42,7 +42,7 @@
         <param name="footprint_max_y" value="0.01" />
         <param name="footprint_max_y" value="-0.03" />
 
-        <param name="speed_ki" value="0.5" />
+        <param name="speed_pid_k" value="0.5" />
 
         <param name="enble_costmap_obstacle" value="false" />
         <param name="direction_inverse" value="false" />

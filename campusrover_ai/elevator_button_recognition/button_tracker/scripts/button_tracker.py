@@ -91,6 +91,7 @@ class read_video_and_recognize:
     cv_image = bridge.imgmsg_to_cv2(Image, 'bgr8') 
     frame = cv_image
     button_tracker = ButtonTracker()
+    print (self.check)
     if self.check == True:  
       (self.boxes, scores, self.texts, beliefs) = button_tracker.call_for_service(frame)
       for box, text in zip(self.boxes, self.texts):
@@ -98,7 +99,7 @@ class read_video_and_recognize:
         button_tracker.visualize_recognitions(frame, box, text)
         ros_result_image=bridge.cv2_to_imgmsg(frame,'bgr8')
         pub.publish(ros_result_image)
-        self.check = False
+      self.check = False
 
   def depth_image(self,data):
     bridge = CvBridge()
@@ -176,10 +177,10 @@ class read_video_and_recognize:
 if __name__ == '__main__':
   rospy.init_node('button_tracker', anonymous=True)
   read=read_video_and_recognize()
-  pub=rospy.Publisher('button_image',Image,queue_size=2)
+  pub=rospy.Publisher('button_recognize_image',Image,queue_size=2)
   pub_xyz=rospy.Publisher('button_pose',PoseStamped,queue_size=2)
-  rospy.Subscriber('right_camera/aligned_depth_to_color/image_raw',Image,read.depth_image)
-  rospy.Subscriber("right_camera/color/image_raw", Image,read.read_and_recognize)
+  rospy.Subscriber('/aligned_depth_image_raw',Image,read.depth_image)
+  rospy.Subscriber("/color_image_raw", Image,read.read_and_recognize)
   rospy.Subscriber('button_info', String,read.button_info_enable)
   # rospy.Subscriber('elevator_control',Bool,read.check_flag)
   rospy.spin()

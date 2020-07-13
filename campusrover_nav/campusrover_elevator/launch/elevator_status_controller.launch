@@ -63,5 +63,8 @@
     <!-- elevator position finder -->
     <include file="$(find campusrover_elevator)/launch/elevator_position_finder.launch" />
 
+    <!-- elevator position finder -->
+    <include file="$(find campusrover_elevator)/launch/elevator_button_recognition.launch" />
+
 
 </launch>

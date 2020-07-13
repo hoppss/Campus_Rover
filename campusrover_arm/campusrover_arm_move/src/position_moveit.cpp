@@ -98,7 +98,7 @@ bool ArmServiceCallback(campusrover_msgs::ArmAction::Request  &req, campusrover_
     move_group.setNumPlanningAttempts(num_planning_attempts_);
     move_group.allowReplanning(allow_replanning_);
 
-    slope_msg.request.slope = 35;
+    slope_msg.request.slope = 40;
     SetComplianceSlopeCallService(joint_1_slope_client_, slope_msg);
     SetComplianceSlopeCallService(joint_2_slope_client_, slope_msg);
     SetComplianceSlopeCallService(joint_3_slope_client_, slope_msg);
@@ -167,9 +167,21 @@ bool ArmServiceCallback(campusrover_msgs::ArmAction::Request  &req, campusrover_
         pose_ = local_pose;
     }
     
+    double yaw;
+
+    if(target_pose.position.x > target_pose.position.z)
+    {
+      yaw = atan2(pose_.pose.position.y,pose_.pose.position.x);
+    }
+    else
+    {
+      yaw = atan2(pose_.pose.position.x,pose_.pose.position.z);
+    }
+
     
 
-    double yaw = atan2(pose_.pose.position.y,pose_.pose.position.x);
+    
+
     quat_tf.setRPY( 0, 0, yaw ); 
     geometry_msgs::Quaternion quat_msg = tf2::toMsg(quat_tf);
     target_pose.position = pose_.pose.position;
@@ -182,61 +194,86 @@ bool ArmServiceCallback(campusrover_msgs::ArmAction::Request  &req, campusrover_
 
     move_group.setPoseTarget(target_pose);
     success = (move_group.plan(plan) == moveit::planning_interface::MoveItErrorCode::SUCCESS);
-    move_group.move();
-    ros::Duration(0.5).sleep();
+    if(success)
+    {
+      move_group.move();
+      ros::Duration(0.1).sleep();
 
-    static std::vector<geometry_msgs::Pose> waypoints;
-    waypoints.clear();
+      static std::vector<geometry_msgs::Pose> waypoints;
+      waypoints.clear();
 
-    waypoints.push_back(target_pose);
+      waypoints.push_back(target_pose);
 
-    target_pose.position.x += press_dis_;
-    //target_pose.position.x += press_dis_*cos(yaw);
-    //target_pose.position.y += press_dis_*sin(yaw);
-    waypoints.push_back(target_pose);  // right
+      if(target_pose.position.x > target_pose.position.z)
+      {
+        target_pose.position.x += press_dis_;
+        waypoints.push_back(target_pose); 
 
-    target_pose.position.x -= press_dis_;
-    //target_pose.position.x -= press_dis_*cos(yaw);
-    //target_pose.position.y -= press_dis_*sin(yaw);
-    waypoints.push_back(target_pose);  // up and left
+        target_pose.position.x -= press_dis_;
+        waypoints.push_back(target_pose);  
+      }
+      else
+      {
+        target_pose.position.z += press_dis_;
+        waypoints.push_back(target_pose); 
 
-    // Cartesian motions are frequently needed to be slower for actions such as approach and retreat
-    // grasp motions. Here we demonstrate how to reduce the speed of the robot arm via a scaling factor
-    // of the maxiumum speed of each joint. Note this is not the speed of the end effector point.
-    move_group.setMaxVelocityScalingFactor(1.0);
+        target_pose.position.z -= press_dis_;
+        waypoints.push_back(target_pose); 
+      }
+        
 
-    static moveit_msgs::RobotTrajectory trajectory;
-    double fraction = move_group.computeCartesianPath(waypoints, eef_step_, jump_threshold_, trajectory);
-    ROS_INFO_NAMED("tutorial", "Visualizing plan 4 (Cartesian path) (%.2f%% acheived)", fraction * 100.0);
+     
 
-    // Visualize the plan in RViz
-    visual_tools.deleteAllMarkers();
-    visual_tools.publishText(text_pose, "Joint Space Goal", rvt::WHITE, rvt::XLARGE);
-    visual_tools.publishPath(waypoints, rvt::LIME_GREEN, rvt::SMALL);
-    for (std::size_t i = 0; i < waypoints.size(); ++i)
-    visual_tools.publishAxisLabeled(waypoints[i], "pt" + std::to_string(i), rvt::SMALL);
-    visual_tools.trigger();
+      // Cartesian motions are frequently needed to be slower for actions such as approach and retreat
+      // grasp motions. Here we demonstrate how to reduce the speed of the robot arm via a scaling factor
+      // of the maxiumum speed of each joint. Note this is not the speed of the end effector point.
 
-    plan.trajectory_ = trajectory;
-    move_group.execute(plan);
+      static moveit_msgs::RobotTrajectory trajectory;
+      double fraction = move_group.computeCartesianPath(waypoints, eef_step_, jump_threshold_, trajectory);
+      ROS_INFO_NAMED("tutorial", "Visualizing plan 4 (Cartesian path) (%.2f%% acheived)", fraction * 100.0);
 
-    ros::Duration(0.5).sleep();
+      // Visualize the plan in RViz
+      visual_tools.deleteAllMarkers();
+      visual_tools.publishText(text_pose, "Joint Space Goal", rvt::WHITE, rvt::XLARGE);
+      visual_tools.publishPath(waypoints, rvt::LIME_GREEN, rvt::SMALL);
+      for (std::size_t i = 0; i < waypoints.size(); ++i)
+      visual_tools.publishAxisLabeled(waypoints[i], "pt" + std::to_string(i), rvt::SMALL);
+      visual_tools.trigger();
 
-    slope_msg.request.slope = 70;
-    SetComplianceSlopeCallService(joint_1_slope_client_, slope_msg);
-    SetComplianceSlopeCallService(joint_2_slope_client_, slope_msg);
-    SetComplianceSlopeCallService(joint_3_slope_client_, slope_msg);
+      plan.trajectory_ = trajectory;
+      move_group.execute(plan);
 
-    status_msg.request.node_name.data = "arm";
-    status_msg.request.status.data = true;
-    StatusCheckCallService(status_check_client_, status_msg);
+      ros::Duration(0.5).sleep();
 
-    cout << "move to standby_pose  " << endl;
-    move_group.setMaxVelocityScalingFactor(1.0);
-    success = (move_group.setNamedTarget("standby_pose") == moveit::planning_interface::MoveItErrorCode::SUCCESS);
-    move_group.move();
+      status_msg.request.node_name.data = "arm";
+      status_msg.request.status.data = true;
+      StatusCheckCallService(status_check_client_, status_msg);
 
-    ros::Duration(0.5).sleep();
+      slope_msg.request.slope = 70;
+      SetComplianceSlopeCallService(joint_1_slope_client_, slope_msg);
+      SetComplianceSlopeCallService(joint_2_slope_client_, slope_msg);
+      SetComplianceSlopeCallService(joint_3_slope_client_, slope_msg);
+
+      cout << "move to standby_pose  " << endl;
+      move_group.setMaxVelocityScalingFactor(1.0);
+      success = (move_group.setNamedTarget("standby_pose") == moveit::planning_interface::MoveItErrorCode::SUCCESS);
+      move_group.move();
+      
+      ros::Duration(0.2).sleep();
+      
+    }else
+    {
+      status_msg.request.node_name.data = "arm";
+      status_msg.request.status.data = false;
+      StatusCheckCallService(status_check_client_, status_msg);
+
+      slope_msg.request.slope = 70;
+      SetComplianceSlopeCallService(joint_1_slope_client_, slope_msg);
+      SetComplianceSlopeCallService(joint_2_slope_client_, slope_msg);
+      SetComplianceSlopeCallService(joint_3_slope_client_, slope_msg);
+    }
+
+    
     cout << "move to release_pose " << endl;
     move_group.setMaxVelocityScalingFactor(1.0);
     success = (move_group.setNamedTarget(release_pose_name_) == moveit::planning_interface::MoveItErrorCode::SUCCESS);
@@ -313,7 +350,7 @@ void SetComplianceSlopeCallService(ros::ServiceClient &client,dynamixel_controll
     ros::Duration(1.0).sleep();
   }
 }
-
+//-----------------------------------------------------------------------------------------------
 int main(int argc, char **argv)
 {
     ros::init(argc, argv, "position_moveit");

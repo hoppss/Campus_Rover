@@ -1,0 +1,12 @@
+<launch>
+
+  <!-- arm  sever -->
+  <include file="$(find campusrover_arm_move)/launch/press_button.launch" />
+
+  <!-- Arm Control -->
+  <include file="$(find campusrover_dynamixel)/launch/arm_controller.launch" />
+
+  <!-- Moveit Execution -->
+  <include file="$(find campusrover_arm_moveit_config)/launch/moveit_planning_execution.launch" />
+
+</launch>

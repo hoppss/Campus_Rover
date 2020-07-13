@@ -139,8 +139,8 @@ void PoseCallback(const geometry_msgs::PoseArrayConstPtr &poses)
         after_pose.pose.position = poses->poses[i].position;
         after_pose.pose.orientation = poses->poses[i].orientation;
       }
-      
 
+      
       pose.position = after_pose.pose.position;
       pose.orientation = after_pose.pose.orientation;
       doors_status_msg.doors_pose.poses.push_back(pose);
@@ -196,13 +196,22 @@ void PoseCallback(const geometry_msgs::PoseArrayConstPtr &poses)
       open_rate = open_rate_sgn / count;
       //cout<<"open_rate "<<open_rate<<'\n';
 
-      if(open_rate > door_open_threshold_)
+      if(pose.position.z < 0)
       {
         door_status.data = "open";
       }else
       {
-        door_status.data = "close";
+        if(open_rate > door_open_threshold_)
+        {
+          door_status.data = "open";
+        }else
+        {
+          door_status.data = "close";
+        }
       }
+      
+
+      
       doors_status_msg.doors_status.push_back(door_status);
       
     }

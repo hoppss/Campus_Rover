@@ -58,3 +58,6 @@ target_link_libraries(elevator_path_generater ${catkin_LIBRARIES})
 
 add_executable(elevator_status_controller src/elevator_status_controller.cpp)
 target_link_libraries(elevator_status_controller ${catkin_LIBRARIES})
+
+add_executable(camera_topic_mux src/camera_topic_mux.cpp)
+target_link_libraries(camera_topic_mux ${catkin_LIBRARIES})

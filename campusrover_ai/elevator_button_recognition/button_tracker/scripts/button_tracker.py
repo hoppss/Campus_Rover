@@ -11,14 +11,12 @@ from sensor_msgs.msg import Image
 from std_msgs.msg import Bool
 from std_msgs.msg import String
 from geometry_msgs.msg import PoseStamped
-from campusrover_msgs.srv import ArmAction
-from campusrover_msgs.srv import PressButton
-from campusrover_msgs.srv import PressButtonResponse
+from campusrover_msgs.srv import *
 from button_recognition.srv import *
 from cv_bridge import CvBridge
 from sensor_msgs.msg import PointCloud2
 from sensor_msgs import point_cloud2
-from campusrover_msgs.msg import ButtonStatus
+from campusrover_msgs.msg import ButtonCommand
 
 init_brightness_value=0
 check_brightness_value=0
@@ -108,15 +106,17 @@ class read_video_and_recognize:
       y=self.box[1]
       w=self.box[2]-self.box[0]
       h=self.box[3]-self.box[1]
-      button_image_array = hsv[y:y+h x:x+w]
+      button_image_array = hsv[y:y+h, x:x+w]
       # cv2.imshow("button", button_image_array)
       if self.button_status == 'init':
         init_brightness_value=sum(button_image_array[:,:,2])/len(button_image_array)
+        self.hsvcheck = False
       if self.button_status == 'check':
         check_brightness_value=sum(button_image_array[:,:,2])/len(button_image_array)
         diff_brightness=check_brightness_value-init_brightness_value
-        if diff_brightness > brightness_set:
+        if diff_brightness > brightness_set :
           self.button_status_check = True
+          self.hsvcheck = False
               
       
     
@@ -168,25 +168,39 @@ class read_video_and_recognize:
     goal.pose.position.x = self.pixel_depth_ros
     goal.pose.position.y = self.x_biase*-1
     goal.pose.position.z = self.y_biase*-1
-    if self.pixel_depth_ros>0 and self.pixel_depth_ros<0.5 and presstext == self.button_info and self.presscheck == True:
+    if self.pixel_depth_ros>0 and self.pixel_depth_ros<0.5 and presstext == self.button_info and self.presscheck == True and self.button_status == 'init':
       read=read_video_and_recognize()
-      read.call_arm_service(goal,self.button_status_check)
+      read.call_arm_service(goal)
       self.presscheck = False
+    if presstext == self.button_info and self.button_status == 'check':
+      read=read_video_and_recognize()
+      read.call_arm_service_check(self.button_status_check)
+      self.presscheck = False
+    
 
   def button_info_enable(self,button):
-    self.button_info=button.data.button_name
-    self.button_status=button.data.status
+    self.button_info=button.button_name
+    self.button_status=button.command_type
     self.presscheck = True
     self.recognize_check=True
     self.hsvcheck = True
 
-  def call_arm_service(self,pose_data,status):
+  def call_arm_service(self,pose_data):
     rospy.wait_for_service('arm_action')
     try:
       pose = rospy.ServiceProxy('arm_action', ArmAction)
-      response_ans = pose(pose_data,status)
+      response_ans = pose(pose_data)
     except rospy.ServiceException(f):
-      print("arm service failed: {}".format(f))
+      print("arm_action service failed: {}".format(f))
+  
+  def call_arm_service_check(self,buttonstatus_data):
+    rospy.wait_for_service('button_status')
+    try:
+      status = rospy.ServiceProxy('button_status', ButtonStatus)
+      response_ans = status(buttonstatus_data)
+    except rospy.ServiceException(f):
+      print("button_status service failed: {}".format(f))
+  
   
 
 if __name__ == '__main__':
@@ -198,5 +212,5 @@ if __name__ == '__main__':
   
   rospy.Subscriber("/color_image_raw", Image,read.read_and_recognize)
   rospy.Subscriber("/color_image_raw", Image,read.imagetohsv)
-  rospy.Subscriber('/button_info', ButtonStatus,read.button_info_enable)
+  rospy.Subscriber('/button_info', ButtonCommand,read.button_info_enable)
   rospy.spin()

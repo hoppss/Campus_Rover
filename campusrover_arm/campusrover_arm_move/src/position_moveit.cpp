@@ -178,9 +178,11 @@ bool ArmServiceCallback(campusrover_msgs::ArmAction::Request  &req, campusrover_
         
         pose_ = local_pose;
     }
-    
-    double yaw;
 
+
+    double yaw;
+    
+    target_pose.position = pose_.pose.position;
     if(target_pose.position.x > target_pose.position.z)
     {
       yaw = atan2(pose_.pose.position.y,pose_.pose.position.x);
@@ -189,14 +191,8 @@ bool ArmServiceCallback(campusrover_msgs::ArmAction::Request  &req, campusrover_
     {
       yaw = atan2(pose_.pose.position.x,pose_.pose.position.z);
     }
-
-    
-
-    
-
     quat_tf.setRPY( 0, 0, yaw ); 
     geometry_msgs::Quaternion quat_msg = tf2::toMsg(quat_tf);
-    target_pose.position = pose_.pose.position;
     target_pose.orientation = quat_msg;
     target_pose.position.x += shift_x_;
     target_pose.position.y += shift_y_;
@@ -291,10 +287,17 @@ bool ArmServiceCallback(campusrover_msgs::ArmAction::Request  &req, campusrover_
 
       ros::Duration(0.1).sleep();
 
+      status_msg.request.node_name.data = "arm";
+      status_msg.request.status.data = true;
+
+    }
+    else
+    {
+      status_msg.request.node_name.data = "arm";
+      status_msg.request.status.data = false;
     }
 
-    status_msg.request.node_name.data = "arm";
-    status_msg.request.status.data = true;
+    
     StatusCheckCallService(status_check_client_, status_msg);
 
     slope_msg.request.slope = 70;

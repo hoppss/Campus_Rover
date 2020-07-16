@@ -5,9 +5,9 @@
         <param name="path_resolution" value="0.05" />
 
         <param name="outside_button_pose_x_1" value="-2.4" />
-        <param name="outside_button_pose_y_1" value="-0.5" />
-        <param name="outside_button_pose_x_2" value="-0.67" />
-        <param name="outside_button_pose_y_2" value="-0.5" />
+        <param name="outside_button_pose_y_1" value="-0.6" />
+        <param name="outside_button_pose_x_2" value="-0.7" />
+        <param name="outside_button_pose_y_2" value="-0.6" />
         <param name="outside_button_pose_yaw" value="0.0" />
 
         <param name="outside_standby_pose_x_1" value="-0.4" />

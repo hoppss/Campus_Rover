@@ -1,0 +1,6 @@
+[submodule "third_party/realsense-ros"]
+	path = third_party/realsense-ros
+	url = https://github.com/IntelRealSense/realsense-ros.git
+[submodule "third_party/ydlidar_ros"]
+	path = third_party/ydlidar_ros
+	url = https://github.com/YDLIDAR/ydlidar_ros.git

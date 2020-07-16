@@ -116,7 +116,9 @@ class read_video_and_recognize:
         diff_brightness=check_brightness_value-init_brightness_value
         if diff_brightness > brightness_set :
           self.button_status_check = True
-          self.hsvcheck = False
+        else:
+          self.button_status_check = False
+        self.hsvcheck = False
               
       
     

@@ -24,6 +24,7 @@ add_message_files(
   ElevatorControlStatus.msg
   FloorStatus.msg
   Encode.msg
+  ButtonStatus.msg
 )
 
 ## Generate service in the 'srv' folder###

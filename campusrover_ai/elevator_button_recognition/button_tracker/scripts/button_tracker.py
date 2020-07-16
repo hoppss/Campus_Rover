@@ -18,7 +18,10 @@ from button_recognition.srv import *
 from cv_bridge import CvBridge
 from sensor_msgs.msg import PointCloud2
 from sensor_msgs import point_cloud2
+from campusrover_msgs.msg import ButtonStatus
 
+init_brightness_value=0
+check_brightness_value=0
 
 class ButtonTracker:
   def __init__(self):
@@ -69,50 +72,73 @@ class ButtonTracker:
 class read_video_and_recognize:
   def __init__(self):
     self.boxes=[]
+    self.box=[0,0,0,0]
     self.texts=[]
-    self.check=False
+    self.recognize_check=False
     self.pixel_depth_ros=1
     self.x_biase=0
     self.y_biase=0
     self.button_info=''
-    self.presecheck=False
+    self.presscheck=False
     self.frame_id=''
-
+    self.hsvcheck=False
+    self.button_status=''
+    self.button_status_check=False
   def read_and_recognize(self,Image):
-# initialize tracking process
+  # initialize tracking process
     bridge = CvBridge()
     cv_image = bridge.imgmsg_to_cv2(Image, 'bgr8') 
-    frame = cv_image
     self.frame_id=Image.header.frame_id
     button_tracker = ButtonTracker()
-    print (self.check)
-    if self.check == True:  
+    if self.recognize_check == True:  
       (self.boxes, scores, self.texts, beliefs) = button_tracker.call_for_service(frame)
       for box, text in zip(self.boxes, self.texts):
-# output video in ros
-        button_tracker.visualize_recognitions(frame, box, text)
-        ros_result_image=bridge.cv2_to_imgmsg(frame,'bgr8')
+    # output video in ros
+        button_tracker.visualize_recognitions(cv_image, box, text)
+        ros_result_image=bridge.cv2_to_imgmsg(cv_image,'bgr8')
         pub.publish(ros_result_image)
-      self.check = False
+      self.recognize_check = False
+  
+  def imagetohsv (self,Image):
+    bridge = CvBridge()
+    cv_image = bridge.imgmsg_to_cv2(Image, 'bgr8')
+    hsv=cv2.cvtColor(cv_image,cv2.COLOR_BGR2HSV)
+    if self.hsvcheck == True:
+      x=self.box[0]
+      y=self.box[1]
+      w=self.box[2]-self.box[0]
+      h=self.box[3]-self.box[1]
+      button_image_array = hsv[y:y+h x:x+w]
+      # cv2.imshow("button", button_image_array)
+      if self.button_status == 'init':
+        init_brightness_value=sum(button_image_array[:,:,2])/len(button_image_array)
+      if self.button_status == 'check':
+        check_brightness_value=sum(button_image_array[:,:,2])/len(button_image_array)
+        diff_brightness=check_brightness_value-init_brightness_value
+        if diff_brightness > brightness_set:
+          self.button_status_check = True
+              
+      
+    
+
 
   def depth_image(self,data):
     bridge = CvBridge()
     cv_depth_image = bridge.imgmsg_to_cv2(data, '16UC1')
     i=0
-    box=[0,0,0,0]
     text='set'
     presstext='set'
     for text in self.texts:
       if text==self.button_info:
-        box=self.boxes[i]
+        self.box=self.boxes[i]
         presstext=text
         break
       else:
         i=i+1
       if i==len(self.texts):
-        self.check = True
-    point_x = (box[2] + box[0]) / 2.0 
-    point_y = (box[3] + box[1]) / 2.0
+        self.recognize_check = True
+    point_x = (self.box[2] + self.box[0]) / 2.0 
+    point_y = (self.box[3] + self.box[1]) / 2.0
     pixel_depth=cv_depth_image[int(point_y),int(point_x)]
    
     self.pixel_depth_ros=float(pixel_depth)/1000
@@ -142,24 +168,23 @@ class read_video_and_recognize:
     goal.pose.position.x = self.pixel_depth_ros
     goal.pose.position.y = self.x_biase*-1
     goal.pose.position.z = self.y_biase*-1
-    if self.pixel_depth_ros>0 and self.pixel_depth_ros<0.5 and presstext == self.button_info and self.presecheck == True:
-      pub_xyz.publish(goal) 
+    if self.pixel_depth_ros>0 and self.pixel_depth_ros<0.5 and presstext == self.button_info and self.presscheck == True:
       read=read_video_and_recognize()
-      read.call_arm_service(goal)
-      self.presecheck = False
+      read.call_arm_service(goal,self.button_status_check)
+      self.presscheck = False
 
   def button_info_enable(self,button):
-    self.button_info=button.data
-    read=read_video_and_recognize()
-    self.presecheck = True
-    self.check=True
+    self.button_info=button.data.button_name
+    self.button_status=button.data.status
+    self.presscheck = True
+    self.recognize_check=True
+    self.hsvcheck = True
 
-  def call_arm_service(self,data):
+  def call_arm_service(self,pose_data,status):
     rospy.wait_for_service('arm_action')
     try:
       pose = rospy.ServiceProxy('arm_action', ArmAction)
-      response_ans = pose(data)
-      return response_ans
+      response_ans = pose(pose_data,status)
     except rospy.ServiceException(f):
       print("arm service failed: {}".format(f))
   
@@ -167,9 +192,11 @@ class read_video_and_recognize:
 if __name__ == '__main__':
   rospy.init_node('button_tracker', anonymous=True)
   read=read_video_and_recognize()
+  brightness_set= rospy.get_param('/brightness_detect',10)
   pub=rospy.Publisher('button_recognize_image',Image,queue_size=2)
-  pub_xyz=rospy.Publisher('button_pose',PoseStamped,queue_size=2)
   rospy.Subscriber('/aligned_depth_image_raw',Image,read.depth_image)
+  
   rospy.Subscriber("/color_image_raw", Image,read.read_and_recognize)
-  rospy.Subscriber('button_info', String,read.button_info_enable)
+  rospy.Subscriber("/color_image_raw", Image,read.imagetohsv)
+  rospy.Subscriber('/button_info', ButtonStatus,read.button_info_enable)
   rospy.spin()

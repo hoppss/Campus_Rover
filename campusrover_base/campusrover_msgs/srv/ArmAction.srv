@@ -1,2 +1,3 @@
 geometry_msgs/PoseStamped button_pose
+std_msgs/Bool button_status
 ---

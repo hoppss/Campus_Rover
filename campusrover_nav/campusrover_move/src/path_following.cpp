@@ -182,8 +182,6 @@ void check_arrive_direction()
     status_checker_msg_.request.node_name.data = "planner";
     status_checker_msg_.request.status.data = arriving_end_direction_;
     StatusCheckCallService(status_check_client_, status_checker_msg_);
-    TwistPublish(0.0, 0.0);
-    TwistPublish(0.0, 0.0);
   }else{
     arriving_end_direction_ = false;
   }
@@ -214,11 +212,23 @@ void TimerCallback(const ros::TimerEvent &event)
           if(!arriving_end_point_)
           {
             check_arrive_point();
+            if(arriving_end_point_)
+            {
+              moving_to_target_direction();
+              return;
+            }
             moving_to_target_point();
           }
           else
           {
             check_arrive_direction();
+            if(arriving_end_direction_)
+            {
+              status_msg_ = 4;
+              TwistPublish(0.0, 0.0);
+              return;
+            }
+
             moving_to_target_direction();
           }
         }
@@ -355,6 +365,11 @@ void moving_to_target_point()
   else
   {
     len_vel = max_linear_velocity_;
+  }
+
+  if(target_point_id == closest_id)
+  {
+    len_vel = len_vel*0.5;
   }
   
   

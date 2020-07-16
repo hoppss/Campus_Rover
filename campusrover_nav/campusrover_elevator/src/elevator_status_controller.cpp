@@ -58,6 +58,12 @@ void InitFloorCallService(ros::ServiceClient &client,campusrover_msgs::InitFloor
 void PressButtonCallService(ros::ServiceClient &client,campusrover_msgs::PressButton &srv) ;
 void PlannerFunctionCallService(ros::ServiceClient &client,campusrover_msgs::PlannerFunction &srv) ;
 void ArmStandybyFunctionCallService(ros::ServiceClient &client,campusrover_msgs::ArmStandby &srv);
+void MoveToButton();
+void PressButton(campusrover_msgs::PressButton button_param);
+void EnterElevator();
+void LeaveElevator();
+void MoveToPose();
+
 
 //-----------------------------------------------------------------------------------------------
 void get_parameters(ros::NodeHandle n_private)
@@ -66,10 +72,10 @@ void get_parameters(ros::NodeHandle n_private)
   twist_param_0_.angular.z = 0.0;
 
   twist_param_1_.linear.x = 0.2;
-  twist_param_1_.angular.z = 1.0;
+  twist_param_1_.angular.z = 0.8;
 
-  twist_param_2_.linear.x = 0.4;
-  twist_param_2_.angular.z = 1.0;
+  twist_param_2_.linear.x = 0.3;
+  twist_param_2_.angular.z = 0.8;
 
 
 }
@@ -81,106 +87,41 @@ void TimerCallback(const ros::TimerEvent &event)
   static campusrover_msgs::PlannerFunction planner_param;
   static campusrover_msgs::InitFloor init_param;
   static campusrover_msgs::PressButton button_param;
-  static campusrover_msgs::ArmStandby arm_standby_msg;;
+  static campusrover_msgs::ArmStandby arm_standby_msg;
+  
 
   status.control_status = control_status_;
   control_status_pub_.publish(status);
 
   if(control_status_ == 1)// move to front of button (outside)
   {
-    if(first_time && path_generater_check_done_)
-    {
+    //init floor 
+    init_param.request.init_floor = init_floor_;
+    InitFloorCallService(init_floor_srv_client_, init_param);
 
-      //init floor 
-      init_param.request.init_floor = init_floor_;
-      InitFloorCallService(init_floor_srv_client_, init_param);
+    MoveToButton();
 
-      planner_param.request.action.data = true;
-      planner_param.request.direction_inverse.data = false;
-      planner_param.request.speed_parameter = twist_param_1_;
-      PlannerFunctionCallService(planner_srv_client_, planner_param);
-      //Arm Standby pose 
-      arm_standby_msg.request.status.data = true;
-      ArmStandybyFunctionCallService(arm_standby_srv_client_, arm_standby_msg);
-      first_time = false;
-    }
-  
-    if(planner_check_done_)
-    {
-      planner_param.request.action.data = false;
-      planner_param.request.direction_inverse.data = false;
-      planner_param.request.speed_parameter = twist_param_0_;
-      PlannerFunctionCallService(planner_srv_client_, planner_param);
-      planner_check_done_ = false;
-      path_generater_check_done_ = false;
-      first_time = true;
-      control_status_++;
-    }
-
+    //Arm Standby pose 
+    arm_standby_msg.request.status.data = true;
+    ArmStandybyFunctionCallService(arm_standby_srv_client_, arm_standby_msg);
 
   }else if(control_status_ == 2) //press button (outside)
   {
-    // 
-    if(first_time)
+    if(target_floor_ - init_floor_> 0)
     {
-      if(target_floor_ - init_floor_> 0)
-      {
-        button_param.request.button_type.data="(";
-      }
-      else
-      {
-        button_param.request.button_type.data=")";
-      }
-
-      PressButtonCallService(button_srv_client_,button_param);
-      first_time = false;
+      button_param.request.button_type.data="("; // up
     }
-  
-    if(arm_return_checker_)
+    else
     {
-      
-      first_time = true;
-      arm_return_checker_ = false;
-      control_status_++;
-
-    }
+      button_param.request.button_type.data=")"; // down
+    } 
     
+    PressButton(button_param);
 
   }else if(control_status_ == 3)// move to standby position
   {
-    if(first_time && path_generater_check_done_)
-    {
-      planner_param.request.action.data = true;
-      planner_param.request.direction_inverse.data = true;
-      planner_param.request.speed_parameter = twist_param_1_;
-      PlannerFunctionCallService(planner_srv_client_, planner_param);
-      
-      //
-      first_time = false;
-    }
-  
-    if(planner_check_done_)
-    {
-      planner_param.request.action.data = false;
-      planner_param.request.direction_inverse.data = true;
-      planner_param.request.speed_parameter = twist_param_0_;
-      PlannerFunctionCallService(planner_srv_client_, planner_param);
-      planner_check_done_ = false;
-      path_generater_check_done_ = false;
-      first_time = true;
-
-      if(arm_return_status_)
-      {
-        control_status_++;
-      }
-      else
-      {
-        control_status_ = 1;
-      }
-      
-      
-    }
-
+    MoveToPose();
+    
   }else if(control_status_ == 4)// waiting door open
   {
     if(door_status_ == "open")
@@ -190,119 +131,23 @@ void TimerCallback(const ros::TimerEvent &event)
     
   }else if(control_status_ == 5)//enter the elevator
   {
-    if(door_status_ == "open")
-    {
-      if(first_time && path_generater_check_done_)
-      {
-        planner_param.request.action.data = true;
-        planner_param.request.direction_inverse.data = false;
-        planner_param.request.speed_parameter = twist_param_2_;
-        PlannerFunctionCallService(planner_srv_client_, planner_param);
-        first_time = false;
-      }
-    }
-    else if(!first_time && door_status_ == "close")
-    {
-      planner_param.request.action.data = true;
-      planner_param.request.direction_inverse.data = false;
-      planner_param.request.speed_parameter = twist_param_0_;
-      PlannerFunctionCallService(planner_srv_client_, planner_param);
-      first_time = true;
-    }
-    
-    
-  
-    if(planner_check_done_)
-    {
-      planner_param.request.action.data = false;
-      planner_param.request.direction_inverse.data = false;
-      planner_param.request.speed_parameter = twist_param_0_;
-      PlannerFunctionCallService(planner_srv_client_, planner_param);
-      planner_check_done_ = false;
-      path_generater_check_done_ = false;
-      first_time = true;
-      control_status_ = 7;
-      
-    }
+    EnterElevator();
     
   }else if(control_status_ == 6)//move to front of button (inside)
   {
-
-    if(first_time && path_generater_check_done_)
-    {
-      planner_param.request.action.data = true;
-      planner_param.request.direction_inverse.data = false;
-      planner_param.request.speed_parameter = twist_param_1_;
-      PlannerFunctionCallService(planner_srv_client_, planner_param);
-      first_time = false;
-    }
-  
-    if(planner_check_done_)
-    {
-      planner_param.request.action.data = false;
-      planner_param.request.direction_inverse.data = false;
-      planner_param.request.speed_parameter = twist_param_0_;
-      PlannerFunctionCallService(planner_srv_client_, planner_param);
-      planner_check_done_ = false;
-      path_generater_check_done_ = false;
-      first_time = true;
-      control_status_++;
-    }
+    //Arm Standby pose 
+    // arm_standby_msg.request.status.data = true;
+    // ArmStandybyFunctionCallService(arm_standby_srv_client_, arm_standby_msg);
+    MoveToButton();
     
   }else if(control_status_ == 7) //press button (inside)
   {
-    if(first_time)
-    {
-      //Arm Standby pose 
-      arm_standby_msg.request.status.data = true;
-      ArmStandybyFunctionCallService(arm_standby_srv_client_, arm_standby_msg);
-
-      button_param.request.button_type.data = to_string(target_floor_);
-      PressButtonCallService(button_srv_client_,button_param);
-      first_time = false;
-    }
-  
-
-    if(arm_return_checker_)
-    {
-      
-      first_time = true;
-      arm_return_checker_ = false;
-      control_status_++;
-
-    }
-    
+    button_param.request.button_type.data = to_string(target_floor_);
+    PressButton(button_param);
   }
   else if(control_status_ == 8)//move to standby position
   {
-    if(first_time && path_generater_check_done_)
-    {
-      planner_param.request.action.data = true;
-      planner_param.request.direction_inverse.data = true;
-      planner_param.request.speed_parameter = twist_param_1_;
-      PlannerFunctionCallService(planner_srv_client_, planner_param);
-      first_time = false;
-    }
-  
-    if(planner_check_done_)
-    {
-      planner_param.request.action.data = false;
-      planner_param.request.direction_inverse.data = true;
-      planner_param.request.speed_parameter = twist_param_0_;
-      PlannerFunctionCallService(planner_srv_client_, planner_param);
-      planner_check_done_ = false;
-      path_generater_check_done_ = false;
-      first_time = true;
-
-      if(arm_return_status_)
-      {
-        control_status_++;
-      }
-      else
-      {
-        control_status_ = 6;
-      }
-    }
+    MoveToPose();
   }
   else if(control_status_ == 9)//waiting arrive target floor
   {
@@ -320,41 +165,180 @@ void TimerCallback(const ros::TimerEvent &event)
   }
   else if(control_status_ == 11)//go out of the elevator
   {
-    if(door_status_ == "open")
-    {
-      if(first_time && path_generater_check_done_)
-      {
-        planner_param.request.action.data = true;
-        planner_param.request.direction_inverse.data = false;
-        planner_param.request.speed_parameter = twist_param_2_;
-        PlannerFunctionCallService(planner_srv_client_, planner_param);
-        first_time = false;
-      }
-    }
-    else if(door_status_ == "close")
-    {
-      planner_param.request.action.data = false;
-      planner_param.request.direction_inverse.data = false;
-      planner_param.request.speed_parameter = twist_param_0_;
-      PlannerFunctionCallService(planner_srv_client_, planner_param);
-      first_time = true;
-      control_status_ = 9;
-    }
+    LeaveElevator();
+  }
 
-    if(planner_check_done_)
+}
+//--------------------------------------------------------------------------------------
+void MoveToButton()
+{
+  static bool first_time = true;
+  static campusrover_msgs::PlannerFunction planner_param;
+  static campusrover_msgs::InitFloor init_param;
+  static campusrover_msgs::ArmStandby arm_standby_msg;
+
+  if(first_time && path_generater_check_done_)
+  {
+
+    planner_param.request.action.data = true;
+    planner_param.request.direction_inverse.data = false;
+    planner_param.request.speed_parameter = twist_param_1_;
+    PlannerFunctionCallService(planner_srv_client_, planner_param);
+    
+    first_time = false;
+  }
+
+  if(planner_check_done_)
+  {
+    planner_param.request.action.data = false;
+    planner_param.request.direction_inverse.data = false;
+    planner_param.request.speed_parameter = twist_param_0_;
+    PlannerFunctionCallService(planner_srv_client_, planner_param);
+    planner_check_done_ = false;
+    path_generater_check_done_ = false;
+    first_time = true;
+    control_status_++;
+  }
+}
+//--------------------------------------------------------------------------------------
+void PressButton(campusrover_msgs::PressButton button_param)
+{
+  static bool first_time = true;
+
+  if(first_time)
+  {
+    PressButtonCallService(button_srv_client_,button_param);
+    first_time = false;
+  }
+
+  if(arm_return_checker_)
+  {
+    
+    first_time = true;
+    arm_return_checker_ = false;
+    control_status_++;
+
+  }
+}
+//-----------------------------------------------------------------------------------------------
+void EnterElevator()
+{
+  static bool first_time = true;
+  static campusrover_msgs::PlannerFunction planner_param;
+
+  if(door_status_ == "open")
+  {
+    if(first_time && path_generater_check_done_)
     {
-      planner_param.request.action.data = false;
+      planner_param.request.action.data = true;
       planner_param.request.direction_inverse.data = false;
-      planner_param.request.speed_parameter = twist_param_0_;
+      planner_param.request.speed_parameter = twist_param_2_;
       PlannerFunctionCallService(planner_srv_client_, planner_param);
-      planner_check_done_ = false;
-      path_generater_check_done_ = false;
-      first_time = true;
-      control_status_ = 0;
+      first_time = false;
     }
   }
+  else if(!first_time && door_status_ == "close")
+  {
+    planner_param.request.action.data = true;
+    planner_param.request.direction_inverse.data = false;
+    planner_param.request.speed_parameter = twist_param_0_;
+    PlannerFunctionCallService(planner_srv_client_, planner_param);
+    first_time = true;
+  }
+  
   
 
+  if(planner_check_done_)
+  {
+    planner_param.request.action.data = false;
+    planner_param.request.direction_inverse.data = false;
+    planner_param.request.speed_parameter = twist_param_0_;
+    PlannerFunctionCallService(planner_srv_client_, planner_param);
+    planner_check_done_ = false;
+    path_generater_check_done_ = false;
+    first_time = true;
+    control_status_ = 7;
+    
+  }
+
+}
+//-----------------------------------------------------------------------------------------------
+void LeaveElevator()
+{
+  static bool first_time = true;
+  static campusrover_msgs::PlannerFunction planner_param;
+
+  if(door_status_ == "open")
+  {
+    if(first_time && path_generater_check_done_)
+    {
+      planner_param.request.action.data = true;
+      planner_param.request.direction_inverse.data = false;
+      planner_param.request.speed_parameter = twist_param_2_;
+      PlannerFunctionCallService(planner_srv_client_, planner_param);
+      first_time = false;
+    }
+  }
+  else if(door_status_ == "close")
+  {
+    planner_param.request.action.data = false;
+    planner_param.request.direction_inverse.data = false;
+    planner_param.request.speed_parameter = twist_param_0_;
+    PlannerFunctionCallService(planner_srv_client_, planner_param);
+    first_time = true;
+    control_status_ = 9;
+  }
+
+  if(planner_check_done_)
+  {
+    planner_param.request.action.data = false;
+    planner_param.request.direction_inverse.data = false;
+    planner_param.request.speed_parameter = twist_param_0_;
+    PlannerFunctionCallService(planner_srv_client_, planner_param);
+    planner_check_done_ = false;
+    path_generater_check_done_ = false;
+    first_time = true;
+    control_status_ = 0;
+  }
+
+
+}
+//-----------------------------------------------------------------------------------------------
+void MoveToPose()
+{
+  static bool first_time = true;
+  static campusrover_msgs::PlannerFunction planner_param;
+
+  if(first_time && path_generater_check_done_)
+  {
+    planner_param.request.action.data = true;
+    planner_param.request.direction_inverse.data = true;
+    planner_param.request.speed_parameter = twist_param_1_;
+    PlannerFunctionCallService(planner_srv_client_, planner_param);
+    
+    //
+    first_time = false;
+  }
+
+  if(planner_check_done_)
+  {
+    planner_param.request.action.data = false;
+    planner_param.request.direction_inverse.data = true;
+    planner_param.request.speed_parameter = twist_param_0_;
+    PlannerFunctionCallService(planner_srv_client_, planner_param);
+    planner_check_done_ = false;
+    path_generater_check_done_ = false;
+    first_time = true;
+
+    if(arm_return_status_)
+    {
+      control_status_++;
+    }
+    else
+    {
+      control_status_ = control_status_ - 2.0;
+    }
+  }
 }
 //-----------------------------------------------------------------------------------------------
 void DoorStatusCallback(const campusrover_msgs::DoorStatusConstPtr &door_status )

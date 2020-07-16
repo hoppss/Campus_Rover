@@ -29,7 +29,7 @@ find_package(catkin REQUIRED COMPONENTS
 catkin_package(
 #  INCLUDE_DIRS include
 #  LIBRARIES campusrover_elevator
-#  CATKIN_DEPENDS roscpp rospy
+#  CATKIN_DEPENDS roscpp rospy std_msgs
 #  DEPENDS system_lib
 )
 
@@ -61,3 +61,8 @@ target_link_libraries(elevator_status_controller ${catkin_LIBRARIES})
 
 add_executable(camera_topic_mux src/camera_topic_mux.cpp)
 target_link_libraries(camera_topic_mux ${catkin_LIBRARIES})
+
+# catkin_install_python(PROGRAMS scripts/elevator_localizer.py
+#   DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
+# )
+#

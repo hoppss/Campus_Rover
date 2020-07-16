@@ -24,9 +24,9 @@ add_message_files(
   ElevatorControlStatus.msg
   FloorStatus.msg
   Encode.msg
-  ButtonStatus.msg
+  ButtonCommand.msg
 )
-
+#
 ## Generate service in the 'srv' folder###
 add_service_files(
   FILES
@@ -38,6 +38,7 @@ add_service_files(
   PressButton.srv
   ElevatorControlInterface.srv
   ElevatorStatusChecker.srv
+  ButtonStatus.srv
 )
 #
 ## Generate added messages and services with any dependencies listed here

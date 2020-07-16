@@ -17,6 +17,8 @@
 #include <campusrover_msgs/PressButton.h>
 #include <campusrover_msgs/ElevatorStatusChecker.h> 
 #include <campusrover_msgs/ArmStandby.h> 
+#include <campusrover_msgs/ButtonCommand.h> 
+#include <campusrover_msgs/ButtonStatus.h> 
 #include <dynamixel_controllers/SetComplianceSlope.h>
 
 using namespace std;
@@ -27,10 +29,13 @@ ros::Subscriber pose_sub_;
 ros::Publisher button_info_pub_;
 geometry_msgs::PoseStamped pose_;
 
+bool button_check_status_;
+
 string planning_frame_id_;
 string planning_group_name_;
 string standby_pose_name_;
 string release_pose_name_;
+string press_pose_name_;
 
 double planning_time_;
 double num_planning_attempts_;
@@ -38,6 +43,8 @@ double press_dis_;
 double gap_dis_;
 double jump_threshold_;
 double eef_step_;
+
+string button_info_;
 
 double shift_x_;
 double shift_y_;
@@ -47,6 +54,9 @@ bool allow_replanning_;
 bool Visualization_;
 bool arm_execution_done_= false;
 bool standby_pose_ready_ = false;
+
+bool get_button_check_data_ = false;
+bool button_status_ = false;
 
 void initialization();
 void ButtonPoseCallback(geometry_msgs::Pose Pose);
@@ -59,6 +69,7 @@ void get_parameters(ros::NodeHandle n_private)
     n_private.param<string>("planning_frame_id", planning_frame_id_, "link_0");
     n_private.param<string>("planning_group_name", planning_group_name_, "arm");
     n_private.param<string>("standby_pose_name", standby_pose_name_, "standby_pose");
+    n_private.param<string>("press_pose_name", press_pose_name_, "standby_pose");
     n_private.param<string>("release_pose_name", release_pose_name_, "standby_pose");
     n_private.param<double>("planning_time", planning_time_, 5.0);
     n_private.param<double>("num_planning_attempts", num_planning_attempts_, 10.0);
@@ -113,12 +124,12 @@ bool ArmServiceCallback(campusrover_msgs::ArmAction::Request  &req, campusrover_
     
 
     //Visualization_//
-    namespace rvt = rviz_visual_tools;
-    moveit_visual_tools::MoveItVisualTools visual_tools(planning_frame_id_);
-    visual_tools.deleteAllMarkers();
-    visual_tools.loadRemoteControl();
-    Eigen::Isometry3d text_pose = Eigen::Isometry3d::Identity();
-    visual_tools.trigger();
+    // namespace rvt = rviz_visual_tools;
+    // moveit_visual_tools::MoveItVisualTools visual_tools(planning_frame_id_);
+    // visual_tools.deleteAllMarkers();
+    // visual_tools.loadRemoteControl();
+    // Eigen::Isometry3d text_pose = Eigen::Isometry3d::Identity();
+    // visual_tools.trigger();
 
     //move to standby_pose//
     bool success;
@@ -143,6 +154,7 @@ bool ArmServiceCallback(campusrover_msgs::ArmAction::Request  &req, campusrover_
     static tf2::Quaternion quat_tf;
     static tf2_ros::Buffer tfBuffer;
     static tf2_ros::TransformListener tfListener(tfBuffer);
+    static campusrover_msgs::ButtonCommand button_command;
 
     cout << "Planning Frame : " <<move_group.getPlanningFrame()<<" input frame : "<<pose_.header.frame_id<< endl;
 
@@ -233,49 +245,65 @@ bool ArmServiceCallback(campusrover_msgs::ArmAction::Request  &req, campusrover_
       ROS_INFO_NAMED("tutorial", "Visualizing plan 4 (Cartesian path) (%.2f%% acheived)", fraction * 100.0);
 
       // Visualize the plan in RViz
-      visual_tools.deleteAllMarkers();
-      visual_tools.publishText(text_pose, "Joint Space Goal", rvt::WHITE, rvt::XLARGE);
-      visual_tools.publishPath(waypoints, rvt::LIME_GREEN, rvt::SMALL);
-      for (std::size_t i = 0; i < waypoints.size(); ++i)
-      visual_tools.publishAxisLabeled(waypoints[i], "pt" + std::to_string(i), rvt::SMALL);
-      visual_tools.trigger();
+      // visual_tools.deleteAllMarkers();
+      // visual_tools.publishText(text_pose, "Joint Space Goal", rvt::WHITE, rvt::XLARGE);
+      // visual_tools.publishPath(waypoints, rvt::LIME_GREEN, rvt::SMALL);
+      // for (std::size_t i = 0; i < waypoints.size(); ++i)
+      // visual_tools.publishAxisLabeled(waypoints[i], "pt" + std::to_string(i), rvt::SMALL);
+      // visual_tools.trigger();
 
       plan.trajectory_ = trajectory;
       move_group.execute(plan);
 
-      ros::Duration(0.5).sleep();
 
-      status_msg.request.node_name.data = "arm";
-      status_msg.request.status.data = true;
-      StatusCheckCallService(status_check_client_, status_msg);
 
-      slope_msg.request.slope = 70;
-      SetComplianceSlopeCallService(joint_1_slope_client_, slope_msg);
-      SetComplianceSlopeCallService(joint_2_slope_client_, slope_msg);
-      SetComplianceSlopeCallService(joint_3_slope_client_, slope_msg);
+      //check button is pressed
+      button_command.button_name.data = button_info_;
+      button_command.command_type.data = "check";
+      button_info_pub_.publish(button_command);
 
-      cout << "move to standby_pose  " << endl;
-      move_group.setMaxVelocityScalingFactor(1.0);
-      success = (move_group.setNamedTarget("standby_pose") == moveit::planning_interface::MoveItErrorCode::SUCCESS);
+      //move to press  pose
+      move_group.setNamedTarget(standby_pose_name_);
       move_group.move();
-      
-      ros::Duration(0.2).sleep();
-      
-    }else
-    {
-      status_msg.request.node_name.data = "arm";
-      status_msg.request.status.data = false;
-      StatusCheckCallService(status_check_client_, status_msg);
 
-      slope_msg.request.slope = 70;
-      SetComplianceSlopeCallService(joint_1_slope_client_, slope_msg);
-      SetComplianceSlopeCallService(joint_2_slope_client_, slope_msg);
-      SetComplianceSlopeCallService(joint_3_slope_client_, slope_msg);
+      
+      while (!get_button_check_data_)
+      {
+        ROS_WARN("arm move group  : waiting for button check");
+        ros::Duration(1.0).sleep();
+      }
+
+      if(get_button_check_data_)
+      {
+        if(!button_check_status_)
+        {
+          button_command.button_name.data = button_info_;
+          button_command.command_type.data = "init";
+          
+          get_button_check_data_ = false;
+          cout << "button don't be pressed please ,call arm action again" << endl;
+          button_info_pub_.publish(button_command);
+          return true;
+        }
+      }
+
+      //move to standby pose
+
+      ros::Duration(0.1).sleep();
+
     }
+
+    status_msg.request.node_name.data = "arm";
+    status_msg.request.status.data = true;
+    StatusCheckCallService(status_check_client_, status_msg);
+
+    slope_msg.request.slope = 70;
+    SetComplianceSlopeCallService(joint_1_slope_client_, slope_msg);
+    SetComplianceSlopeCallService(joint_2_slope_client_, slope_msg);
+    SetComplianceSlopeCallService(joint_3_slope_client_, slope_msg);
 
     
     cout << "move to release_pose " << endl;
-    move_group.setMaxVelocityScalingFactor(1.0);
     success = (move_group.setNamedTarget(release_pose_name_) == moveit::planning_interface::MoveItErrorCode::SUCCESS);
     move_group.move();
 
@@ -288,14 +316,28 @@ bool ArmServiceCallback(campusrover_msgs::ArmAction::Request  &req, campusrover_
 //----------------------------------------------------------------------------------------------------------------------
 bool ButtonServiceCallback(campusrover_msgs::PressButton::Request  &req, campusrover_msgs::PressButton::Response &res)
 {
-    static std_msgs::String button_info;
-    button_info.data = req.button_type.data;
+  static campusrover_msgs::ButtonCommand button_command;
 
-    button_info_pub_.publish(button_info);
+  button_command.button_name.data = req.button_type.data;
+  button_command.command_type.data = "init";
 
-    
-    //
-    return true;
+  button_info_pub_.publish(button_command);
+
+  
+  //
+  return true;
+
+}
+//----------------------------------------------------------------------------------------------------------------------
+bool ButtonStatusServiceCallback(campusrover_msgs::ButtonStatus::Request  &req, campusrover_msgs::ButtonStatus::Response &res)
+{
+
+  
+  button_check_status_ = req.button_status.data;
+  
+  get_button_check_data_ = true;
+
+  return true;
 
 }
 //----------------------------------------------------------------------------------------------------------------------
@@ -363,7 +405,7 @@ int main(int argc, char **argv)
     ros::ServiceServer button_service = n.advertiseService("button_press", ButtonServiceCallback);
     ros::ServiceServer arm_move_to_standby_pose_button_service = n.advertiseService("arm_move_to_standby_pose", MoveToStandbyPoseServiceCallback);
 
-    button_info_pub_ = n.advertise<std_msgs::String>("button_info", 50);
+    button_info_pub_ = n.advertise<campusrover_msgs::ButtonCommand>("button_info", 50);
 
     button_srv_client_ = n.serviceClient<campusrover_msgs::PressButton>("button_info");
     status_check_client_ = n.serviceClient<campusrover_msgs::ElevatorStatusChecker>("elevator_status_checker");

@@ -66,6 +66,26 @@ Visualization Manager:
           Show Axes: false
           Show Trail: false
           Value: true
+        left_camera_link:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
+        link_0:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
+        right_camera_link:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
+        velodyne:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
         velodyne_link:
           Alpha: 1
           Show Axes: false
@@ -137,7 +157,7 @@ Visualization Manager:
       Enabled: true
       Invert Rainbow: false
       Max Color: 255; 255; 255
-      Max Intensity: 136
+      Max Intensity: 155
       Min Color: 0; 0; 0
       Min Intensity: 0
       Name: Velodyne
@@ -180,7 +200,7 @@ Visualization Manager:
       Radius: 0.0299999993
       Shaft Diameter: 0.100000001
       Shaft Length: 0.100000001
-      Topic: /autolabor_odom
+      Topic: /campusrover_odom
       Unreliable: false
       Value: true
     - Alpha: 1
@@ -270,11 +290,11 @@ Visualization Manager:
       Invert Z Axis: false
       Name: Current View
       Near Clip Distance: 0.00999999978
-      Scale: 41.9006996
+      Scale: 24.3492451
       Target Frame: base_link
       Value: TopDownOrtho (rviz)
-      X: 3.94418097
-      Y: 1.23302603
+      X: -2.87831283
+      Y: 1.12998331
     Saved: ~
 Window Geometry:
   Displays:

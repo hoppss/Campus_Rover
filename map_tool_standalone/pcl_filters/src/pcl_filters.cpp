@@ -40,7 +40,7 @@ int main (int argc, char *argv[])
   // VoxelGrid filter
   pcl::VoxelGrid<pcl::PointXYZI> v_sor;
   v_sor.setInputCloud (cloud_filtered);
-  v_sor.setLeafSize (0.6, 0.6, 0.6);
+  v_sor.setLeafSize (0.2, 0.2, 0.2);
   v_sor.filter (*cloud_filtered);
 
   // viewer.showCloud (cloud_filtered);

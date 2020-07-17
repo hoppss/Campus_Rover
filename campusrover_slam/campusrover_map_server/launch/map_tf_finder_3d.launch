@@ -1,10 +1,10 @@
 <!-- -*- mode: XML -*- -->
 
 <launch>
-  <arg name="file_name" default="20200402_TT_1F" />
+  <arg name="file_name" default="20200402_TT_2F" />
   <arg name="fake_gps_file" default="$(arg file_name).gps" />
   <arg name="fake_gps_topic" default="/fake_gps/fix" />
-  <arg name="pcd_file" default="20200430_1f_2_10cm.pcd " />
+  <arg name="pcd_file" default="20200528_2f_1_20cm.pcd " />
 
   <node pkg="campusrover_map_server" type="pcd_tf_finder" name="pcd_tf_finder_node" output="log">
     <param name="world_frame" type="str" value="world" />
@@ -33,11 +33,13 @@
   <!-- <include file="$(find osm_cartography)/launch/viz_osm.launch">
     <arg name="url" value="package://campusrover_map_server/osm/taipei_test_area.osm" />
   </include> -->
+
+
   <node pkg="tf2_ros" type="static_transform_publisher" name="world_to_earth_broadcaster"
         args="0 0 0 0 0 0 world earth" />
 
   <include file="$(find osm_cartography)/launch/viz_osm.launch">
-    <arg name="url" value="package://campusrover_odom/osm/20200326_TaipeiTech.osm" />
+    <arg name="url" value="package://campusrover_odom/osm/20200402_TaipeiTech_3f.osm" />
   </include>
 
 </launch>

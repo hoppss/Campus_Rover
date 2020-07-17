@@ -1,4 +1,4 @@
-# Install script for directory: /home/luke/autolabor_ws/src/autolabor/map_tool_standalone/pcl_filters
+# Install script for directory: /home/luke/campusrover_ws/src/Campus_Rover/map_tool_standalone/pcl_filters
 
 # Set the install prefix
 if(NOT DEFINED CMAKE_INSTALL_PREFIX)
@@ -40,5 +40,5 @@ endif()
 
 string(REPLACE ";" "\n" CMAKE_INSTALL_MANIFEST_CONTENT
        "${CMAKE_INSTALL_MANIFEST_FILES}")
-file(WRITE "/home/luke/autolabor_ws/src/autolabor/map_tool_standalone/pcl_filters/build/${CMAKE_INSTALL_MANIFEST}"
+file(WRITE "/home/luke/campusrover_ws/src/Campus_Rover/map_tool_standalone/pcl_filters/build/${CMAKE_INSTALL_MANIFEST}"
      "${CMAKE_INSTALL_MANIFEST_CONTENT}")

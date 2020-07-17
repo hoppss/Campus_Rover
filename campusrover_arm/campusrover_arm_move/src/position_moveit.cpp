@@ -57,6 +57,7 @@ bool standby_pose_ready_ = false;
 
 bool get_button_check_data_ = false;
 bool button_status_ = false;
+bool enable_button_check_;
 
 void initialization();
 void ButtonPoseCallback(geometry_msgs::Pose Pose);
@@ -81,6 +82,7 @@ void get_parameters(ros::NodeHandle n_private)
     n_private.param<double>("eef_step", eef_step_, 0.01);
     n_private.param<bool>("allow_replanning", allow_replanning_, true);
     n_private.param<bool>("Visualization", Visualization_, true);
+    n_private.param<bool>("enable_button_check", enable_button_check_, false);
     initialization();
 }
 
@@ -186,17 +188,21 @@ bool ArmServiceCallback(campusrover_msgs::ArmAction::Request  &req, campusrover_
     if(target_pose.position.x > target_pose.position.z)
     {
       yaw = atan2(pose_.pose.position.y,pose_.pose.position.x);
+      target_pose.position.x += shift_x_;
+      target_pose.position.y += shift_y_;
+      target_pose.position.z += shift_z_;
     }
     else
     {
       yaw = atan2(pose_.pose.position.x,pose_.pose.position.z);
+      target_pose.position.x -= shift_z_;
+      target_pose.position.y += shift_y_;
+      target_pose.position.z += shift_x_;
     }
     quat_tf.setRPY( 0, 0, yaw ); 
     geometry_msgs::Quaternion quat_msg = tf2::toMsg(quat_tf);
     target_pose.orientation = quat_msg;
-    target_pose.position.x += shift_x_;
-    target_pose.position.y += shift_y_;
-    target_pose.position.z += shift_z_;
+    
 
     cout << "target pose : " <<target_pose<< endl;
 
@@ -262,26 +268,31 @@ bool ArmServiceCallback(campusrover_msgs::ArmAction::Request  &req, campusrover_
       move_group.setNamedTarget(standby_pose_name_);
       move_group.move();
 
-      
-      while (!get_button_check_data_)
+      if(enable_button_check_)
       {
-        ROS_WARN("arm move group  : waiting for button check");
-        ros::Duration(1.0).sleep();
-      }
-
-      if(get_button_check_data_)
-      {
-        if(!button_check_status_)
+        while (!get_button_check_data_)
         {
-          button_command.button_name.data = button_info_;
-          button_command.command_type.data = "init";
-          
-          get_button_check_data_ = false;
-          cout << "button don't be pressed please ,call arm action again" << endl;
-          button_info_pub_.publish(button_command);
-          return true;
+          ROS_WARN("arm move group  : waiting for button check");
+          ros::Duration(1.0).sleep();
+        }
+
+        if(get_button_check_data_)
+        {
+          if(!button_check_status_)
+          {
+            button_command.button_name.data = button_info_;
+            button_command.command_type.data = "init";
+            
+            get_button_check_data_ = false;
+            cout << "button don't be pressed please ,call arm action again" << endl;
+            button_info_pub_.publish(button_command);
+            return true;
+          }
         }
       }
+
+      
+      
 
       //move to standby pose
 

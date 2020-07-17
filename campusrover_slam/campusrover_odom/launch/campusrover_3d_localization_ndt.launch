@@ -1,8 +1,8 @@
 <!-- -->
 <launch>
   <arg name="debug" default="false" />
-  <arg name="map_file" default="$(find campusrover_map_server)/maps/20200402_TT_3F.yaml" />
-  <arg name="bag_file" default="$(env HOME)/bags/campusrover_bag/20200402_3f_1.bag" />
+  <arg name="map_file" default="$(find campusrover_map_server)/maps/20200402_TT_2F.yaml" />
+  <arg name="bag_file" default="$(env HOME)/bags/campusrover_bag/20200717_2f_2.bag" />
   <arg name="viz" default="true" />
 
   <group if="$(arg debug)">

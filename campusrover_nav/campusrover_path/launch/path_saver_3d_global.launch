@@ -1,6 +1,6 @@
 <launch>
-  <arg name="bag_file" default="20200430_1f_2.bag" />
-  <arg name="map_file" default="20200402_TT_1F.yaml" />
+  <arg name="bag_file" default="20200717_3f_1.bag" />
+  <arg name="map_file" default="20200402_TT_3F.yaml" />
   <include file="$(find campusrover_odom)/launch/campusrover_3d_localization_ndt.launch">
     <arg name="debug" value="true" />
     <arg name="map_file" value="$(find campusrover_map_server)/maps/$(arg map_file)" />

@@ -71,7 +71,9 @@ double speed_pid_k_;
 double target_yaw_;
 
 double max_linear_velocity_;
+double min_linear_velocity_;
 double max_angular_velocity_;
+double min_angular_velocity_;
 double target_point_dis_;
 
 void TwistPublish(double x, double z);
@@ -89,6 +91,7 @@ void get_parameters(ros::NodeHandle n_private)
 
   n_private.param<double>("max_linear_velocity", max_linear_velocity_, 0.5);
   n_private.param<double>("max_angular_velocity", max_angular_velocity_, 0.3);
+  n_private.param<double>("min_angular_velocity", min_angular_velocity_, 0.1);
   n_private.param<double>("target_point_dis", target_point_dis_, 0.5);
 
   n_private.param<double>("threshold_occupied", threshold_occupied_, 10);
@@ -369,7 +372,7 @@ void moving_to_target_point()
 
   if(target_point_id == closest_id)
   {
-    len_vel = len_vel*0.5;
+    len_vel = len_vel*0.7;
   }
   
   
@@ -406,6 +409,14 @@ void TwistPublish(double x, double z)
   else if(z < -max_angular_velocity_)
   {
     pub_twist.angular.z = -max_angular_velocity_;
+  }
+  else if(z > 0 && z < min_angular_velocity_)
+  {
+    pub_twist.angular.z = min_angular_velocity_;
+  }
+  else if(z < 0 && z > -min_angular_velocity_)
+  {
+    pub_twist.angular.z = -min_angular_velocity_;
   }
   else
   {

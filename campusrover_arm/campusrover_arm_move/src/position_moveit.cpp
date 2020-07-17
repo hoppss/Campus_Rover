@@ -259,17 +259,20 @@ bool ArmServiceCallback(campusrover_msgs::ArmAction::Request  &req, campusrover_
 
 
 
-      //check button is pressed
-      button_command.button_name.data = button_info_;
-      button_command.command_type.data = "check";
-      button_info_pub_.publish(button_command);
+      
 
-      //move to press  pose
-      move_group.setNamedTarget(standby_pose_name_);
-      move_group.move();
+      
 
       if(enable_button_check_)
       {
+        //move to press  pose
+        move_group.setNamedTarget(standby_pose_name_);
+        move_group.move();
+        //check button is pressed
+        button_command.button_name.data = button_info_;
+        button_command.command_type.data = "check";
+        button_info_pub_.publish(button_command);
+
         while (!get_button_check_data_)
         {
           ROS_WARN("arm move group  : waiting for button check");
@@ -331,7 +334,7 @@ bool ArmServiceCallback(campusrover_msgs::ArmAction::Request  &req, campusrover_
 bool ButtonServiceCallback(campusrover_msgs::PressButton::Request  &req, campusrover_msgs::PressButton::Response &res)
 {
   static campusrover_msgs::ButtonCommand button_command;
-
+  button_info_ = req.button_type.data;
   button_command.button_name.data = req.button_type.data;
   button_command.command_type.data = "init";
 

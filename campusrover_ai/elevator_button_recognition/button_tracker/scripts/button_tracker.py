@@ -81,13 +81,12 @@ class read_video_and_recognize:
     self.frame_id=''
     self.hsvcheck=False
     self.button_status=''
-    self.button_status_check=False
+    self.button_status_check=True
   def read_and_recognize(self,Image):
   # initialize tracking process
     bridge = CvBridge()
     cv_image = bridge.imgmsg_to_cv2(Image, 'bgr8') 
     self.frame_id=Image.header.frame_id
-    print(self.frame_id)
     button_tracker = ButtonTracker()
     if self.recognize_check == True:  
       (self.boxes, scores, self.texts, beliefs) = button_tracker.call_for_service(cv_image)
@@ -102,20 +101,22 @@ class read_video_and_recognize:
     global init_brightness_value
     global check_brightness_value
     bridge = CvBridge()
-    cv_image = bridge.imgmsg_to_cv2(Image, 'bgr8')
-    hsv=cv2.cvtColor(cv_image,cv2.COLOR_BGR2HSV)
+    cv_hsvimage = bridge.imgmsg_to_cv2(Image, 'bgr8')
+    hsv=cv2.cvtColor(cv_hsvimage,cv2.COLOR_BGR2HSV)
     if self.hsvcheck == True:
       x=self.box[0]
       y=self.box[1]
       w=self.box[2]-self.box[0]
       h=self.box[3]-self.box[1]
       button_image_array = hsv[y:y+h, x:x+w]
+      h,s,v = cv2.split(button_image_array)
+      print(np.sum(v))
       # cv2.imshow("button", button_image_array)
       if self.button_status == 'init':
-        init_brightness_value=np.sum(button_image_array[:,:,2])/np.size(button_image_array[:,:,2])
+        init_brightness_value=np.sum(v)/np.size(v)
         self.hsvcheck = False
       if self.button_status == 'check':
-        check_brightness_value=np.sum(button_image_array[:,:,2])/np.size(button_image_array[:,:,2])
+        check_brightness_value=np.sum(v)/np.size(v)
         diff_brightness=check_brightness_value-init_brightness_value
         if diff_brightness > brightness_set :
           self.button_status_check = True
@@ -173,7 +174,7 @@ class read_video_and_recognize:
     goal.pose.position.x = self.x_biase
     goal.pose.position.y = self.y_biase
     goal.pose.position.z = self.pixel_depth_ros
-    if self.pixel_depth_ros>0 and self.pixel_depth_ros<0.5 and presstext == self.button_info and self.presscheck == True and self.button_status == 'init':
+    if self.pixel_depth_ros>0 and self.pixel_depth_ros<0.45 and presstext == self.button_info and self.presscheck == True and self.button_status == 'init':
       read=read_video_and_recognize()
       read.call_arm_service(goal)
       self.presscheck = False

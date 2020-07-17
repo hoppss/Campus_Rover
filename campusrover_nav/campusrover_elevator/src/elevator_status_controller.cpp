@@ -52,6 +52,7 @@ bool planner_check_done_ = false;
 bool arm_return_status_ = false;
 bool arm_return_checker_ = false;
 bool path_generater_check_done_ = false;
+bool elevator_pose_ckeck_done_ = false;
 bool arrive_target_floor_ = false;
 
 void InitFloorCallService(ros::ServiceClient &client,campusrover_msgs::InitFloor &srv) ;
@@ -88,7 +89,8 @@ void TimerCallback(const ros::TimerEvent &event)
 
   if(control_status_ == 1)// move to front of button (outside)
   {
-    if(first_time && path_generater_check_done_)
+  
+    if(first_time && path_generater_check_done_ && elevator_pose_ckeck_done_)
     {
 
       //init floor 
@@ -113,6 +115,7 @@ void TimerCallback(const ros::TimerEvent &event)
       PlannerFunctionCallService(planner_srv_client_, planner_param);
       planner_check_done_ = false;
       path_generater_check_done_ = false;
+      elevator_pose_ckeck_done_ = false;
       first_time = true;
       control_status_++;
     }
@@ -265,10 +268,16 @@ void TimerCallback(const ros::TimerEvent &event)
 
     if(arm_return_checker_)
     {
+      if(arm_return_status_)
+      {
+        control_status_ = 9;
+      }
+      else
+      {
+        first_time = true;
+        arm_return_checker_ = false;
+      }
       
-      first_time = true;
-      arm_return_checker_ = false;
-      control_status_++;
 
     }
     
@@ -300,7 +309,7 @@ void TimerCallback(const ros::TimerEvent &event)
       }
       else
       {
-        control_status_ = 6;
+        control_status_ = 7;
       }
     }
   }
@@ -451,7 +460,7 @@ bool ControlServiceCallback(campusrover_msgs::ElevatorControlInterface::Request 
 bool StatusCheckServiceCallback(campusrover_msgs::ElevatorStatusChecker::Request  &req, campusrover_msgs::ElevatorStatusChecker::Response &res)
 {
   cout << "  ==============" << endl;
-  cout << "  node_name : " <<req.node_name.data<< endl;
+  cout << "  node_name : " <<req.node_name.data<< endl; 
   cout << "  data : " <<req.status.data<< endl;
   if(req.node_name.data == "planner")
   {
@@ -467,6 +476,12 @@ bool StatusCheckServiceCallback(campusrover_msgs::ElevatorStatusChecker::Request
   else if(req.node_name.data == "path_generater")
   {
     path_generater_check_done_ = req.status.data;
+    return true;
+  }
+
+  else if(req.node_name.data == "position_finder")
+  {
+    elevator_pose_ckeck_done_ = req.status.data;
     return true;
   }
   else

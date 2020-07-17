@@ -112,11 +112,10 @@ class read_video_and_recognize:
       button_image_array = hsv[y:y+h, x:x+w]
       # cv2.imshow("button", button_image_array)
       if self.button_status == 'init':
-        print(sum(button_image_array[:,:,2]))
-        init_brightness_value=sum(button_image_array[:,:,2])/np.size(button_image_array[:,:,2])
+        init_brightness_value=np.sum(button_image_array[:,:,2])/np.size(button_image_array[:,:,2])
         self.hsvcheck = False
       if self.button_status == 'check':
-        check_brightness_value=sum(button_image_array[:,:,2])/np.size(button_image_array[:,:,2])
+        check_brightness_value=np.sum(button_image_array[:,:,2])/np.size(button_image_array[:,:,2])
         diff_brightness=check_brightness_value-init_brightness_value
         if diff_brightness > brightness_set :
           self.button_status_check = True

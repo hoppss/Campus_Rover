@@ -108,9 +108,9 @@ class read_video_and_recognize:
       y=self.box[1]
       w=self.box[2]-self.box[0]
       h=self.box[3]-self.box[1]
-      button_image_array = hsv[y:y+h, x:x+w]
-      h,s,v = cv2.split(button_image_array)
-      print(np.sum(v))
+      if w != 0 and h !=0:
+        button_image_array = hsv[y:y+h, x:x+w]
+      hue,s,v = cv2.split(button_image_array)
       # cv2.imshow("button", button_image_array)
       if self.button_status == 'init':
         init_brightness_value=np.sum(v)/np.size(v)
@@ -196,6 +196,7 @@ class read_video_and_recognize:
     try:
       pose = rospy.ServiceProxy('arm_action', ArmAction)
       response_ans = pose(pose_data)
+      return response_ans
     except rospy.ServiceException(f):
       print("arm_action service failed: {}".format(f))
   
@@ -204,6 +205,7 @@ class read_video_and_recognize:
     try:
       status = rospy.ServiceProxy('button_status', ButtonStatus)
       response_ans = status(buttonstatus_data)
+      return response_ans
     except rospy.ServiceException(f):
       print("button_status service failed: {}".format(f))
   

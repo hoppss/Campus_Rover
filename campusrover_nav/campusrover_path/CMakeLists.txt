@@ -25,7 +25,7 @@ add_service_files(FILES
   SavePath.srv
 )
 
-generate_messages(DEPENDENCIES std_msgs)
+generate_messages(DEPENDENCIES std_msgs )
 
 catkin_package(CATKIN_DEPENDS std_msgs)
 

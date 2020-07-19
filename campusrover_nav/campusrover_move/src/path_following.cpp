@@ -372,7 +372,7 @@ void moving_to_target_point()
 
   if(target_point_id == closest_id)
   {
-    len_vel = len_vel*0.7;
+    len_vel = len_vel*0.5;
   }
   
   

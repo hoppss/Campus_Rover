@@ -37,7 +37,7 @@ using namespace std;
 #define M_PI 3.14159265358979323846  /* pi */
 
 ros::Subscriber door_status_sub_,floor_status_sub_;
-ros::Publisher control_status_pub_;
+ros::Publisher control_status_pub_, finish_pub_;
 ros::ServiceClient init_floor_srv_client_, button_srv_client_, planner_srv_client_, arm_standby_srv_client_;
 
 geometry_msgs::Twist twist_param_0_, twist_param_1_, twist_param_2_;
@@ -67,10 +67,10 @@ void get_parameters(ros::NodeHandle n_private)
   twist_param_0_.angular.z = 0.0;
 
   twist_param_1_.linear.x = 0.2;
-  twist_param_1_.angular.z = 0.8;
+  twist_param_1_.angular.z = 0.5;
 
   twist_param_2_.linear.x = 0.3;
-  twist_param_2_.angular.z = 0.8;
+  twist_param_2_.angular.z = 0.5;
 
 
 }
@@ -82,7 +82,8 @@ void TimerCallback(const ros::TimerEvent &event)
   static campusrover_msgs::PlannerFunction planner_param;
   static campusrover_msgs::InitFloor init_param;
   static campusrover_msgs::PressButton button_param;
-  static campusrover_msgs::ArmStandby arm_standby_msg;;
+  static campusrover_msgs::ArmStandby arm_standby_msg;
+  static std_msgs::Empty finish_msgs;
 
   status.control_status = control_status_;
   control_status_pub_.publish(status);
@@ -270,7 +271,7 @@ void TimerCallback(const ros::TimerEvent &event)
     {
       if(arm_return_status_)
       {
-        control_status_ = 9;
+        control_status_++;
       }
       else
       {
@@ -303,14 +304,14 @@ void TimerCallback(const ros::TimerEvent &event)
       path_generater_check_done_ = false;
       first_time = true;
 
-      if(arm_return_status_)
-      {
-        control_status_++;
-      }
-      else
-      {
-        control_status_ = 7;
-      }
+      // if(arm_return_status_)
+      // {
+      control_status_++;
+      // }
+      // else
+      // {
+      //   control_status_ = 7;
+      // }
     }
   }
   else if(control_status_ == 9)//waiting arrive target floor
@@ -360,6 +361,7 @@ void TimerCallback(const ros::TimerEvent &event)
       path_generater_check_done_ = false;
       first_time = true;
       control_status_ = 0;
+      finish_pub_.publish(finish_msgs);
     }
   }
   
@@ -505,6 +507,7 @@ int main(int argc, char **argv)
   floor_status_sub_ = nh.subscribe("floor_status", 10, FloorStatusCallback);
 
   control_status_pub_ = nh.advertise<campusrover_msgs::ElevatorControlStatus>("control_status", 50);
+  finish_pub_ = nh.advertise<std_msgs::Empty>("elevator_completed", 50);
 
   init_floor_srv_client_ = nh.serviceClient<campusrover_msgs::InitFloor>("init_floor");
   button_srv_client_ = nh.serviceClient<campusrover_msgs::PressButton>("button_press");

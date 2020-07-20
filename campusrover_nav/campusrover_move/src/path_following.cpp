@@ -31,9 +31,9 @@ using namespace std;
 
 
 
-ros::Subscriber path_sub_, costmap_sub_, click_sub_;
-ros::Publisher twist_pub_, twist_path_pub_, path_marker_pub_;
-ros::ServiceClient status_check_client_;
+ros::Subscriber elevator_path_sub_, global_path_sub_, costmap_sub_, click_sub_;
+ros::Publisher twist_pub_, twist_path_pub_, path_marker_pub_, global_status_check_pub_;
+ros::ServiceClient elevator_status_check_client_, global_status_check_client_;
 
 nav_msgs::Path globle_path_;
 geometry_msgs::PoseStamped target_pose_;
@@ -42,12 +42,15 @@ nav_msgs::OccupancyGrid costmap_data_;
 geometry_msgs::Pose robot_tf_pose_;
 geometry_msgs::PoseArray obstacle_poses_;
 
-campusrover_msgs::ElevatorStatusChecker status_checker_msg_;
+campusrover_msgs::ElevatorStatusChecker elevator_status_checker_msg_;
+std_msgs::Empty global_status_checker_msg_;
 
 
 
 string robot_frame_;
 int status_msg_;
+int path_sub_mode_;
+
 double arriving_range_dis_;
 double arriving_range_angle_;
 
@@ -80,7 +83,8 @@ void TwistPublish(double x, double z);
 void moving_to_target_point();
 void moving_to_target_direction();
 void angle_normalize(double &angle);
-void StatusCheckCallService(ros::ServiceClient &client,campusrover_msgs::ElevatorStatusChecker &srv);
+void ElevatorStatusCheckCallService(ros::ServiceClient &client,campusrover_msgs::ElevatorStatusChecker &srv);
+
 
 //-----------------------------------------------------------------------------------------------
 void get_parameters(ros::NodeHandle n_private)
@@ -182,9 +186,17 @@ void check_arrive_direction()
   if(abs(angle_error) < arriving_range_angle_)
   {
     arriving_end_direction_ = true;
-    status_checker_msg_.request.node_name.data = "planner";
-    status_checker_msg_.request.status.data = arriving_end_direction_;
-    StatusCheckCallService(status_check_client_, status_checker_msg_);
+    if(path_sub_mode_ == campusrover_msgs::PlannerFunction::Request::MODE_ELEVATOR_PATH)
+    {
+      elevator_status_checker_msg_.request.node_name.data = "planner";
+      elevator_status_checker_msg_.request.status.data = arriving_end_direction_;
+      ElevatorStatusCheckCallService(elevator_status_check_client_, elevator_status_checker_msg_);
+    }
+    else if(path_sub_mode_ == campusrover_msgs::PlannerFunction::Request::MODE_GLOBAL_PATH)
+    {
+      global_status_check_pub_.publish(global_status_checker_msg_);
+    }
+    
   }else{
     arriving_end_direction_ = false;
   }
@@ -442,10 +454,64 @@ void angle_normalize(double &angle)
   }
 }
 //-----------------------------------------------------------------------------------------------
-void PathCallback(const nav_msgs::PathConstPtr &path)
+void ElevatorPathCallback(const nav_msgs::PathConstPtr &path)
 {
   static geometry_msgs::PoseStamped pose;
   static double roll, pitch, yaw;
+
+  if(path_sub_mode_ != campusrover_msgs::PlannerFunction::Request::MODE_ELEVATOR_PATH)
+  {
+    return;
+  }
+
+  if(path->poses.size()==0)
+  {
+    return;
+  }
+
+  globle_path_.header.frame_id = path->header.frame_id;
+
+  globle_path_.poses.clear();
+
+  for (int i = 0; i < path->poses.size(); i++)
+  {
+    pose.pose.position.x = path->poses[i].pose.position.x;
+    pose.pose.position.y = path->poses[i].pose.position.y;
+    pose.pose.position.z = path->poses[i].pose.position.z;
+    pose.pose.orientation.x = path->poses[i].pose.orientation.x;
+    pose.pose.orientation.y = path->poses[i].pose.orientation.y;
+    pose.pose.orientation.z = path->poses[i].pose.orientation.z;
+    pose.pose.orientation.w = path->poses[i].pose.orientation.w;
+
+    globle_path_.poses.push_back(pose);
+
+    if(i == path->poses.size()-1)
+    {
+      target_pose_.header.frame_id = path->header.frame_id;
+      target_pose_.pose.position = path->poses[i].pose.position;
+      target_pose_.pose.orientation = path->poses[i].pose.orientation;
+    }
+  }
+  tf::Quaternion q( target_pose_.pose.orientation.x,
+                    target_pose_.pose.orientation.y,
+                    target_pose_.pose.orientation.z,
+                    target_pose_.pose.orientation.w);
+  tf::Matrix3x3 m(q);
+  m.getRPY(roll, pitch, yaw);
+  target_yaw_ = yaw;
+
+  get_globle_path_ = true;
+}
+//-----------------------------------------------------------------------------------------------
+void GlobalPathCallback(const nav_msgs::PathConstPtr &path)
+{
+  static geometry_msgs::PoseStamped pose;
+  static double roll, pitch, yaw;
+
+  if(path_sub_mode_ != campusrover_msgs::PlannerFunction::Request::MODE_GLOBAL_PATH)
+  {
+    return;
+  }
 
   if(path->poses.size()==0)
   {
@@ -578,11 +644,23 @@ void CostmapCallback(const nav_msgs::OccupancyGridConstPtr &map)
 //-----------------------------------------------------------------------------------------------
 bool ServiceCallback(campusrover_msgs::PlannerFunction::Request  &req, campusrover_msgs::PlannerFunction::Response &res)
 {
+  // if (req.mode == campusrover_msgs::PlannerFunction::Request::MODE_GLOBAL_PATH)
+  // {
+    
+
+  // }
+  // else if((req.mode == campusrover_msgs::PlannerFunction::Request::MODE_ELEVATOR_PATH))
+  // {
+    
+  // }
+  
   //ros::Duration(1.0).sleep();
   action_flag_ = req.action.data;
   direction_inverse_ = req.direction_inverse.data;
   max_linear_velocity_ = req.speed_parameter.linear.x;
   max_angular_velocity_ = req.speed_parameter.angular.z;
+
+  path_sub_mode_ = req.mode;
 
   cout << "recrvie planner fuction : " << endl;
   cout << "  action_flag : " <<action_flag_<< endl;
@@ -602,14 +680,14 @@ bool ServiceCallback(campusrover_msgs::PlannerFunction::Request  &req, campusrov
   
 }
 //-----------------------------------------------------------------------------------------------
-void StatusCheckCallService(ros::ServiceClient &client,campusrover_msgs::ElevatorStatusChecker &srv)
+void ElevatorStatusCheckCallService(ros::ServiceClient &client,campusrover_msgs::ElevatorStatusChecker &srv)
 {
   ros::Duration(0.5).sleep();
-  string str = "===========planner status check============= " ;
+  string str = "===========elevator planner status check============= " ;
   cout << "Request massage: \n" << srv.request;
   while (!client.call(srv))
   {
-    ROS_ERROR("planner status check : Failed to call service");
+    ROS_ERROR("elevator planner status check : Failed to call service");
     ros::Duration(1.0).sleep();
   }
 }
@@ -621,8 +699,9 @@ int main(int argc, char **argv)
   ros::NodeHandle nh_private("~");
   get_parameters(nh_private);
   ros::Time::init();
-
-  path_sub_ = nh.subscribe("path", 10, PathCallback);
+  
+  elevator_path_sub_ = nh.subscribe("elevator_path", 10, ElevatorPathCallback);
+  global_path_sub_ = nh.subscribe("global_path", 10, GlobalPathCallback);
   costmap_sub_ = nh.subscribe("costmap", 10, CostmapCallback);
 
   twist_pub_ = nh.advertise<geometry_msgs::Twist>("cmd_vel", 50);
@@ -630,11 +709,13 @@ int main(int argc, char **argv)
   twist_path_pub_ = nh.advertise<nav_msgs::Path>("twist_path", 20);
   path_marker_pub_ = nh.advertise<visualization_msgs::MarkerArray>("local_trajectories", 10);
 
+  global_status_check_pub_ = nh.advertise<std_msgs::Empty>("reach_goal", 20);
+
   ros::Timer timer = nh.createTimer(ros::Duration(0.05), TimerCallback);
   ros::Timer msgs_timer = nh.createTimer(ros::Duration(2), msgs_timerCallback);
 
   ros::ServiceServer service = nh.advertiseService("planner_function", ServiceCallback);
-  status_check_client_ = nh.serviceClient<campusrover_msgs::ElevatorStatusChecker>("elevator_status_checker");
+  elevator_status_check_client_ = nh.serviceClient<campusrover_msgs::ElevatorStatusChecker>("elevator_status_checker");
 
   ros::spin();
 

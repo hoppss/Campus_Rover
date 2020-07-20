@@ -111,7 +111,7 @@ bool ArmServiceCallback(campusrover_msgs::ArmAction::Request  &req, campusrover_
     move_group.setNumPlanningAttempts(num_planning_attempts_);
     move_group.allowReplanning(allow_replanning_);
 
-    slope_msg.request.slope = 40;
+    slope_msg.request.slope = 45;
     SetComplianceSlopeCallService(joint_1_slope_client_, slope_msg);
     SetComplianceSlopeCallService(joint_2_slope_client_, slope_msg);
     SetComplianceSlopeCallService(joint_3_slope_client_, slope_msg);
@@ -157,6 +157,7 @@ bool ArmServiceCallback(campusrover_msgs::ArmAction::Request  &req, campusrover_
     static tf2_ros::Buffer tfBuffer;
     static tf2_ros::TransformListener tfListener(tfBuffer);
     static campusrover_msgs::ButtonCommand button_command;
+    static double pitch, yaw;
 
     cout << "Planning Frame : " <<move_group.getPlanningFrame()<<" input frame : "<<pose_.header.frame_id<< endl;
 
@@ -182,7 +183,9 @@ bool ArmServiceCallback(campusrover_msgs::ArmAction::Request  &req, campusrover_
     }
 
 
-    double yaw;
+    
+
+    pitch = yaw = 0;
     
     target_pose.position = pose_.pose.position;
     if(target_pose.position.x > target_pose.position.z)
@@ -194,12 +197,12 @@ bool ArmServiceCallback(campusrover_msgs::ArmAction::Request  &req, campusrover_
     }
     else
     {
-      yaw = atan2(pose_.pose.position.x,pose_.pose.position.z);
+      pitch = (atan2(pose_.pose.position.x,pose_.pose.position.z)) -1.57;
       target_pose.position.x -= shift_z_;
       target_pose.position.y += shift_y_;
       target_pose.position.z += shift_x_;
     }
-    quat_tf.setRPY( 0, 0, yaw ); 
+    quat_tf.setRPY( 0, pitch, yaw ); 
     geometry_msgs::Quaternion quat_msg = tf2::toMsg(quat_tf);
     target_pose.orientation = quat_msg;
     
@@ -372,7 +375,7 @@ bool MoveToStandbyPoseServiceCallback(campusrover_msgs::ArmStandby::Request  &re
   standby_pose_move_group.setNumPlanningAttempts(num_planning_attempts_);
   standby_pose_move_group.allowReplanning(allow_replanning_);
 
-  slope_msg.request.slope = 35;
+  slope_msg.request.slope = 45;
   SetComplianceSlopeCallService(joint_1_slope_client_, slope_msg);
   SetComplianceSlopeCallService(joint_2_slope_client_, slope_msg);
   SetComplianceSlopeCallService(joint_3_slope_client_, slope_msg);

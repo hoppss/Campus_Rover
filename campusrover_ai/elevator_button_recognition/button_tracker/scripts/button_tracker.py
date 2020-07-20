@@ -141,7 +141,7 @@ class read_video_and_recognize:
         break
       else:
         i=i+1
-      if i==len(self.texts) or len():
+      if i==len(self.texts):
         self.recognize_check = True
     point_x = (self.box[2] + self.box[0]) / 2.0 
     point_y = (self.box[3] + self.box[1]) / 2.0
@@ -175,7 +175,7 @@ class read_video_and_recognize:
     goal.pose.position.y = self.y_biase
     goal.pose.position.z = self.pixel_depth_ros
     
-    if self.pixel_depth_ros>0 and self.pixel_depth_ros<0.45 and presstext == self.button_info and self.presscheck == True and self.button_status == 'init':
+    if self.pixel_depth_ros>0 and presstext == self.button_info and self.presscheck == True and self.button_status == 'init':
       read=read_video_and_recognize()
       self.button_status = 'set'
       read.call_arm_service(goal)

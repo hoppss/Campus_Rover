@@ -271,7 +271,7 @@ void TimerCallback(const ros::TimerEvent &event)
     {
       if(arm_return_status_)
       {
-        control_status_++;
+        control_status_ = 10;
       }
       else
       {
@@ -414,6 +414,7 @@ void PressButtonCallService(ros::ServiceClient &client,campusrover_msgs::PressBu
 void PlannerFunctionCallService(ros::ServiceClient &client,campusrover_msgs::PlannerFunction &srv)
 {
   string str = "===========planner function============= " ;
+  srv.request.mode = campusrover_msgs::PlannerFunction::Request::MODE_ELEVATOR_PATH;
   cout << "Request massage: \n" << srv.request;
   while (!client.call(srv))
   {

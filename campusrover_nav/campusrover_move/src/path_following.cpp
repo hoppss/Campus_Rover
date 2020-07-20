@@ -153,7 +153,7 @@ void UpdateCampusRoverPoseFromTF()
   }
   robot_yaw_ = pre_yaw;
 
-  std::cout << "arriving_end_point_ : " << arriving_end_point_<< " arriving_end_dir : "<< arriving_end_direction_<<'\n';
+  // std::cout << "arriving_end_point_ : " << arriving_end_point_<< " arriving_end_dir : "<< arriving_end_direction_<<'\n';
   
 }
 //-----------------------------------------------------------------------------------------------

@@ -1,0 +1,92 @@
+<launch>
+  <arg name="debug" default="false" />
+
+  <arg name="use_osrm" default="true" />
+
+  <arg name="bag_file" default="20200402_3f_1.bag" />
+  <arg name="map_file" default="$(find campusrover_map_server)/maps/20200402_TT_3F.yaml" />
+  <arg name="map_file_2d" default="$(find campusrover_map_server)/maps/map2d/2018taf1.yaml" />
+  <arg name="path_file" default="20200402_3f_ndt.path" />
+
+  <arg name="route" default="$(env HOME)/osrm/20200402_3f_ndt/20200402_TaipeiTech_3f_ndt.osrm" />
+  <arg name="use_avoidance" default="true" />
+  <arg name="costmap_with_global_map" default="true" />
+
+  <!-- bag play -->
+  <group if="$(arg debug)">
+    <node pkg="rosbag" type="play" name="rosbag_play_node"
+        args="$(env HOME)/bags/campusrover_bag/$(arg bag_file) --clock" >
+    </node>
+    <param name="use_sim_time" value="true" />
+    <!-- Static transtorm -->
+    <param name="robot_description"
+      textfile="$(find campusrover_description)/urdf/campusrover.urdf" />
+    <node name="robot_state_publisher" pkg="robot_state_publisher"
+      type="robot_state_publisher" />
+    <!-- start joy stick -->
+    <include file="$(find campusrover_sensors)/launch/sensors/joy.launch.xml" />
+  </group>
+
+  <!-- off sim_time -->
+  <param name="use_sim_time" value="false" unless="$(arg debug)" />
+
+  <!-- rviz gps -->
+  <node name="rviz_goal_gps" pkg="campusrover_demo" type="rviz_goal_gps" >
+    <remap from="goal" to="/move_base_simple/goal" />
+  </node>
+
+  <!-- campusrover path planner -->
+  <include file="$(find campusrover_move)/launch/adp_planner.launch" >
+    <arg name="debug"               value="false"/>
+    <arg name="globle_path"         value="/osrm_route_path"/>
+    <!-- <arg name="globle_path"         value="/route_path"/> -->
+    <arg name="costmap_topic"       value="/campusrover_local_costmap"/>
+    <!-- <arg name="twist_output_topic"  value="/cmd_vel"/> -->
+    <arg name="twist_output_topic"  value="/yocs_cmd_vel_mux/input/navigation"/>
+  </include>
+
+  <!-- Localization -->
+  <include file="$(find campusrover_odom)/launch/campusrover_3d_localization_ndt.launch">
+    <!-- <arg name="with_global_map"     value="$(arg costmap_with_global_map)" /> -->
+    <arg name="debug" value="false" />
+    <arg name="map_file" value="$(arg map_file)" />
+    <!-- <arg name="map_file_2d" value="$(arg map_file_2d)" /> -->
+    <arg name="viz" value="false" />
+  </include>
+
+  <!-- cosmap -->
+  <include file="$(find campusrover_costmap)/launch/start_costmap.launch">
+    <!-- <arg name="with_global_map"     value="$(arg costmap_with_global_map)" /> -->
+    <arg name="use_velodyne"        value="false"/>
+  </include>
+
+  <!-- Demo code -->
+  <node pkg="campusrover_demo" type="demo_gps" name="demo_gps_node" output="screen">
+    <remap from="route_path"      to="route_path" />
+    <remap from="gps_destination" to="gps_destination"/>
+    <param name="map_frame" type="str" value="map" />
+    <param name="pending_dis_" type="double" value="1.5" />
+    <param name="path_file" type="str" value="$(find campusrover_path)/paths/$(arg path_file)" />
+    <param name="pub_gps_position" type="bool" value="true" />
+  </node>
+
+  <!-- OSRM -->
+  <include if="$(arg use_osrm)" file="$(find campusrover_routing)/launch/osrm.launch">
+    <arg name="debug" value="false" />
+    <arg name="route" value="$(arg route)" />
+  </include>
+
+  <!-- for showing  OSM-->
+  <node pkg="tf2_ros" type="static_transform_publisher" name="world_to_earth_broadcaster"
+        args="0 0 0 0 0 0 world earth" />
+  <include file="$(find osm_cartography)/launch/viz_osm.launch">
+    <arg name="url" value="package://campusrover_odom/osm/20200402_TaipeiTech_3f.osm" />
+  </include>
+
+  <!-- pev network sever-->
+  <!-- <include file="$(find campusrover_network)/launch/start_network_service.launch"/> -->
+
+  <!-- RVIZ -->
+  <node pkg="rviz" type="rviz" name="rviz" args="-d $(find campusrover_demo)/rviz/demo_3d.rviz" />
+
+</launch>

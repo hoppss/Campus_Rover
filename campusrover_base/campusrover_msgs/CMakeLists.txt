@@ -33,6 +33,8 @@ add_message_files(
   State.msg
   NodeInfo.msg
   WorkingFloor.msg
+  Trip.msg
+  LocationRoom.msg
 )
 #
 ## Generate service in the 'srv' folder###

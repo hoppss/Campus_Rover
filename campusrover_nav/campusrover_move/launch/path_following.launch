@@ -1,9 +1,10 @@
 <launch>
     <arg name="debug"               default="false"/>
     <arg name="bag_filename"        default="$(env HOME)/bags/campusrover_bag/20200529_elevator_1.bag"/>
-    <arg name="globle_path" default="/elevator_path"/>
-    <arg name="local_costmap" default="/campusrover_local_costmap"/>
-    <arg name="cmd_vel" default="/yocs_cmd_vel_mux/input/navigation"/>
+    <arg name="elevator_path"       default="/elevator_path"/>
+    <arg name="global_path"         default="/global_path"/>
+    <arg name="local_costmap"       default="/campusrover_local_costmap"/>
+    <arg name="cmd_vel"             default="/yocs_cmd_vel_mux/input/navigation"/>
     <!-- /////////////////////////////////////////////////////////////////////////////////// -->
     <group if="$(arg debug)">
 
@@ -24,17 +25,18 @@
     </group>
 
     <node pkg="campusrover_move" type="path_following" name="path_following" output="screen">
-        <remap from="path"    to="$(arg globle_path)" />
+        <remap from="elevator_path"    to="$(arg elevator_path)" />
+        <remap from="global_path"    to="$(arg global_path)" />
         <remap from="costmap"    to="$(arg local_costmap)" />
         <remap from="cmd_vel"    to="$(arg cmd_vel)" />
         <param name="robot_frame" value="base_link" />
 
-        <param name="arriving_range_dis" value="0.15" />
-        <param name="arriving_range_angle" value="0.2" />
+        <param name="arriving_range_dis" value="0.2" />
+        <param name="arriving_range_angle" value="0.1" />
         
         <param name="max_linear_velocity" value="0.5" />
-        <param name="max_angular_velocity" value="0.3" />
-        <param name="target_point_dis" value="0.5" />
+        <param name="max_angular_velocity" value="0.4" />
+        <param name="target_point_dis" value="0.6" />
 
         <param name="threshold_occupied" value="10" />
         <param name="footprint_max_x" value="0.4" />
@@ -42,7 +44,7 @@
         <param name="footprint_max_y" value="0.01" />
         <param name="footprint_max_y" value="-0.03" />
 
-        <param name="speed_pid_k" value="0.5" />
+        <param name="speed_pid_k" value="0.45" />
 
         <param name="enble_costmap_obstacle" value="false" />
         <param name="direction_inverse" value="false" />

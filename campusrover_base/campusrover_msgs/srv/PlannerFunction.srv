@@ -1,4 +1,7 @@
+uint8 MODE_GLOBAL_PATH = 1
+uint8 MODE_ELEVATOR_PATH = 2
 std_msgs/Bool action
 std_msgs/Bool direction_inverse
+uint8 mode
 geometry_msgs/Twist speed_parameter
 ---

@@ -17,9 +17,7 @@ from cv_bridge import CvBridge
 from sensor_msgs.msg import PointCloud2
 from sensor_msgs import point_cloud2
 from campusrover_msgs.msg import ButtonCommand
-
-global init_brightness_value
-global check_brightness_value
+import global_variable
 
 class ButtonTracker:
   def __init__(self):
@@ -51,8 +49,8 @@ class ButtonTracker:
         texts.append(text.replace(' ', ''))
         beliefs.append(pred.belief)
       return boxes, scores, texts, beliefs
-    except rospy.ServiceException(e):
-      print("recognition service failed: {}".format(e))
+    except rospy.ServiceException(recog):
+      print("recognition service failed: {}".format(recog))
   
   def visualize_recognitions(self,frame, box, text):
     # draw bounding boxes
@@ -87,7 +85,6 @@ class read_video_and_recognize:
     bridge = CvBridge()
     cv_image = bridge.imgmsg_to_cv2(Image, 'bgr8') 
     self.frame_id=Image.header.frame_id
-    print(self.frame_id)
     button_tracker = ButtonTracker()
     if self.recognize_check == True:  
       (self.boxes, scores, self.texts, beliefs) = button_tracker.call_for_service(cv_image)
@@ -96,32 +93,36 @@ class read_video_and_recognize:
         button_tracker.visualize_recognitions(cv_image, box, text)
         ros_result_image=bridge.cv2_to_imgmsg(cv_image,'bgr8')
         pub.publish(ros_result_image)
-      self.recognize_check = False
+      if self.texts == []:
+        self.recognize_check = True
+      else:
+        self.recognize_check = False
   
   def imagetohsv (self,Image):
-    global init_brightness_value
-    global check_brightness_value
     bridge = CvBridge()
-    cv_image = bridge.imgmsg_to_cv2(Image, 'bgr8')
-    hsv=cv2.cvtColor(cv_image,cv2.COLOR_BGR2HSV)
+    cv_hsvimage = bridge.imgmsg_to_cv2(Image, 'bgr8')
+    hsv=cv2.cvtColor(cv_hsvimage,cv2.COLOR_BGR2HSV)
     if self.hsvcheck == True:
       x=self.box[0]
       y=self.box[1]
       w=self.box[2]-self.box[0]
       h=self.box[3]-self.box[1]
-      button_image_array = hsv[y:y+h, x:x+w]
+      if w != 0 and h !=0:
+        button_image_array = hsv[y:y+h, x:x+w]
+        hue,s,v = cv2.split(button_image_array)
       # cv2.imshow("button", button_image_array)
-      if self.button_status == 'init':
-        init_brightness_value=np.sum(button_image_array[:,:,2])/np.size(button_image_array[:,:,2])
-        self.hsvcheck = False
-      if self.button_status == 'check':
-        check_brightness_value=np.sum(button_image_array[:,:,2])/np.size(button_image_array[:,:,2])
-        diff_brightness=check_brightness_value-init_brightness_value
-        if diff_brightness > brightness_set :
-          self.button_status_check = True
-        else:
-          self.button_status_check = False
-        self.hsvcheck = False
+        if self.button_status == 'init':
+          global_variable.init_brightness_value=np.sum(v)/np.size(v)
+          self.hsvcheck = False
+        if self.button_status == 'check':
+          global_variable.check_brightness_value=np.sum(v)/np.size(v)
+          diff_brightness=global_variable.check_brightness_value-global_variable.init_brightness_value
+          print(global_variable.init_brightness_value,diff_brightness)
+          if diff_brightness > brightness_set :
+            self.button_status_check = True
+          else:
+            self.button_status_check = False
+          self.hsvcheck = False
               
       
     
@@ -173,13 +174,17 @@ class read_video_and_recognize:
     goal.pose.position.x = self.x_biase
     goal.pose.position.y = self.y_biase
     goal.pose.position.z = self.pixel_depth_ros
-    if self.pixel_depth_ros>0 and self.pixel_depth_ros<0.5 and presstext == self.button_info and self.presscheck == True and self.button_status == 'init':
+    
+    if self.pixel_depth_ros>0 and presstext == self.button_info and self.presscheck == True and self.button_status == 'init':
       read=read_video_and_recognize()
+      self.button_status = 'set'
       read.call_arm_service(goal)
       self.presscheck = False
+      
     if presstext == self.button_info and self.button_status == 'check':
       read=read_video_and_recognize()
-      read.call_arm_service_check(self.button_status_check)
+      self.button_status = 'set'
+      read.call_button_service_check(self.button_status_check)
       self.presscheck = False
     
 
@@ -195,22 +200,25 @@ class read_video_and_recognize:
     try:
       pose = rospy.ServiceProxy('arm_action', ArmAction)
       response_ans = pose(pose_data)
-    except rospy.ServiceException(f):
-      print("arm_action service failed: {}".format(f))
+      return response_ans
+    except rospy.ServiceException(arm):
+      print("arm_action service failed: {}".format(arm))
   
-  def call_arm_service_check(self,buttonstatus_data):
+  def call_button_service_check(self,buttonstatus_data):
     rospy.wait_for_service('button_status')
     try:
       status = rospy.ServiceProxy('button_status', ButtonStatus)
       response_ans = status(buttonstatus_data)
-    except rospy.ServiceException(f):
-      print("button_status service failed: {}".format(f))
+      return response_ans
+    except rospy.ServiceException(button):
+      print("button_status service failed: {}".format(button))
   
   
 
 if __name__ == '__main__':
   rospy.init_node('button_tracker', anonymous=True)
   read=read_video_and_recognize()
+  global_variable.initialize()
   brightness_set= rospy.get_param('/brightness_detect',10)
   pub=rospy.Publisher('button_recognize_image',Image,queue_size=2)
   rospy.Subscriber('/aligned_depth_image_raw',Image,read.depth_image)

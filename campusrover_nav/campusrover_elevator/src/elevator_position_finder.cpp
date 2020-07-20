@@ -22,6 +22,7 @@
 #include <visualization_msgs/MarkerArray.h>
 
 #include <campusrover_msgs/ElevatorControlStatus.h>
+#include <campusrover_msgs/ElevatorStatusChecker.h>
 
 #include <Eigen/Dense>
 
@@ -31,6 +32,7 @@ using namespace std;
 
 ros::Subscriber scan_sub_, scan2_sub_, control_status_sub_;
 ros::Publisher pose_pub_, break_point_marker_pub_, elevator_corner_marker_pub_, featuer_point_marker_pub_, elevator_marker_pub_;
+ros::ServiceClient status_check_client_;
 
 string status_;
 string scan_frame_;
@@ -78,6 +80,7 @@ bool avg_pose_filter_;
 bool enable_mode_ = false;
 bool enter_done_ = false;
 bool exit_done_ = false;
+bool position_find_done_ = false;
 
 bool pose_filter_first_time_ = true;
 bool matching_success_;
@@ -102,6 +105,7 @@ void initial_elevator_feature();
 void pose_filter(geometry_msgs::PoseArray &poses);
 void FeatureExtract(geometry_msgs::PoseArray &scan_poses);
 void avg_pose(geometry_msgs::Pose &input_pose);
+void StatusCheckCallService(ros::ServiceClient &client,campusrover_msgs::ElevatorStatusChecker &srv);
 
 void get_parameters(ros::NodeHandle n_private)
 {
@@ -393,13 +397,14 @@ void ControlStatusCallback(const campusrover_msgs::ElevatorControlStatusConstPtr
 {
   geometry_msgs::Pose prosses_pose;
   geometry_msgs::PoseArray prosses_poses;
+  static campusrover_msgs::ElevatorStatusChecker status_msg;
 
   prosses_poses.header.frame_id = map_frame_;
   prosses_poses.poses.clear();
 
   control_status_ = con_status->control_status;
 
-  if(control_status_ > 0 && control_status_ < 6 && !enter_done_)
+  if(control_status_ == 1 && !position_find_done_ && !enter_done_)
   {
     enable_mode_ = true;
     sub_mode_ = 2.0; //PointCloud to LaserScan
@@ -409,6 +414,36 @@ void ControlStatusCallback(const campusrover_msgs::ElevatorControlStatusConstPtr
     corner_feature_threshold = enter_corner_feature_threshold_; //
     status_ = "enter";
     exit_done_ = false;
+    if(hold_poses_.poses.size() != 0)
+    {
+      if(hold_poses_.poses[0].position.z >= 30.0 )
+      {
+        status_msg.request.node_name.data = "position_finder";
+        status_msg.request.status.data = true;
+        StatusCheckCallService(status_check_client_, status_msg);
+        position_find_done_ = true;
+      }
+    }
+    
+  }
+  else if(control_status_ == 5  && !enter_done_)
+  {
+    enable_mode_ = true;
+    sub_mode_ = 2.0; //PointCloud to LaserScan
+    feature_point_neighborhood_dis_ = enter_feature_point_neighborhood_dis_; //
+    break_point_neighborhood_dis_ = enter_break_point_neighborhood_dis_; //
+    window_size_ = enter_window_size_; //
+    corner_feature_threshold = enter_corner_feature_threshold_; //
+    status_ = "enter";
+    exit_done_ = false;
+  }
+
+  else if(control_status_ > 0 && control_status_ < 6 && !enter_done_)
+  {
+    enable_mode_ = false;
+    prosses_pose = hold_poses_.poses[0];
+    prosses_poses.poses.push_back(prosses_pose);
+    pose_pub_.publish(prosses_poses);
   }
   else if(control_status_ > 0 && control_status_ < 6 && enter_done_)
   {
@@ -1083,7 +1118,7 @@ void pose_filter(geometry_msgs::PoseArray &filter_poses)
           poses[j].pose.position.y = map_pose.pose.position.y;
           poses[j].pose.orientation = map_pose.pose.orientation;
 
-          if(poses[j].pose.position.z <30.0)
+          if(poses[j].pose.position.z <=30.0)
           {
             poses[j].pose.position.z = poses[j].pose.position.z+2;
             
@@ -1417,7 +1452,18 @@ void VisualizeElevatorEnterPoint(std::vector<nav_msgs::Path> paths)
   elevator_marker_pub_.publish(all_rollOuts);
 
 }
+//--------------------------------------------------------------------
 
+void StatusCheckCallService(ros::ServiceClient &client,campusrover_msgs::ElevatorStatusChecker &srv)
+{
+  string str = "===========position_finder status check============= " ;
+  cout << "Request massage: \n" << srv.request;
+  while (!client.call(srv))
+  {
+    ROS_ERROR("position_finder status check : Failed to call service");
+    ros::Duration(1.0).sleep();
+  }
+}
 //-----------------------------------------------------------------------------------------------//
 int main(int argc, char **argv)
 {
@@ -1437,6 +1483,8 @@ int main(int argc, char **argv)
   break_point_marker_pub_ = nh.advertise<visualization_msgs::MarkerArray>("break_point_marker", 50);
   featuer_point_marker_pub_ = nh.advertise<visualization_msgs::MarkerArray>("feature_point_marker", 50);
   elevator_marker_pub_ = nh.advertise<visualization_msgs::MarkerArray>("elevator_marker", 10);
+
+  status_check_client_ = nh.serviceClient<campusrover_msgs::ElevatorStatusChecker>("elevator_status_checker");
 
   ros::spin();
 

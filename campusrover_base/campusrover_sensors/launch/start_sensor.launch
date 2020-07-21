@@ -11,5 +11,7 @@
 
   <!-- Static transform -->
   <include file="$(find campusrover_sensors)/launch/static_transform.launch" />
-
+  
+  <include file="$(find campusrover_sensors)/launch/start_camera.launch" />
+  <!-- <include file="$(find campusrover_arm_move)/launch/campusrover_robot_arm.launch" /> -->
 </launch>

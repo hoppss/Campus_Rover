@@ -14,6 +14,7 @@ find_package(catkin REQUIRED COMPONENTS
   geometry_msgs
   message_generation
   tf2_ros
+  nav_msgs
 )
 
 ## Generate messages in the 'msg' folder
@@ -25,6 +26,15 @@ add_message_files(
   FloorStatus.msg
   Encode.msg
   ButtonCommand.msg
+  PoseWithId.msg
+  InDemoStatus.msg
+  Room.msg
+  RoomConnected.msg
+  State.msg
+  NodeInfo.msg
+  WorkingFloor.msg
+  Trip.msg
+  LocationRoom.msg
 )
 ##
 ## Generate service in the 'srv' folder###
@@ -39,6 +49,14 @@ add_service_files(
   ElevatorControlInterface.srv
   ElevatorStatusChecker.srv
   ButtonStatus.srv
+  PlannerFunction.srv
+  MapInfo.srv
+  StatePlan.srv
+  ModuleInfo.srv
+  RoutingPath.srv
+  MapLoadInfo.srv
+  MapInitPose.srv
+  LocalizerSwitch.srv
 )
 #
 ## Generate added messages and services with any dependencies listed here
@@ -46,13 +64,14 @@ generate_messages(
   DEPENDENCIES
   std_msgs
   geometry_msgs
+  nav_msgs
 )
 
 
 catkin_package(
 #  INCLUDE_DIRS include
 #  LIBRARIES pev_msgs
- CATKIN_DEPENDS roscpp rospy std_msgs geometry_msgs message_runtime
+ CATKIN_DEPENDS roscpp rospy std_msgs geometry_msgs nav_msgs message_runtime
 #  DEPENDS system_lib
 )
 

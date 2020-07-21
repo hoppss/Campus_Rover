@@ -1,0 +1,6 @@
+bool enable
+string building
+string floor
+string init_point
+---
+string message

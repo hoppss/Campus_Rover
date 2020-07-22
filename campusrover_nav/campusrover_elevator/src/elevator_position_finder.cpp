@@ -95,6 +95,7 @@ std::vector<geometry_msgs::Point> exit_elevator_feature;
 std::vector<geometry_msgs::Point> sample_elevator_feature;
 
 geometry_msgs::PoseArray hold_poses_;
+geometry_msgs::PoseArray prosses_poses_;
 
 void VisualizeCorner(std::vector<geometry_msgs::Point> points);
 void VisualizeBreakPoint(std::vector<geometry_msgs::Point> points);
@@ -313,8 +314,14 @@ void ScanCallback(const sensor_msgs::LaserScanConstPtr &scan)
   std::vector<double> range;
   std::vector<double> intensities;
 
-  if(sub_mode_ != 1 || !enable_mode_)
+  if(sub_mode_ != 1)
     return;
+
+  if(!enable_mode_)
+  {
+    pose_pub_.publish(prosses_poses_);
+    return;
+  }
 
   if(scan->ranges.size()==0)
     return;
@@ -357,8 +364,14 @@ void Scan2Callback(const sensor_msgs::LaserScanConstPtr &scan)
   std::vector<double> range;
   std::vector<double> intensities;
 
-  if(sub_mode_ != 2 || !enable_mode_)
+  if(sub_mode_ != 2)
     return;
+
+  if(!enable_mode_)
+  {
+    pose_pub_.publish(prosses_poses_);
+    return;
+  }
 
   if(scan->ranges.size()==0)
     return;
@@ -396,11 +409,10 @@ void Scan2Callback(const sensor_msgs::LaserScanConstPtr &scan)
 void ControlStatusCallback(const campusrover_msgs::ElevatorControlStatusConstPtr &con_status)
 {
   geometry_msgs::Pose prosses_pose;
-  geometry_msgs::PoseArray prosses_poses;
+  
   static campusrover_msgs::ElevatorStatusChecker status_msg;
 
-  prosses_poses.header.frame_id = map_frame_;
-  prosses_poses.poses.clear();
+  
 
   control_status_ = con_status->control_status;
 
@@ -420,10 +432,17 @@ void ControlStatusCallback(const campusrover_msgs::ElevatorControlStatusConstPtr
       {
         status_msg.request.node_name.data = "position_finder";
         status_msg.request.status.data = true;
-        StatusCheckCallService(status_check_client_, status_msg);
+        // StatusCheckCallService(status_check_client_, status_msg);
         position_find_done_ = true;
       }
     }
+    
+  }
+  else if(control_status_ == 1 && position_find_done_ && !enter_done_)
+  {
+    enable_mode_ = false;
+    prosses_pose = hold_poses_.poses[0];
+    prosses_poses_.poses.push_back(prosses_pose);
     
   }
   else if(control_status_ == 5  && !enter_done_)
@@ -438,20 +457,19 @@ void ControlStatusCallback(const campusrover_msgs::ElevatorControlStatusConstPtr
     exit_done_ = false;
   }
 
-  else if(control_status_ > 0 && control_status_ < 6 && !enter_done_)
+  else if(control_status_ > 1 && control_status_ < 6 && !enter_done_)
   {
     enable_mode_ = false;
     prosses_pose = hold_poses_.poses[0];
-    prosses_poses.poses.push_back(prosses_pose);
-    pose_pub_.publish(prosses_poses);
+    prosses_poses_.poses.push_back(prosses_pose);
+    position_find_done_ = false;
   }
   else if(control_status_ > 0 && control_status_ < 6 && enter_done_)
   {
     enable_mode_ = false;
     prosses_pose = hold_poses_.poses[0];
     prosses_pose.position.z = -1;
-    prosses_poses.poses.push_back(prosses_pose);
-    pose_pub_.publish(prosses_poses);
+    prosses_poses_.poses.push_back(prosses_pose);
   }
   else if (control_status_ > 5 && control_status_ < 12 && !exit_done_)
   {
@@ -478,9 +496,8 @@ void ControlStatusCallback(const campusrover_msgs::ElevatorControlStatusConstPtr
     prosses_pose.position = hold_poses_.poses[0].position;
     prosses_pose.orientation = elevator_pose_q_msg;
 
-    prosses_poses.poses.push_back(prosses_pose);
-    
-    pose_pub_.publish(prosses_poses);
+    prosses_poses_.poses.push_back(prosses_pose);
+  
     
   //   enable_mode_ = true;
   //   sub_mode_ = 1.0; //LaserScan

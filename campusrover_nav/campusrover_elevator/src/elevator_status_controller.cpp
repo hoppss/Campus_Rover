@@ -54,6 +54,7 @@ bool arm_return_checker_ = false;
 bool path_generater_check_done_ = false;
 bool elevator_pose_ckeck_done_ = false;
 bool arrive_target_floor_ = false;
+bool control_status_first_time_ = true;
 
 void InitFloorCallService(ros::ServiceClient &client,campusrover_msgs::InitFloor &srv) ;
 void PressButtonCallService(ros::ServiceClient &client,campusrover_msgs::PressButton &srv) ;
@@ -67,7 +68,7 @@ void get_parameters(ros::NodeHandle n_private)
   twist_param_0_.angular.z = 0.0;
 
   twist_param_1_.linear.x = 0.2;
-  twist_param_1_.angular.z = 0.5;
+  twist_param_1_.angular.z = 0.4;
 
   twist_param_2_.linear.x = 0.3;
   twist_param_2_.angular.z = 0.5;
@@ -77,7 +78,6 @@ void get_parameters(ros::NodeHandle n_private)
 //----------------------------------------------------------------------------------------------
 void TimerCallback(const ros::TimerEvent &event)
 {
-  static bool first_time = true;
   static campusrover_msgs::ElevatorControlStatus status;
   static campusrover_msgs::PlannerFunction planner_param;
   static campusrover_msgs::InitFloor init_param;
@@ -87,11 +87,12 @@ void TimerCallback(const ros::TimerEvent &event)
 
   status.control_status = control_status_;
   control_status_pub_.publish(status);
+  // cout << "  elevator_pose_ckeck_done_ : " <<elevator_pose_ckeck_done_<< endl;
 
   if(control_status_ == 1)// move to front of button (outside)
   {
   
-    if(first_time && path_generater_check_done_ && elevator_pose_ckeck_done_)
+    if(control_status_first_time_ && path_generater_check_done_ && elevator_pose_ckeck_done_)
     {
 
       //init floor 
@@ -105,7 +106,7 @@ void TimerCallback(const ros::TimerEvent &event)
       //Arm Standby pose 
       arm_standby_msg.request.status.data = true;
       ArmStandybyFunctionCallService(arm_standby_srv_client_, arm_standby_msg);
-      first_time = false;
+      control_status_first_time_ = false;
     }
   
     if(planner_check_done_)
@@ -117,7 +118,7 @@ void TimerCallback(const ros::TimerEvent &event)
       planner_check_done_ = false;
       path_generater_check_done_ = false;
       elevator_pose_ckeck_done_ = false;
-      first_time = true;
+      control_status_first_time_ = true;
       control_status_++;
     }
 
@@ -125,7 +126,7 @@ void TimerCallback(const ros::TimerEvent &event)
   }else if(control_status_ == 2) //press button (outside)
   {
     // 
-    if(first_time)
+    if(control_status_first_time_)
     {
       if(target_floor_ - init_floor_> 0)
       {
@@ -137,13 +138,13 @@ void TimerCallback(const ros::TimerEvent &event)
       }
 
       PressButtonCallService(button_srv_client_,button_param);
-      first_time = false;
+      control_status_first_time_ = false;
     }
   
     if(arm_return_checker_)
     {
       
-      first_time = true;
+      control_status_first_time_ = true;
       arm_return_checker_ = false;
       control_status_++;
 
@@ -152,7 +153,7 @@ void TimerCallback(const ros::TimerEvent &event)
 
   }else if(control_status_ == 3)// move to standby position
   {
-    if(first_time && path_generater_check_done_)
+    if(control_status_first_time_ && path_generater_check_done_)
     {
       planner_param.request.action.data = true;
       planner_param.request.direction_inverse.data = true;
@@ -160,7 +161,7 @@ void TimerCallback(const ros::TimerEvent &event)
       PlannerFunctionCallService(planner_srv_client_, planner_param);
       
       //
-      first_time = false;
+      control_status_first_time_ = false;
     }
   
     if(planner_check_done_)
@@ -171,7 +172,7 @@ void TimerCallback(const ros::TimerEvent &event)
       PlannerFunctionCallService(planner_srv_client_, planner_param);
       planner_check_done_ = false;
       path_generater_check_done_ = false;
-      first_time = true;
+      control_status_first_time_ = true;
 
       if(arm_return_status_)
       {
@@ -196,22 +197,22 @@ void TimerCallback(const ros::TimerEvent &event)
   {
     if(door_status_ == "open")
     {
-      if(first_time && path_generater_check_done_)
+      if(control_status_first_time_ && path_generater_check_done_)
       {
         planner_param.request.action.data = true;
         planner_param.request.direction_inverse.data = false;
         planner_param.request.speed_parameter = twist_param_2_;
         PlannerFunctionCallService(planner_srv_client_, planner_param);
-        first_time = false;
+        control_status_first_time_ = false;
       }
     }
-    else if(!first_time && door_status_ == "close")
+    else if(!control_status_first_time_ && door_status_ == "close")
     {
       planner_param.request.action.data = true;
       planner_param.request.direction_inverse.data = false;
       planner_param.request.speed_parameter = twist_param_0_;
       PlannerFunctionCallService(planner_srv_client_, planner_param);
-      first_time = true;
+      control_status_first_time_ = true;
     }
     
     
@@ -224,7 +225,7 @@ void TimerCallback(const ros::TimerEvent &event)
       PlannerFunctionCallService(planner_srv_client_, planner_param);
       planner_check_done_ = false;
       path_generater_check_done_ = false;
-      first_time = true;
+      control_status_first_time_ = true;
       control_status_ = 7;
       
     }
@@ -232,13 +233,13 @@ void TimerCallback(const ros::TimerEvent &event)
   }else if(control_status_ == 6)//move to front of button (inside)
   {
 
-    if(first_time && path_generater_check_done_)
+    if(control_status_first_time_ && path_generater_check_done_)
     {
       planner_param.request.action.data = true;
       planner_param.request.direction_inverse.data = false;
       planner_param.request.speed_parameter = twist_param_1_;
       PlannerFunctionCallService(planner_srv_client_, planner_param);
-      first_time = false;
+      control_status_first_time_ = false;
     }
   
     if(planner_check_done_)
@@ -249,13 +250,13 @@ void TimerCallback(const ros::TimerEvent &event)
       PlannerFunctionCallService(planner_srv_client_, planner_param);
       planner_check_done_ = false;
       path_generater_check_done_ = false;
-      first_time = true;
+      control_status_first_time_ = true;
       control_status_++;
     }
     
   }else if(control_status_ == 7) //press button (inside)
   {
-    if(first_time)
+    if(control_status_first_time_)
     {
       //Arm Standby pose 
       arm_standby_msg.request.status.data = true;
@@ -263,7 +264,7 @@ void TimerCallback(const ros::TimerEvent &event)
 
       button_param.request.button_type.data = to_string(target_floor_);
       PressButtonCallService(button_srv_client_,button_param);
-      first_time = false;
+      control_status_first_time_ = false;
     }
   
 
@@ -271,38 +272,36 @@ void TimerCallback(const ros::TimerEvent &event)
     {
       if(arm_return_status_)
       {
-        control_status_ = 10;
+        control_status_++;
       }
       else
       {
-        first_time = true;
         arm_return_checker_ = false;
       }
-      
-
+      control_status_first_time_ = true;
     }
     
   }
   else if(control_status_ == 8)//move to standby position
   {
-    if(first_time && path_generater_check_done_)
+    if(control_status_first_time_ && path_generater_check_done_)
     {
       planner_param.request.action.data = true;
       planner_param.request.direction_inverse.data = true;
       planner_param.request.speed_parameter = twist_param_1_;
       PlannerFunctionCallService(planner_srv_client_, planner_param);
-      first_time = false;
+      control_status_first_time_ = false;
     }
   
     if(planner_check_done_)
     {
       planner_param.request.action.data = false;
-      planner_param.request.direction_inverse.data = true;
+      planner_param.request.direction_inverse.data = false;
       planner_param.request.speed_parameter = twist_param_0_;
       PlannerFunctionCallService(planner_srv_client_, planner_param);
       planner_check_done_ = false;
       path_generater_check_done_ = false;
-      first_time = true;
+      control_status_first_time_ = true;
 
       // if(arm_return_status_)
       // {
@@ -332,13 +331,13 @@ void TimerCallback(const ros::TimerEvent &event)
   {
     if(door_status_ == "open")
     {
-      if(first_time && path_generater_check_done_)
+      if(control_status_first_time_ && path_generater_check_done_)
       {
         planner_param.request.action.data = true;
         planner_param.request.direction_inverse.data = false;
-        planner_param.request.speed_parameter = twist_param_2_;
+        planner_param.request.speed_parameter = twist_param_1_;
         PlannerFunctionCallService(planner_srv_client_, planner_param);
-        first_time = false;
+        control_status_first_time_ = false;
       }
     }
     else if(door_status_ == "close")
@@ -347,7 +346,7 @@ void TimerCallback(const ros::TimerEvent &event)
       planner_param.request.direction_inverse.data = false;
       planner_param.request.speed_parameter = twist_param_0_;
       PlannerFunctionCallService(planner_srv_client_, planner_param);
-      first_time = true;
+      control_status_first_time_ = true;
       control_status_ = 9;
     }
 
@@ -359,7 +358,7 @@ void TimerCallback(const ros::TimerEvent &event)
       PlannerFunctionCallService(planner_srv_client_, planner_param);
       planner_check_done_ = false;
       path_generater_check_done_ = false;
-      first_time = true;
+      control_status_first_time_ = true;
       control_status_ = 0;
       finish_pub_.publish(finish_msgs);
     }
@@ -446,6 +445,7 @@ bool ControlServiceCallback(campusrover_msgs::ElevatorControlInterface::Request 
     cout << "  init floor : " <<init_floor_<< endl;
     cout << "  target floor : " <<target_floor_<< endl;
     control_status_ = 1;
+    control_status_first_time_ = true;
   }
   else
   {

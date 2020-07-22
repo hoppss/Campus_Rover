@@ -682,7 +682,7 @@ bool ServiceCallback(campusrover_msgs::PlannerFunction::Request  &req, campusrov
 //-----------------------------------------------------------------------------------------------
 void ElevatorStatusCheckCallService(ros::ServiceClient &client,campusrover_msgs::ElevatorStatusChecker &srv)
 {
-  ros::Duration(0.5).sleep();
+  ros::Duration(0.8).sleep();
   string str = "===========elevator planner status check============= " ;
   cout << "Request massage: \n" << srv.request;
   while (!client.call(srv))

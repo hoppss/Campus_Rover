@@ -17,7 +17,7 @@ from cv_bridge import CvBridge
 from sensor_msgs.msg import PointCloud2
 from sensor_msgs import point_cloud2
 from campusrover_msgs.msg import ButtonCommand
-from global_variable import initialize
+# from global_variable import initialize
 
 init_brightness_value=0
 
@@ -82,6 +82,7 @@ class read_video_and_recognize:
     self.hsvcheck=False
     self.button_status=''
     self.button_status_check=False
+    self.init_brightness_value = None
   def read_and_recognize(self,Image):
   # initialize tracking process
     bridge = CvBridge()
@@ -115,12 +116,12 @@ class read_video_and_recognize:
         hue,s,v = cv2.split(button_image_array)
       # cv2.imshow("button", button_image_array)
         if self.button_status == 'init':
-          init_brightness_value=np.sum(v)/np.size(v)
+          self.init_brightness_value=np.sum(v)/np.size(v)
           self.hsvcheck = False
         if self.button_status == 'check':
           check_brightness_value=np.sum(v)/np.size(v)
-          diff_brightness=check_brightness_value -init_brightness_value
-          print(init_brightness_value,diff_brightness)
+          diff_brightness=check_brightness_value -self.init_brightness_value
+          print(self.init_brightness_value,diff_brightness)
           if diff_brightness > brightness_set :
             self.button_status_check = True
           else:

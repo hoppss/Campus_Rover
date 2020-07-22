@@ -412,8 +412,8 @@ void ControlStatusCallback(const campusrover_msgs::ElevatorControlStatusConstPtr
   
   static campusrover_msgs::ElevatorStatusChecker status_msg;
 
-  
-
+  prosses_poses_.header.frame_id = map_frame_;
+  prosses_poses_.poses.clear();
   control_status_ = con_status->control_status;
 
   if(control_status_ == 1 && !position_find_done_ && !enter_done_)
@@ -432,7 +432,7 @@ void ControlStatusCallback(const campusrover_msgs::ElevatorControlStatusConstPtr
       {
         status_msg.request.node_name.data = "position_finder";
         status_msg.request.status.data = true;
-        // StatusCheckCallService(status_check_client_, status_msg);
+        StatusCheckCallService(status_check_client_, status_msg);
         position_find_done_ = true;
       }
     }

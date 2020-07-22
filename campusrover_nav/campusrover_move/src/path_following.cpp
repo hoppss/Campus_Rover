@@ -63,6 +63,10 @@ bool arriving_end_direction_= false;
 bool enble_costmap_obstacle_;
 bool direction_inverse_= false;;
 
+bool enable_linear_depend_angular_;
+double max_angle_of_linear_profile_;
+double min_angle_of_linear_profile_;
+
 double threshold_occupied_;
 double footprint_max_x_;
 double footprint_min_x_;
@@ -105,8 +109,12 @@ void get_parameters(ros::NodeHandle n_private)
   n_private.param<double>("footprint_min_y", footprint_min_y_, -0.6);
   n_private.param<double>("speed_pid_k", speed_pid_k_, 0.06);
 
+  n_private.param<double>("min_angle_of_linear_profile", min_angle_of_linear_profile_, 0.1);
+  n_private.param<double>("max_angle_of_linear_profile", max_angle_of_linear_profile_, 0.5);
+
   n_private.param<bool>("enble_costmap_obstacle", enble_costmap_obstacle_, false);
   n_private.param<bool>("direction_inverse", direction_inverse_, false);
+  n_private.param<bool>("enable_linear_depend_angular", enable_linear_depend_angular_, false);
 }
 
 //-----------------------------------------------------------------------------------------------
@@ -386,6 +394,19 @@ void moving_to_target_point()
   {
     len_vel = len_vel*0.5;
   }
+
+  if(enable_linear_depend_angular_)
+  {
+    if(abs(yaw_error) >= max_angle_of_linear_profile_)
+    {
+      len_vel = 0.0;
+    }
+    else if(abs(yaw_error) >= min_angle_of_linear_profile_ && abs(yaw_error) < max_angle_of_linear_profile_)
+    {
+      len_vel = len_vel*(1.0-((abs(yaw_error)-min_angle_of_linear_profile_)/max_angle_of_linear_profile_));
+    }
+  }
+  
   
   
   
@@ -435,9 +456,9 @@ void TwistPublish(double x, double z)
     pub_twist.angular.z = z;
   }
   
-
-    pub_twist.linear.x = x;
-    
+  
+  
+  pub_twist.linear.x = x;
   
   //make_twist_path(pub_twist.linear.x, pub_twist.angular.z);
   twist_pub_.publish(pub_twist);

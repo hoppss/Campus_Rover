@@ -46,6 +46,10 @@
 
         <param name="speed_pid_k" value="0.5" />
 
+        <param name="min_angle_of_linear_profile" value="0.5" />
+        <param name="max_angle_of_linear_profile" value="1.0" />
+
+        <param name="enable_linear_depend_angular" value="true" />
         <param name="enble_costmap_obstacle" value="false" />
         <param name="direction_inverse" value="false" />
     </node>

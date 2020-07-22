@@ -1,4 +1,4 @@
-def initialize():
+def initialize(data):
     global init_brightness_value
-    global check_brightness_value
+    init_brightness_value=data
 

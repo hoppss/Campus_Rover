@@ -17,7 +17,9 @@ from cv_bridge import CvBridge
 from sensor_msgs.msg import PointCloud2
 from sensor_msgs import point_cloud2
 from campusrover_msgs.msg import ButtonCommand
-import global_variable
+from global_variable import initialize
+
+init_brightness_value=0
 
 class ButtonTracker:
   def __init__(self):
@@ -99,6 +101,7 @@ class read_video_and_recognize:
         self.recognize_check = False
   
   def imagetohsv (self,Image):
+    global init_brightness_value
     bridge = CvBridge()
     cv_hsvimage = bridge.imgmsg_to_cv2(Image, 'bgr8')
     hsv=cv2.cvtColor(cv_hsvimage,cv2.COLOR_BGR2HSV)
@@ -112,12 +115,12 @@ class read_video_and_recognize:
         hue,s,v = cv2.split(button_image_array)
       # cv2.imshow("button", button_image_array)
         if self.button_status == 'init':
-          global_variable.init_brightness_value=np.sum(v)/np.size(v)
+          init_brightness_value=np.sum(v)/np.size(v)
           self.hsvcheck = False
         if self.button_status == 'check':
-          global_variable.check_brightness_value=np.sum(v)/np.size(v)
-          diff_brightness=global_variable.check_brightness_value-global_variable.init_brightness_value
-          print(global_variable.init_brightness_value,diff_brightness)
+          check_brightness_value=np.sum(v)/np.size(v)
+          diff_brightness=check_brightness_value -init_brightness_value
+          print(init_brightness_value,diff_brightness)
           if diff_brightness > brightness_set :
             self.button_status_check = True
           else:
@@ -218,7 +221,6 @@ class read_video_and_recognize:
 if __name__ == '__main__':
   rospy.init_node('button_tracker', anonymous=True)
   read=read_video_and_recognize()
-  global_variable.initialize()
   brightness_set= rospy.get_param('/brightness_detect',10)
   pub=rospy.Publisher('button_recognize_image',Image,queue_size=2)
   rospy.Subscriber('/aligned_depth_image_raw',Image,read.depth_image)

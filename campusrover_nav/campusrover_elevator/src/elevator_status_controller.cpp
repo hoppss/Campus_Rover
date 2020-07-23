@@ -87,7 +87,10 @@ void TimerCallback(const ros::TimerEvent &event)
 
   status.control_status = control_status_;
   control_status_pub_.publish(status);
+  // cout << "  control_status_first_time_ : " <<control_status_first_time_<< endl;
+  // cout << "  path_generater_check_done_ : " <<path_generater_check_done_<< endl;
   // cout << "  elevator_pose_ckeck_done_ : " <<elevator_pose_ckeck_done_<< endl;
+  // cout << "  -------------------------------------- " << endl;
 
   if(control_status_ == 1)// move to front of button (outside)
   {

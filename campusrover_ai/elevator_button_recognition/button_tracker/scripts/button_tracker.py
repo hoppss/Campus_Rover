@@ -83,7 +83,7 @@ class read_video_and_recognize:
     self.button_status=''
     self.button_status_check=False
     self.init_brightness_value = 0
-    self.count == False
+    self.count = False
   def read_and_recognize(self,Image):
   # initialize tracking process
     bridge = CvBridge()

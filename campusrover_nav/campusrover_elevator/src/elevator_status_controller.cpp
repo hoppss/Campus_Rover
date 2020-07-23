@@ -183,7 +183,7 @@ void TimerCallback(const ros::TimerEvent &event)
       }
       else
       {
-        control_status_ = 1;
+        control_status_ = control_status_- 2.0 ;
       }
       
       
@@ -229,22 +229,25 @@ void TimerCallback(const ros::TimerEvent &event)
       planner_check_done_ = false;
       path_generater_check_done_ = false;
       control_status_first_time_ = true;
-      control_status_ = 7;
+      control_status_ ++;
       
     }
     
   }else if(control_status_ == 6)//move to front of button (inside)
   {
-
-    if(control_status_first_time_ && path_generater_check_done_)
+    if(control_status_first_time_ && path_generater_check_done_ )
     {
+
       planner_param.request.action.data = true;
       planner_param.request.direction_inverse.data = false;
       planner_param.request.speed_parameter = twist_param_1_;
       PlannerFunctionCallService(planner_srv_client_, planner_param);
+      //Arm Standby pose 
+      arm_standby_msg.request.status.data = true;
+      ArmStandybyFunctionCallService(arm_standby_srv_client_, arm_standby_msg);
       control_status_first_time_ = false;
     }
-  
+
     if(planner_check_done_)
     {
       planner_param.request.action.data = false;
@@ -269,19 +272,15 @@ void TimerCallback(const ros::TimerEvent &event)
       PressButtonCallService(button_srv_client_,button_param);
       control_status_first_time_ = false;
     }
-  
+
 
     if(arm_return_checker_)
     {
-      if(arm_return_status_)
-      {
-        control_status_++;
-      }
-      else
-      {
-        arm_return_checker_ = false;
-      }
+      
       control_status_first_time_ = true;
+      arm_return_checker_ = false;
+      control_status_++;
+
     }
     
   }
@@ -306,14 +305,14 @@ void TimerCallback(const ros::TimerEvent &event)
       path_generater_check_done_ = false;
       control_status_first_time_ = true;
 
-      // if(arm_return_status_)
-      // {
-      control_status_++;
-      // }
-      // else
-      // {
-      //   control_status_ = 7;
-      // }
+      if(arm_return_status_)
+      {
+        control_status_++;
+      }
+      else
+      {
+        control_status_ = control_status_- 2.0 ;
+      }
     }
   }
   else if(control_status_ == 9)//waiting arrive target floor

@@ -83,7 +83,6 @@ class read_video_and_recognize:
     self.button_status=''
     self.button_status_check=False
     self.init_brightness_value = 0
-    self.count = False
   def read_and_recognize(self,Image):
   # initialize tracking process
     bridge = CvBridge()
@@ -114,32 +113,14 @@ class read_video_and_recognize:
       if w != 0 and h !=0:
         button_image_array = hsv[y:y+h, x:x+w]
         hue,s,v = cv2.split(button_image_array)
-      # cv2.imshow("button", button_image_array)
         if self.button_status == 'init':
           self.init_brightness_value=np.sum(v)/np.size(v)
           print(self.init_brightness_value)
-          i=0
-          while self.count == False:
-            i += i
           self.hsvcheck = False
-
-  def imagetohsvcheck (self,Image):
-    bridge = CvBridge()
-    cv_hsvimage = bridge.imgmsg_to_cv2(Image, 'bgr8')
-    hsv=cv2.cvtColor(cv_hsvimage,cv2.COLOR_BGR2HSV)
-    if self.hsvcheck == True:
-      x=self.box[0]
-      y=self.box[1]
-      w=self.box[2]-self.box[0]
-      h=self.box[3]-self.box[1]
-      if w != 0 and h !=0:
-        button_image_array = hsv[y:y+h, x:x+w]
-        hue,s,v = cv2.split(button_image_array)
         if self.button_status == 'check':
           check_brightness_value=np.sum(v)/np.size(v)
           diff_brightness=check_brightness_value - self.init_brightness_value
           print(self.init_brightness_value,diff_brightness)
-          self.count = True
           if diff_brightness > brightness_set :
             self.button_status_check = True
           else:
@@ -242,6 +223,5 @@ if __name__ == '__main__':
   
   rospy.Subscriber("/color_image_raw", Image,read.read_and_recognize)
   rospy.Subscriber("/color_image_raw", Image,read.imagetohsv)
-  rospy.Subscriber("/color_image_raw", Image,read.imagetohsvcheck)
   rospy.Subscriber('/button_info', ButtonCommand,read.button_info_enable)
   rospy.spin()

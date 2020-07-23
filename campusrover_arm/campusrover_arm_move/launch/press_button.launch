@@ -8,11 +8,11 @@
     <param name="num_planning_attempts" value="10"/>
     <param name="shift_x" value="-0.06"/>
     <param name="shift_y" value="0.02"/>
-    <param name="shift_z" value="-0.02"/>
-    <param name="press_dis" value="0.15"/>
+    <param name="shift_z" value="-0.03"/>
+    <param name="press_dis" value="0.05"/>
     <param name="jump_threshold" value="0.0"/>
     <param name="eef_step" value="0.002"/>
     <param name="allow_replanning" value="true"/>
-    <param name="enable_button_check" value="false"/>
+    <param name="enable_button_check" value="true"/>
 	</node>
 </launch>

@@ -1,12 +1,12 @@
 <?xml version="1.0"?>
 <launch>
-  <arg name="aligned_depth_image_raw" default="/camera/aligned_depth_to_color/image_raw"/>
-  <arg name="color_image_raw" default="/camera/color/image_raw"/>
+  <arg name="aligned_depth_image_raw" default="/right_camera/aligned_depth_to_color/image_raw"/>
+  <arg name="color_image_raw" default="/right_camera/color/image_raw"/>
 
   <node pkg="button_tracker" type="button_tracker.py" name="button_tracker" output="screen">
     <remap from="color_image_raw" to="$(arg color_image_raw)"/>
     <remap from="aligned_depth_image_raw" to="$(arg aligned_depth_image_raw)"/>
-    <param name="brightness_detect" value="10"/>
+    <param name="brightness_detect" value="8"/>
   
   </node>
 </launch>

@@ -198,9 +198,9 @@ bool ArmServiceCallback(campusrover_msgs::ArmAction::Request  &req, campusrover_
     else
     {
       pitch = (atan2(pose_.pose.position.x,pose_.pose.position.z)) -1.57;
-      target_pose.position.x -= shift_z_;
-      target_pose.position.y += shift_y_;
-      target_pose.position.z += shift_x_;
+      target_pose.position.x += -0.01;
+      target_pose.position.y += 0.01;
+      target_pose.position.z += -0.06;
     }
     quat_tf.setRPY( 0, pitch, yaw ); 
     geometry_msgs::Quaternion quat_msg = tf2::toMsg(quat_tf);
@@ -291,9 +291,11 @@ bool ArmServiceCallback(campusrover_msgs::ArmAction::Request  &req, campusrover_
             
             get_button_check_data_ = false;
             cout << "button don't be pressed please ,call arm action again" << endl;
+            
             button_info_pub_.publish(button_command);
             return true;
           }
+          get_button_check_data_ = false;
         }
       }
 
@@ -337,6 +339,9 @@ bool ArmServiceCallback(campusrover_msgs::ArmAction::Request  &req, campusrover_
 bool ButtonServiceCallback(campusrover_msgs::PressButton::Request  &req, campusrover_msgs::PressButton::Response &res)
 {
   static campusrover_msgs::ButtonCommand button_command;
+
+  ros::Duration(1.0).sleep();
+
   button_info_ = req.button_type.data;
   button_command.button_name.data = req.button_type.data;
   button_command.command_type.data = "init";
@@ -353,7 +358,7 @@ bool ButtonStatusServiceCallback(campusrover_msgs::ButtonStatus::Request  &req, 
 {
 
   
-  button_check_status_ = req.button_status.data;
+  button_check_status_ = req.button_status;
   
   get_button_check_data_ = true;
 
@@ -423,11 +428,11 @@ int main(int argc, char **argv)
     //pose_sub_ = n.subscribe("/button_pose", 1, ButtonPoseCallback);
     ros::ServiceServer arm_service = n.advertiseService("arm_action", ArmServiceCallback);
     ros::ServiceServer button_service = n.advertiseService("button_press", ButtonServiceCallback);
+    ros::ServiceServer button_status_service = n.advertiseService("button_status", ButtonStatusServiceCallback);
     ros::ServiceServer arm_move_to_standby_pose_button_service = n.advertiseService("arm_move_to_standby_pose", MoveToStandbyPoseServiceCallback);
 
     button_info_pub_ = n.advertise<campusrover_msgs::ButtonCommand>("button_info", 50);
 
-    button_srv_client_ = n.serviceClient<campusrover_msgs::PressButton>("button_info");
     status_check_client_ = n.serviceClient<campusrover_msgs::ElevatorStatusChecker>("elevator_status_checker");
 
     joint_1_slope_client_ = n.serviceClient<dynamixel_controllers::SetComplianceSlope>("/joint_1/set_compliance_slope");

@@ -381,7 +381,7 @@ void FloorStatusCallback(const campusrover_msgs::FloorStatusConstPtr &floor_stat
 
   if(target_floor_ ==  current_floor_)
   {
-     arrive_target_floor_ = true;
+    arrive_target_floor_ = true;
   }
   else
   {

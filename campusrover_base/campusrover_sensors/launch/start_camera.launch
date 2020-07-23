@@ -9,7 +9,7 @@
     <arg name="center_camera"              		default="center_camera"/>
     <arg name="right_camera"              		default="right_camera"/>
 
-    <arg name="left_camera_enable"              default="true"/>		
+    <arg name="left_camera_enable"              default="false"/>		
     <arg name="center_camera_enable"            default="false"/>
     <arg name="right_camera_enable"             default="true"/>
 
@@ -71,6 +71,6 @@
         </include>
     </group>
 
-    <node pkg="campusrover_elevator" type="camera_topic_mux" name="camera_topic_mux" output="screen"/>
+    <!-- <node pkg="campusrover_elevator" type="camera_topic_mux" name="camera_topic_mux" output="screen"/> -->
 
 </launch>

@@ -277,10 +277,7 @@ void TimerCallback(const ros::TimerEvent &event)
       {
         control_status_++;
       }
-      else
-      {
-        arm_return_checker_ = false;
-      }
+      arm_return_checker_ = false;
       control_status_first_time_ = true;
     }
     
@@ -382,7 +379,7 @@ void FloorStatusCallback(const campusrover_msgs::FloorStatusConstPtr &floor_stat
 
   if(target_floor_ ==  current_floor_)
   {
-     arrive_target_floor_ = true;
+    arrive_target_floor_ = true;
   }
   else
   {

@@ -83,6 +83,13 @@ class read_video_and_recognize:
     self.button_status=''
     self.button_status_check=False
     self.init_brightness_value = 0
+    self.pub=rospy.Publisher('button_recognize_image',Image,queue_size=2)
+    self.brightness_set= rospy.get_param('/brightness_detect',10)
+    rospy.Subscriber('/aligned_depth_image_raw',Image,self.depth_image)
+    rospy.Subscriber("/color_image_raw", Image,self.read_and_recognize)
+    rospy.Subscriber("/color_image_raw", Image,self.imagetohsv)
+    rospy.Subscriber('/button_info', ButtonCommand,self.button_info_enable)
+
   def read_and_recognize(self,Image):
   # initialize tracking process
     bridge = CvBridge()
@@ -95,7 +102,7 @@ class read_video_and_recognize:
     # output video in ros
         button_tracker.visualize_recognitions(cv_image, box, text)
         ros_result_image=bridge.cv2_to_imgmsg(cv_image,'bgr8')
-        pub.publish(ros_result_image)
+        self.pub.publish(ros_result_image)
       if self.texts == []:
         self.recognize_check = True
       else:
@@ -121,7 +128,7 @@ class read_video_and_recognize:
           check_brightness_value=np.sum(v)/np.size(v)
           diff_brightness=check_brightness_value - self.init_brightness_value
           print(self.init_brightness_value,diff_brightness)
-          if diff_brightness > brightness_set :
+          if diff_brightness > self.brightness_set :
             self.button_status_check = True
           else:
             self.button_status_check = False
@@ -216,12 +223,5 @@ class read_video_and_recognize:
 
 if __name__ == '__main__':
   rospy.init_node('button_tracker', anonymous=True)
-  read=read_video_and_recognize()
-  brightness_set= rospy.get_param('/brightness_detect',10)
-  pub=rospy.Publisher('button_recognize_image',Image,queue_size=2)
-  rospy.Subscriber('/aligned_depth_image_raw',Image,read.depth_image)
-  
-  rospy.Subscriber("/color_image_raw", Image,read.read_and_recognize)
-  rospy.Subscriber("/color_image_raw", Image,read.imagetohsv)
-  rospy.Subscriber('/button_info', ButtonCommand,read.button_info_enable)
+  read = read_video_and_recognize()
   rospy.spin()

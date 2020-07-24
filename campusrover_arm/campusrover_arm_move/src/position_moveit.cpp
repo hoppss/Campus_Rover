@@ -164,44 +164,37 @@ bool ArmServiceCallback(campusrover_msgs::ArmAction::Request  &req, campusrover_
     bool transformed = false;
     if (planning_frame_id_ != pose_.header.frame_id)
     {
-        while(!transformed)
+      while(!transformed)
+      {
+        try
         {
-            try
-            {
-            tfBuffer.transform(pose_, local_pose, planning_frame_id_);
-            transformed = true;
-            }
-            catch (tf2::TransformException &ex)
-            {
-            ROS_WARN("position_move: %s",ex.what());
-            ros::Duration(1.0).sleep();
-            continue;
-            }
+          tfBuffer.transform(pose_, local_pose, planning_frame_id_);
+          transformed = true;
         }
-        
-        pose_ = local_pose;
+        catch (tf2::TransformException &ex)
+        {
+          ROS_WARN("position_move: %s",ex.what());
+          ros::Duration(1.0).sleep();
+          continue;
+        }
+      }
+      pose_ = local_pose;
     }
 
 
     
 
-    pitch = yaw = 0;
+    pitch = yaw = 0.0;
     
     target_pose.position = pose_.pose.position;
-    if(target_pose.position.x > target_pose.position.z)
-    {
-      yaw = atan2(pose_.pose.position.y,pose_.pose.position.x);
-      target_pose.position.x += shift_x_;
-      target_pose.position.y += shift_y_;
-      target_pose.position.z += shift_z_;
-    }
-    else
-    {
-      pitch = (atan2(pose_.pose.position.x,pose_.pose.position.z)) -1.57;
-      target_pose.position.x += -0.01;
-      target_pose.position.y += 0.01;
-      target_pose.position.z += -0.06;
-    }
+
+    
+    target_pose.position.x += shift_x_;
+    target_pose.position.y += shift_y_;
+    target_pose.position.z += shift_z_;
+
+    yaw = atan2(pose_.pose.position.y,pose_.pose.position.x);
+    
     quat_tf.setRPY( 0, pitch, yaw ); 
     geometry_msgs::Quaternion quat_msg = tf2::toMsg(quat_tf);
     target_pose.orientation = quat_msg;
@@ -221,26 +214,13 @@ bool ArmServiceCallback(campusrover_msgs::ArmAction::Request  &req, campusrover_
 
       waypoints.push_back(target_pose);
 
-      if(target_pose.position.x > target_pose.position.z)
-      {
-        target_pose.position.x += press_dis_;
-        waypoints.push_back(target_pose); 
+      target_pose.position.x += press_dis_;
+      waypoints.push_back(target_pose); 
 
-        target_pose.position.x -= press_dis_;
-        waypoints.push_back(target_pose);  
-      }
-      else
-      {
-        target_pose.position.z += press_dis_;
-        waypoints.push_back(target_pose); 
+      target_pose.position.x -= press_dis_;
+      waypoints.push_back(target_pose);  
 
-        target_pose.position.z -= press_dis_;
-        waypoints.push_back(target_pose); 
-      }
-        
-
-     
-
+ 
       // Cartesian motions are frequently needed to be slower for actions such as approach and retreat
       // grasp motions. Here we demonstrate how to reduce the speed of the robot arm via a scaling factor
       // of the maxiumum speed of each joint. Note this is not the speed of the end effector point.
@@ -268,7 +248,10 @@ bool ArmServiceCallback(campusrover_msgs::ArmAction::Request  &req, campusrover_
 
       if(enable_button_check_)
       {
-        //move to press  pose
+        //move to press  pose press_pose_name_
+        move_group.setNamedTarget(press_pose_name_);
+        move_group.move();
+
         move_group.setNamedTarget(standby_pose_name_);
         move_group.move();
         //check button is pressed
@@ -326,7 +309,9 @@ bool ArmServiceCallback(campusrover_msgs::ArmAction::Request  &req, campusrover_
 
     
     cout << "move to release_pose " << endl;
-    success = (move_group.setNamedTarget(release_pose_name_) == moveit::planning_interface::MoveItErrorCode::SUCCESS);
+    move_group.setNamedTarget(press_pose_name_);
+    move_group.move();
+    move_group.setNamedTarget(release_pose_name_);
     move_group.move();
 
     standby_pose_ready_ = false;

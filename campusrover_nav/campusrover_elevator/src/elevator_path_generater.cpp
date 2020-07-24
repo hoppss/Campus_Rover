@@ -729,7 +729,7 @@ void LeaveElevatorPath(geometry_msgs::PoseStamped &input_pose , nav_msgs::Path &
       
       if(i >= step_count-1)
       {
-        target_yaw = enter_pose_yaw_ + avg_yaw;
+        target_yaw = leave_pose_yaw_ + avg_yaw;
       }
       else
       {

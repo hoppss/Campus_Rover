@@ -951,7 +951,7 @@ void FeatureMatching(std::vector<geometry_msgs::Point> points)
 // //
   if(shortest_dis != -1.0 && status_ == "enter")
   {
-    if(shortest_dis <  0.5)
+    if(shortest_dis <  0.8)
     {
       enter_done_ = true;
     }

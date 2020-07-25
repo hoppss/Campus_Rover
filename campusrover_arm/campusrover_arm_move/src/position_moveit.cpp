@@ -261,16 +261,16 @@ bool ArmServiceCallback(campusrover_msgs::ArmAction::Request  &req, campusrover_
       move_group.execute(plan);
 
 
-
+      //move to press  pose
+      move_group.setNamedTarget(press_pose_name_);
+      move_group.move();
       
 
       
 
       if(enable_button_check_)
       {
-        //move to press  pose
-        move_group.setNamedTarget(standby_pose_name_);
-        move_group.move();
+        
         //check button is pressed
         button_command.button_name.data = button_info_;
         button_command.command_type.data = "check";
@@ -312,6 +312,7 @@ bool ArmServiceCallback(campusrover_msgs::ArmAction::Request  &req, campusrover_
     }
     else
     {
+      
       status_msg.request.node_name.data = "arm";
       status_msg.request.status.data = false;
     }
@@ -326,7 +327,7 @@ bool ArmServiceCallback(campusrover_msgs::ArmAction::Request  &req, campusrover_
 
     
     cout << "move to release_pose " << endl;
-    success = (move_group.setNamedTarget(release_pose_name_) == moveit::planning_interface::MoveItErrorCode::SUCCESS);
+    move_group.setNamedTarget(release_pose_name_);
     move_group.move();
 
     standby_pose_ready_ = false;

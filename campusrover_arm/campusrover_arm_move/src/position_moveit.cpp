@@ -241,16 +241,13 @@ bool ArmServiceCallback(campusrover_msgs::ArmAction::Request  &req, campusrover_
       move_group.execute(plan);
 
 
-
-      
-
-      
+      move_group.setNamedTarget(press_pose_name_);
+      move_group.move();
 
       if(enable_button_check_)
       {
         //move to press  pose press_pose_name_
-        move_group.setNamedTarget(press_pose_name_);
-        move_group.move();
+        
 
         //check button is pressed
         button_command.button_name.data = button_info_;
@@ -293,8 +290,6 @@ bool ArmServiceCallback(campusrover_msgs::ArmAction::Request  &req, campusrover_
     }
     else
     {
-      move_group.setNamedTarget(press_pose_name_);
-      move_group.move();
       status_msg.request.node_name.data = "arm";
       status_msg.request.status.data = false;
     }

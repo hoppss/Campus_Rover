@@ -82,7 +82,7 @@ class read_video_and_recognize:
     self.init_brightness_value = 0
     self.depth_check = False
     self.pub=rospy.Publisher('button_recognize_image',Image,queue_size=2)
-    self.brightness_set= rospy.get_param('/brightness_detect',8)
+    self.brightness_set= rospy.get_param('brightness_detect',6.45)
     rospy.Subscriber("/color_image_raw", Image,self.read_and_recognize)
     rospy.Subscriber('/aligned_depth_image_raw',Image,self.depth_image)
     rospy.Subscriber('/button_info', ButtonCommand,self.button_info_enable)
@@ -190,17 +190,19 @@ class read_video_and_recognize:
     if self.depth_check == True:
       print('depth')
       if pixel_depth_ros>0 and self.presstext == self.button_info and self.presscheck == True and self.button_status == 'init':
+        self.presscheck = False
+        self.depth_check = False
         print('call_arm_service')
         self.call_arm_service(goal)
         print('arm_service finish')
-        self.presscheck = False
-        self.depth_check = False
+        
 
   def button_info_enable(self,button):
     self.button_info=button.button_name.data
     self.button_status=button.command_type.data
-    print('pub')
-    self.presscheck = True
+    # print('pub')
+    if self.button_status == 'init':
+      self.presscheck = True
     self.recognize_check=True
     self.hsvcheck = True
 

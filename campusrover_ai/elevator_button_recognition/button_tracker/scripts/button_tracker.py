@@ -138,10 +138,12 @@ class read_video_and_recognize:
             button_status_check = True
             print('call_button_check_True')
             self.call_button_service_check(button_status_check)
+            print('button_check_service finish')
           else:
             button_status_check = False
             print('call_button_check_False')
             self.call_button_service_check(button_status_check)
+            print('button_check_service finish')
         self.hsvcheck = False
       
 
@@ -190,6 +192,7 @@ class read_video_and_recognize:
       if pixel_depth_ros>0 and self.presstext == self.button_info and self.presscheck == True and self.button_status == 'init':
         print('call_arm_service')
         self.call_arm_service(goal)
+        print('arm_service finish')
         self.presscheck = False
         self.depth_check = False
 

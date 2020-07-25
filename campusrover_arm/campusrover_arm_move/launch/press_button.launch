@@ -13,6 +13,6 @@
     <param name="jump_threshold" value="0.0"/>
     <param name="eef_step" value="0.002"/>
     <param name="allow_replanning" value="true"/>
-    <param name="enable_button_check" value="false"/>
+    <param name="enable_button_check" value="true"/>
 	</node>
 </launch>

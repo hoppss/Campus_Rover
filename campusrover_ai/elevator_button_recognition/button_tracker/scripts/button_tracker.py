@@ -82,8 +82,8 @@ class read_video_and_recognize:
     self.init_brightness_value = 0
     self.depth_check = False
     self.pub=rospy.Publisher('button_recognize_image',Image,queue_size=2)
-    self.brightness_set= rospy.get_param('/brightness_detect',8)
-    rospy.Subscriber("/color_image_raw", Image,self.read_and_recognize,queue_size=2)
+    self.brightness_set= rospy.get_param('brightness_detect',6.45)
+    rospy.Subscriber("/color_image_raw", Image,self.read_and_recognize)
     rospy.Subscriber('/aligned_depth_image_raw',Image,self.depth_image)
     rospy.Subscriber('/button_info', ButtonCommand,self.button_info_enable)
 
@@ -97,6 +97,7 @@ class read_video_and_recognize:
     if self.recognize_check == True:  
       (self.boxes, scores, self.texts, beliefs) = button_tracker.call_for_service(cv_image)
       i=0
+      print('recognize')
       for box, text in zip(self.boxes, self.texts):
     # output video in ros
         button_tracker.visualize_recognitions(cv_image, box, text)
@@ -132,15 +133,17 @@ class read_video_and_recognize:
           check_brightness_value=np.sum(v)/np.size(v)
           diff_brightness=check_brightness_value - self.init_brightness_value
           print(self.init_brightness_value,diff_brightness,self.brightness_set)
+          self.depth_check = False
           if diff_brightness > self.brightness_set :
             button_status_check = True
             print('call_button_check_True')
             self.call_button_service_check(button_status_check)
+            print('button_check_service finish')
           else:
             button_status_check = False
             print('call_button_check_False')
             self.call_button_service_check(button_status_check)
-        # self.button_status = 'set'
+            print('button_check_service finish')
         self.hsvcheck = False
       
 
@@ -185,17 +188,21 @@ class read_video_and_recognize:
     goal.pose.position.y = y_biase
     goal.pose.position.z = pixel_depth_ros
     if self.depth_check == True:
+      print('depth')
       if pixel_depth_ros>0 and self.presstext == self.button_info and self.presscheck == True and self.button_status == 'init':
-        print('call_arm_service')
-        self.call_arm_service(goal)
         self.presscheck = False
         self.depth_check = False
+        print('call_arm_service')
+        self.call_arm_service(goal)
+        print('arm_service finish')
+        
 
   def button_info_enable(self,button):
     self.button_info=button.button_name.data
     self.button_status=button.command_type.data
-    print('pub')
-    self.presscheck = True
+    # print('pub')
+    if self.button_status == 'init':
+      self.presscheck = True
     self.recognize_check=True
     self.hsvcheck = True
 

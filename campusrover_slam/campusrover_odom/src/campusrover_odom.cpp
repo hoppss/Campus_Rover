@@ -120,6 +120,7 @@ void EncoderDataCallback(campusrover_msgs::Encode encode_data)
   
   if(pub_odom_)
   {
+    odom_.header.stamp = ros::Time::now();
     odom_.header.frame_id = source_frame_id_;
     odom_.child_frame_id = target_frame_id_;
     odom_.header.stamp = now_;

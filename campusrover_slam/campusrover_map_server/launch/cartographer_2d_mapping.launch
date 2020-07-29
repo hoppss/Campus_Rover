@@ -1,5 +1,5 @@
 <launch>
-  <arg name="bag_filename" default="$(env HOME)/bags/campusrover_bag/20200704elevator_test_4_180trun.bag"/>
+  <arg name="bag_filename" default="$(env HOME)/bags/campusrover_bag/third_floor.bag"/>
 
     <param name="use_sim_time" value="true" />
 
@@ -15,16 +15,48 @@
     <node name="robot_state_publisher" pkg="robot_state_publisher"
         type="robot_state_publisher" />
 
+    <!-- run pointcloud_to_laserscan node -->
+    <node pkg="pointcloud_to_laserscan" type="pointcloud_to_laserscan_node" name="pointcloud_to_laserscan">
+
+        <remap from="cloud_in" to="velodyne_points"/>
+        <remap from="scan" to="scan2"/>
+        <rosparam>
+            min_height: -1.0
+            max_height: -0.18
+
+            angle_min: -3.14 # -M_PI/2
+            angle_max: 3.14 # M_PI/2
+            angle_increment: 0.0087 # M_PI/360.0
+            scan_time: 0.3333
+            range_min: 0.45
+            range_max: 16.0
+            use_inf: true
+            inf_epsilon: 1.0
+
+            # Concurrency level, affects number of pointclouds queued for processing and number of threads used
+            # 0 : Detect number of cores
+            # 1 : Single threaded
+            # 2->inf : Parallelism level
+            concurrency_level: 1
+        </rosparam>
+
+    </node>
+
   <node name="cartographer_node" pkg="cartographer_ros"
       type="cartographer_node" args="
           -configuration_directory $(find campusrover_map_server)/cartographer
-          -configuration_basename revo_lds.lua"
+          -configuration_basename campusrover_2d.lua"
       output="screen">
-      <remap from="scan" to="scan" />
-      <remap from="odom" to="/wheel_odom" />
+      <remap from="scan" to="scan2" />
+      <remap from="odom" to="/odom" />
   </node>
 
   <node name="cartographer_occupancy_grid_node" pkg="cartographer_ros"
       type="cartographer_occupancy_grid_node" args="-resolution 0.05" />
+
+    <!-- <include file="$(find campusrover_odom)/launch/odom_publish.launch">
+      <arg name="pub_tf" value="true"/>
+      <arg name="debug"     value="false"/>
+    </include> -->
 
 </launch>

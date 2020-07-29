@@ -1,7 +1,7 @@
 <launch>
   <arg name="debug" default="false"/>
-  <arg name="bag_file" default="$(env HOME)/bags/campusrover_bag/20200704elevator_test_4_180trun_2.bag"/>
-  <arg name="map_file" default="$(find campusrover_map_server)/maps/map2d/20200704_3F_Elevator.pbstream" />
+  <arg name="bag_file" default="$(env HOME)/bags/campusrover_bag/two_floor.bag"/>
+  <arg name="map_file" default="$(find campusrover_map_server)/maps/map2d/dorm2_3f.pbstream" />
   <arg name="pub_map" default="true" />
   <arg name="viz" default="true" />
 
@@ -34,38 +34,63 @@
     </include> -->
   </group>
 
-  <!-- <node pkg="tf2_ros" type="static_transform_publisher" name="tf_local_map"
-              args="352314.9307127929 2770482.044740471 0 0 0 0 /world /local_map" /> -->
+  <!-- run pointcloud_to_laserscan node -->
+  <!-- <node pkg="pointcloud_to_laserscan" type="pointcloud_to_laserscan_node" name="pointcloud_to_laserscan">
 
-  <!-- <node pkg="tf2_ros" type="static_transform_publisher" name="tf_map"
-              args="-7.250000476837158, -8.25, 0, 0, 0, 0, 0.9999999403953552 /local_map /map" /> -->
+      <remap from="cloud_in" to="velodyne_points"/>
+      <remap from="scan" to="scan2"/>
+      <rosparam>
+          min_height: -1.0
+          max_height: -0.18
+
+          angle_min: -3.14 # -M_PI/2
+          angle_max: 3.14 # M_PI/2
+          angle_increment: 0.0087 # M_PI/360.0
+          scan_time: 0.3333
+          range_min: 0.45
+          range_max: 16.0
+          use_inf: true
+          inf_epsilon: 1.0
+
+          # Concurrency level, affects number of pointclouds queued for processing and number of threads used
+          # 0 : Detect number of cores
+          # 1 : Single threaded
+          # 2->inf : Parallelism level
+          concurrency_level: 1
+      </rosparam> -->
+
+  </node>
+
 
   <!-- <node name="cartographer_node" pkg="cartographer_ros"
       type="cartographer_node" args="
-          -configuration_directory $(find campusrover_odom)/launch/cartographer_Oct_2017
-          -configuration_basename revo_lds.lua
-          -map_filename $(arg map_file)"
-      >
-      <remap from="scan" to="/scan" />
+          -configuration_directory $(find campusrover_odom)/launch/cartographer
+          -configuration_basename campusrover_2d.lua
+          -load_state_filename $(arg map_file)"
+          
+          output="screen">
+      
+      <remap from="scan" to="/scan2" />
      
   </node> -->
 
   <node name="cartographer_node" pkg="cartographer_ros"
       type="cartographer_node" args="
-          -configuration_directory $(find campusrover_odom)/launch/cartographer_Oct_2017
-          -configuration_basename revo_lds.lua"
+          -configuration_directory $(find campusrover_odom)/launch/cartographer
+          -configuration_basename campusrover_2d_odom.lua"
+          
           output="screen">
-      >
+      
       <remap from="scan" to="/scan" />
      
   </node>
-    <!-- <remap from="odom" to="/wheel_odom" /> -->
-    <!-- <remap from="imu" to="/xsens_imu_odom/imu/data" /> -->
+
   <node name="cartographer_occupancy_grid_node" pkg="cartographer_ros"
       type="cartographer_occupancy_grid_node" args="-resolution 0.05" />
 
-  <!-- <include file="$(find osm_cartography)/launch/viz_osm.launch">
-    <arg name="url" value="package://campusrover_odom/osm/20200326_TaipeiTech.osm" />
+  <!-- <include file="$(find campusrover_odom)/launch/odom_publish.launch">
+      <arg name="pub_tf" value="true"/>
+      <arg name="debug"     value="false"/>
   </include> -->
 
 </launch>

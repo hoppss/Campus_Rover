@@ -12,7 +12,7 @@
   <arg name="points_topic" default="/velodyne_points" />
 
   <node pkg="rosbag" type="play" name="rosbag_play_node"
-      args="$(env HOME)/bags/campusrover_bag/20200524_odom_1.bag --clock" >
+      args="$(env HOME)/bags/campusrover_bag/two_floor.bag --clock" >
   </node>
 
   <rosparam>
@@ -44,19 +44,19 @@
     <param name="imu_topic" value="$(arg imu_topic)" />
   </node>
 
-  <!-- <node pkg="rostopic" type="rostopic" name="ndt_confing"
+  <node pkg="rostopic" type="rostopic" name="ndt_confing"
     args="pub -r 1 /config/ndt_mapping autoware_msgs/ConfigNdtMapping
     {'header: {
       seq: 0,
       stamp: {secs: 0, nsecs: 0},
       frame_id: 'config'},
-    resolution: 0.1,
-    step_size: 0.08,
+    resolution: 0.01,
+    step_size: 0.1,
     trans_epsilon: 0.01,
     max_iterations: 1000,
-    leaf_size: 0.05,
-    min_scan_range: 2.0,
-    min_add_scan_shift: 0.1'} "/> -->
+    leaf_size: 0.1,
+    min_scan_range: 1.0,
+    min_add_scan_shift: 0.1'} "/>
 
     <node pkg="hector_trajectory_server" type="hector_trajectory_server" name="trajectory_node">
       <remap from="trajectory" to="campusrover_odom" />

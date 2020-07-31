@@ -1,9 +1,10 @@
 <launch>
   <node name="position_moveit" pkg="campusrover_arm_move" type="position_moveit" output="screen" >
-    <param name="planning_frame_id" value="link_0"/>
+    <param name="planning_frame_id" value="arm_link_1"/>
     <param name="planning_group_name" value="arm"/>
-    <param name="standby_pose_name" value="lie_pose"/>
-    <param name="release_pose_name" value="laydown"/>
+    <param name="standby_pose_name" value="standby_pose"/>
+    <param name="release_pose_name" value="laydown_pose"/>
+    <param name="press_pose_name" value="press_pose"/>
     <param name="planning_time" value="5.0"/>
     <param name="num_planning_attempts" value="10"/>
     <param name="shift_x" value="-0.06"/>

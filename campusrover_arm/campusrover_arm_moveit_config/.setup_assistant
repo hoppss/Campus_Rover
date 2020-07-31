@@ -7,5 +7,5 @@ moveit_setup_assistant_config:
     relative_path: config/campusrover_arm.srdf
   CONFIG:
     author_name: luke
-    author_email: luke@mit.edu
-    generated_timestamp: 1592814072
+    author_email: luke@ntut.edu.tw
+    generated_timestamp: 1596203561

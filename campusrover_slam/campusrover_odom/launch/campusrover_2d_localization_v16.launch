@@ -1,7 +1,7 @@
 <launch>
   <arg name="debug" default="false"/>
-  <arg name="bag_filename" default="$(env HOME)/bags/campusrover_bag/1011court_yard_path.bag"/>
-  <arg name="map_filename" default="$(env HOME)/maps/1025_medialab_1f" />
+  <arg name="bag_file" default="$(env HOME)/bags/campusrover_bag/20200609_1.bag"/>
+  <arg name="map_file" default="$(find campusrover_map_server)/maps/map2d/dorm2_1f.pbstream" />
   <arg name="pub_map" default="true" />
   <arg name="viz" default="true" />
 
@@ -11,32 +11,86 @@
         args="-d $(find cartographer_ros)/configuration_files/demo_2d.rviz" />
 
     <node name="playbag" pkg="rosbag" type="play"
-        args="--clock $(arg bag_filename)" />
+        args="--clock $(arg bag_file)" />
 
     <param name="robot_description"
       textfile="$(find campusrover_description)/urdf/campusrover.urdf" />
 
     <node name="robot_state_publisher" pkg="robot_state_publisher"
       type="robot_state_publisher" />
+    
+    <node pkg="hector_trajectory_server" type="hector_trajectory_server" name="trajectory_node">
+      <remap from="trajectory" to="campusrover_odom" />
+      <!-- <remap from="trajectory" to="path_loader" /> -->
+      <param name="target_frame_name" type="string" value="odom" />
+      <param name="source_frame_name" type="string" value="base_link" />
+      <param name="trajectory_update_rate" value="10" />
+      <param name="trajectory_publish_rate" value="10" />
+    </node>
 
-    <include file="$(find campusrover_odom)/launch/odom_publish.launch">
-      <arg name="use_wheel" value="true"/>
+    <!-- <include file="$(find campusrover_odom)/launch/odom_publish.launch">
+      <arg na`me="use_wheel" value="true"/>
       <arg name="debug"     value="false"/>
-    </include>
+    </include> -->
   </group>
 
-  <!-- <param unless="debug" name="use_sim_time" value="false" /> -->
+  <!-- run pointcloud_to_laserscan node -->
+  <node pkg="pointcloud_to_laserscan" type="pointcloud_to_laserscan_node" name="pointcloud_to_laserscan">
+
+      <remap from="cloud_in" to="velodyne_points"/>
+      <remap from="scan" to="scan2"/>
+      <rosparam>
+          min_height: -1.0
+          max_height: -0.18
+
+          angle_min: -3.14 # -M_PI/2
+          angle_max: 3.14 # M_PI/2
+          angle_increment: 0.0087 # M_PI/360.0
+          scan_time: 0.3333
+          range_min: 0.45
+          range_max: 16.0
+          use_inf: true
+          inf_epsilon: 1.0
+
+          # Concurrency level, affects number of pointclouds queued for processing and number of threads used
+          # 0 : Detect number of cores
+          # 1 : Single threaded
+          # 2->inf : Parallelism level
+          concurrency_level: 1
+      </rosparam>
+
+  </node>
+
 
   <node name="cartographer_node" pkg="cartographer_ros"
       type="cartographer_node" args="
           -configuration_directory $(find campusrover_odom)/launch/cartographer
-          -configuration_basename campusrover_2d_localization_v16.lua
-          -map_filename $(arg map_filename)"
-      output="screen">
-      <remap from="points2" to="velodyne_slam" />
-      <remap from="odom" to="/odom" />
-      <remap from="imu" to="/mti/sensor/imu" />
+          -configuration_basename campusrover_2d.lua
+          -load_state_filename $(arg map_file)"
+          
+          output="screen">
+      
+      <remap from="scan" to="/scan" />
+     
   </node>
+
+  <!-- <node name="cartographer_node" pkg="cartographer_ros"
+      type="cartographer_node" args="
+          -configuration_directory $(find campusrover_odom)/launch/cartographer
+          -configuration_basename campusrover_2d.lua"
+          
+          output="screen">
+      
+      <remap from="scan" to="/scan2" />
+     
+  </node> -->
+
   <node name="cartographer_occupancy_grid_node" pkg="cartographer_ros"
       type="cartographer_occupancy_grid_node" args="-resolution 0.05" />
+
+  <!-- <include file="$(find campusrover_odom)/launch/odom_publish.launch">
+      <arg name="pub_tf" value="true"/>
+      <arg name="debug"     value="false"/>
+  </include> -->
+
 </launch>

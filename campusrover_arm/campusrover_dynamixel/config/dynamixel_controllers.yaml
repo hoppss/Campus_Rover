@@ -32,9 +32,9 @@ joint_3:
   joint_max_speed: 2.0
   motor:
     id: 3
-    init: 830
-    min: 900
-    max: 200
+    init: 512
+    min: 180
+    max: 820
 joint_4:
   controller:
     package: dynamixel_controllers
@@ -45,21 +45,8 @@ joint_4:
   motor:
     id: 4
     init: 512
-    min: 820
-    max: 180
-
-linear_actuator_controller:
-    controller:
-        package: dynamixel_controllers
-        module: joint_torque_controller
-        type: JointTorqueController
-    joint_name: linear_actuator
-    joint_max_speed: 100.0
-    motor:
-        id: 6
-        init: 0
-        min: 0
-        max: 4095
+    min: 180
+    max: 820
 
 
 arm_controller:

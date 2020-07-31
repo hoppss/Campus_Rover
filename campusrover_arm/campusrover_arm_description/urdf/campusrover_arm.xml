@@ -1,6 +1,6 @@
 <robot file="campusrover_arm.dae">
         <Manipulator name="campusrover_arm">
-          <base>link_0</base>
-          <effector>link_6</effector>
+          <base>arm_link_1</base>
+          <effector>arm_link_6</effector>
         </Manipulator>
 </robot>

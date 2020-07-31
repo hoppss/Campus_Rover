@@ -123,7 +123,6 @@ void EncoderDataCallback(campusrover_msgs::Encode encode_data)
     odom_.header.stamp = ros::Time::now();
     odom_.header.frame_id = source_frame_id_;
     odom_.child_frame_id = target_frame_id_;
-    odom_.header.stamp = now_;
     odom_.pose.pose.position.x = accumulation_x_;
     odom_.pose.pose.position.y = accumulation_y_;
     odom_.pose.pose.position.z = 0;

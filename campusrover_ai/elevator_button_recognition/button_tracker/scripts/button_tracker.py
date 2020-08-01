@@ -17,9 +17,18 @@ from cv_bridge import CvBridge
 from sensor_msgs.msg import PointCloud2
 from sensor_msgs import point_cloud2
 from campusrover_msgs.msg import ButtonCommand
+import pyrealsense2 as rs
 # from global_variable import initialize
 
 
+def camera_intr():
+  pipeline = rs.pipeline()
+  config = rs.config()
+  config.enable_stream(rs.stream.color, 640, 480, rs.format.rgb8, 30)
+  cfg = pipeline.start(config)
+  profile = cfg.get_stream(rs.stream.color)
+  intr = profile.as_video_stream_profile().get_intrinsics()
+  return intr.ppx,intr.ppy,intr.fx,intr.fy
 
 class ButtonTracker:
   def __init__(self):
@@ -61,11 +70,14 @@ class ButtonTracker:
     # draw text at a proper location
     btn_width = (box[2] - box[0]) / 2.0
     btn_height = (box[3] - box[1]) / 2.0
+    half_width = (box[0] + box[2])/2
+    half_height = (box[3] + box[1])/2
     font_size = min(btn_width, btn_height) * 0.6
     text_len = len(text)
     font_pose = int(0.5*(box[0]+box[2]) - 0.5 * text_len * font_size), int(0.5*(box[1]+box[3]) + 0.5 * font_size)
     # font_pose is the bottom_left of the text
     cv2.putText(frame, text, font_pose, cv2.FONT_HERSHEY_SIMPLEX, 0.6, thickness=2, color=(255, 0, 255))
+    cv2.circle(frame,(int(half_width),int(half_height)), 2, (0, 255, 255), -1)
 
 class read_video_and_recognize:
   def __init__(self):
@@ -126,11 +138,11 @@ class read_video_and_recognize:
         
         
         if self.button_status == 'init':
-          self.init_brightness_value = np.sum(v)/np.size(v)
+          self.init_brightness_value = round(np.sum(v)/np.size(v),3)
           print(self.init_brightness_value)
 
         elif self.button_status == 'check':
-          check_brightness_value=np.sum(v)/np.size(v)
+          check_brightness_value=round(np.sum(v)/np.size(v),3)
           diff_brightness=check_brightness_value - self.init_brightness_value
           print(self.init_brightness_value,diff_brightness,self.brightness_set)
           self.depth_check = False
@@ -149,36 +161,34 @@ class read_video_and_recognize:
 
 
   def depth_image(self,data):
+    
     bridge = CvBridge()
     cv_depth_image = bridge.imgmsg_to_cv2(data, '16UC1')
-    # i=0
-    # text = 'set'
-    # for text in self.texts:
-    #   if text==self.button_info:
-    #     self.mybox=self.boxes[i]
-    #     self.presstext=text
-    #     break
-    #   else:
-    #     i=i+1
-    #   if i==len(self.texts):
-    #     self.recognize_check = True
-    #   else:
-    #     self.recognize_check = False
     point_x = (self.mybox[2] + self.mybox[0]) / 2.0 
     point_y = (self.mybox[3] + self.mybox[1]) / 2.0
     pixel_depth=cv_depth_image[int(point_y),int(point_x)]
-   
-    pixel_depth_ros=float(pixel_depth)/1000
-    pixel_diff_y=int(point_y)-239.967
-    pixel_diff_x=int(point_x)-325.548
 
-    # calculation the real image longth
-    x=2*pixel_depth_ros*math.tan(math.radians(54/2))
-    y=2*pixel_depth_ros*math.tan(math.radians(43/2))
-    diff_x=x/640
-    diff_y=y/480
-    x_biase=diff_x*pixel_diff_x
-    y_biase=diff_y*pixel_diff_y
+    # (cam_intr_ppx,cam_intr_ppy,cam_intr_fx,cam_intr_fy) = camera_intr()
+    pixel_depth_ros=round(float(pixel_depth)/1000, 3)
+
+    intr_matrix = np.array([
+                  [612.669,0,317.633],
+                  [0,611.278,235.112],
+                  [0,0,1]
+                  ])
+    pixel_matrix=np.array([[point_x],[point_y],[1]])
+    [[x_biase],[y_biase],[z_world]] = (np.linalg.inv(intr_matrix)).dot(pixel_matrix)*pixel_depth_ros
+
+    # pixel_diff_y=int(point_y)-cam_intr_ppy
+    # pixel_diff_x=int(point_x)-cam_intr_ppx
+    # # calculation the real image longth
+    # x=2*pixel_depth_ros*math.tan(math.radians(54/2))
+    # y=2*pixel_depth_ros*math.tan(math.radians(43/2))
+    # diff_x=x/640
+    # diff_y=y/480
+    # x_biase=round(diff_x*pixel_diff_x,3)
+    # y_biase=round(diff_y*pixel_diff_y,3)
+    # z_world=pixel_depth_ros
 
     goal = PoseStamped()
     goal.header.seq = 1
@@ -186,12 +196,13 @@ class read_video_and_recognize:
     goal.header.frame_id = self.frame_id
     goal.pose.position.x = x_biase
     goal.pose.position.y = y_biase
-    goal.pose.position.z = pixel_depth_ros
+    goal.pose.position.z = z_world
     if self.depth_check == True:
       print('depth')
       if pixel_depth_ros>0 and self.presstext == self.button_info and self.presscheck == True and self.button_status == 'init':
         self.presscheck = False
         self.depth_check = False
+        print(x_biase,y_biase,z_world)
         print('call_arm_service')
         self.call_arm_service(goal)
         print('arm_service finish')
@@ -200,7 +211,6 @@ class read_video_and_recognize:
   def button_info_enable(self,button):
     self.button_info=button.button_name.data
     self.button_status=button.command_type.data
-    # print('pub')
     if self.button_status == 'init':
       self.presscheck = True
     self.recognize_check=True

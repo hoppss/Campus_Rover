@@ -35,6 +35,7 @@ add_message_files(
   WorkingFloor.msg
   Trip.msg
   LocationRoom.msg
+  HmiStatus.msg
 )
 ##
 ## Generate service in the 'srv' folder###
@@ -57,6 +58,7 @@ add_service_files(
   MapLoadInfo.srv
   MapInitPose.srv
   LocalizerSwitch.srv
+  ArmTablePosition.srv
 )
 #
 ## Generate added messages and services with any dependencies listed here

@@ -26,7 +26,8 @@
 #include <campusrover_msgs/PressButton.h> 
 #include <campusrover_msgs/ElevatorControlInterface.h>
 #include <campusrover_msgs/ElevatorStatusChecker.h>
-#include <campusrover_msgs/ArmStandby.h>
+#include <campusrover_msgs/ArmStandby.h> 
+#include <campusrover_msgs/ArmTablePosition.h>
 //campus rover msgs
 #include <campusrover_msgs/ElevatorControlStatus.h>
 #include <campusrover_msgs/DoorStatus.h>
@@ -38,7 +39,7 @@ using namespace std;
 
 ros::Subscriber door_status_sub_,floor_status_sub_;
 ros::Publisher control_status_pub_, finish_pub_;
-ros::ServiceClient init_floor_srv_client_, button_srv_client_, planner_srv_client_, arm_standby_srv_client_;
+ros::ServiceClient init_floor_srv_client_, button_srv_client_, planner_srv_client_, arm_standby_srv_client_, arm_table_srv_client_;
 
 geometry_msgs::Twist twist_param_0_, twist_param_1_, twist_param_2_;
 
@@ -349,7 +350,7 @@ void TimerCallback(const ros::TimerEvent &event)
       planner_param.request.speed_parameter = twist_param_0_;
       PlannerFunctionCallService(planner_srv_client_, planner_param);
       control_status_first_time_ = true;
-      control_status_ = 9;
+      control_status_ = control_status_ - 2.0;
     }
 
     if(planner_check_done_)
@@ -434,7 +435,17 @@ void ArmStandybyFunctionCallService(ros::ServiceClient &client,campusrover_msgs:
     ros::Duration(1.0).sleep();
   }
 }
-
+//-----------------------------------------------------------------------------------------------
+void ArmPositionFunctionCallService(ros::ServiceClient &client,campusrover_msgs::ArmTablePosition &srv)
+{
+  string str = "===========arm_position function============= " ;
+  cout << "Request massage: \n" << srv.request;
+  while (!client.call(srv))
+  {
+    ROS_ERROR("arm_position function : Failed to call service");
+    ros::Duration(1.0).sleep();
+  }
+}
 //-----------------------------------------------------------------------------------------------
 bool ControlServiceCallback(campusrover_msgs::ElevatorControlInterface::Request  &req, campusrover_msgs::ElevatorControlInterface::Response &res)
 {
@@ -516,6 +527,7 @@ int main(int argc, char **argv)
   button_srv_client_ = nh.serviceClient<campusrover_msgs::PressButton>("button_press");
   planner_srv_client_ = nh.serviceClient<campusrover_msgs::PlannerFunction>("planner_function");
   arm_standby_srv_client_ = nh.serviceClient<campusrover_msgs::ArmStandby>("arm_move_to_standby_pose");
+  arm_table_srv_client_ = nh.serviceClient<campusrover_msgs::ArmTablePosition>("table_position");
 
   ros::ServiceServer control_service = nh.advertiseService("elevator_controller", ControlServiceCallback);
   ros::ServiceServer status_check_service = nh.advertiseService("elevator_status_checker", StatusCheckServiceCallback);

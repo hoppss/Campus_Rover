@@ -1,6 +1,6 @@
 <launch>
   <arg name="debug" default="false"/>
-  <arg name="bag_file" default="$(env HOME)/bags/campusrover_bag/third_floor.bag"/>
+  <arg name="bag_file" default="$(env HOME)/bags/campusrover_bag/fourth_floor.bag"/>
   <arg name="map_file" default="$(find campusrover_map_server)/maps/map2d/dorm2_3f.pbstream" />
   <arg name="pub_map" default="true" />
   <arg name="viz" default="true" />
@@ -70,7 +70,7 @@
           
           output="screen">
       
-      <remap from="scan" to="/scan" />
+      <remap from="scan" to="/scan2" />
      
   </node>
 

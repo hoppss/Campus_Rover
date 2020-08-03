@@ -1,17 +1,36 @@
 <launch>
 
   <!-- Common sensors -->
-  <include file="$(find campusrover_sensors)/launch/sensors/ydlidar_g6.launch.xml" />
-  <include file="$(find campusrover_sensors)/launch/sensors/velodyne_VLP16.launch.xml" />
-  <include file="$(find campusrover_sensors)/launch/sensors/pressure_sensor.launch.xml" />
+  <include file="$(find campusrover_sensors)/launch/sensors/ydlidar_g6.launch.xml" >
+    <arg name="scan_topic" value="scan_front" />
+  </include>
+  <include file="$(find campusrover_sensors)/launch/sensors/ydlidar_g4.launch.xml" >
+    <arg name="scan_topic" value="scan_back" />
+  </include>
+  <!-- <include file="$(find campusrover_sensors)/launch/sensors/velodyne_VLP16.launch.xml" /> -->
   <!-- <include file="$(find campusrover_sensors)/launch/sensors/xsens_imu_odom.launch.xml" /> -->
 
   <!-- joy -->
-  <!-- <include file="$(find campusrover_sensors)/launch/sensors/joy.launch.xml" /> -->
+  <include file="$(find campusrover_sensors)/launch/sensors/joy.launch.xml" />
 
   <!-- Static transform -->
   <include file="$(find campusrover_sensors)/launch/static_transform.launch" />
+
   
-  <include file="$(find campusrover_sensors)/launch/start_camera.launch" />
-  <!-- <include file="$(find campusrover_arm_move)/launch/campusrover_robot_arm.launch" /> -->
+  <!-- ira_laser_tools -->
+  <node pkg="ira_laser_tools" name="laserscan_multi_merger" type="laserscan_multi_merger" output="screen">
+    <param name="destination_frame" value="base_link"/>
+		<param name="cloud_destination_topic" value="/merged_cloud"/>
+		<param name="scan_destination_topic" value="/scan"/>
+    <param name="laserscan_topics" value ="/scan_front /scan_back" /> <!-- LIST OF THE LASER SCAN TOPICS TO SUBSCRIBE -->
+
+    <param name="angle_min" value="-3.1415"/>
+    <param name="angle_max" value="3.1415"/>
+    <param name="angle_increment" value="0.0058"/>
+    <param name="scan_time" value="0.0333333"/>
+    <param name="range_min" value="0.30"/>
+    <param name="range_max" value="50.0"/>
+
+	</node>
+
 </launch>

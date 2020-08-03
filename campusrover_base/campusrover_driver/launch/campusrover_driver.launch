@@ -16,7 +16,7 @@
         <param name="axis_angular" value="3.0" />
     </node>
 
-    <node pkg="campusrover_driver" name="luke_cmd_vel_mux" type="luke_cmd_vel_mux">
+    <node pkg="campusrover_driver" name="lcr_cmd_vel_mux" type="lcr_cmd_vel_mux">
         <remap from="cmd_vel" to="$(arg joy_cmd_vel_topic)"/>
         <param name="joy_mode_button" value="7.0" />
         <param name="nav_mode_button" value="0.0" />

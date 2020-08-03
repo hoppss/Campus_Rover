@@ -1,7 +1,7 @@
 
   
 <launch>
-    <arg name="serial_no_cameraL"    			default="944122072692"/> 			
+    <arg name="serial_no_cameraL"    			default="923322072227"/> 			
     <arg name="serial_no_cameraC"    			default=""/>
     <arg name="serial_no_cameraR"    			default="843112072353"/>
 
@@ -70,7 +70,4 @@
             <arg name="clip_distance"           value="-2"/>
         </include>
     </group>
-
-    <!-- <node pkg="campusrover_elevator" type="camera_topic_mux" name="camera_topic_mux" output="screen"/> -->
-
 </launch>

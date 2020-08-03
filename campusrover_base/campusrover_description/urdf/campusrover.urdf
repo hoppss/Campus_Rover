@@ -28,17 +28,17 @@
     </visual>
   </link>
 
-  <link name="velodyne">
+  <link name="ydlidar_back_link">
     <visual>
       <origin xyz="0.0 0.0 0.0" />
       <geometry>
-        <cylinder length="0.038" radius="0.052" />
+        <cylinder length="0.01" radius="0.01" />
       </geometry>
-      <material name="green"/>
+      <!-- <material name="gray" /> -->
     </visual>
   </link>
 
-  <link name="ydlidar_link">
+  <link name="ydlidar_front_link">
     <visual>
       <origin xyz="0.0 0.0 0.0" />
       <geometry>
@@ -58,27 +58,7 @@
     </visual>
   </link>
 
-  <link name="wit_imu_link">
-    <visual>
-      <origin xyz="0.0 0.0 0.0" />
-      <geometry>
-        <box size="0.035 0.035 0.015" />
-      </geometry>
-      <material name="black" />
-    </visual>
-  </link>
-
   <link name="right_camera_link">
-    <visual>
-      <origin xyz="0.0 0.0 0.0" />
-      <geometry>
-        <box size="0.035 0.035 0.015" />
-      </geometry>
-      <material name="black" />
-    </visual>
-  </link>
-
-  <link name="left_camera_link">
     <visual>
       <origin xyz="0.0 0.0 0.0" />
       <geometry>
@@ -98,11 +78,6 @@
     </visual>
   </link>
 
-  <joint name="wit_imu_link_joint" type="fixed">
-    <parent link="base_link" />
-    <child link="wit_imu_link" />
-    <origin xyz="-0.232 0 1.240" rpy="0 0 0" />
-  </joint>
 
   <joint name="xsens_imu_odom_link_joint" type="fixed">
     <parent link="base_link" />
@@ -116,35 +91,31 @@
     <origin xyz="-0.232 0 1.329" rpy="0 0 -0.03" />
   </joint>
 
-  <joint name="velodyne_joint" type="fixed">
+    <joint name="ydlidar_back_link_joint" type="fixed">
     <parent link="base_link" />
-    <child link="velodyne" />
-    <origin xyz="-0.232 0 1.329" rpy="0 0 -0.03" />
+    <child link="ydlidar_back_link" />
+    <origin xyz="-0.51 0 0.14" rpy="0 0 3.1415" />
   </joint>
 
-  <joint name="ydlidar_link_joint" type="fixed">
+  <joint name="ydlidar_front_link_joint" type="fixed">
     <parent link="base_link" />
-    <child link="ydlidar_link" />
-    <origin xyz="0.12 0 0.288" rpy="0 0 0" />
-  </joint>
-
-  <joint name="right_camera_link_joint" type="fixed">
-    <parent link="base_link" />
-    <child link="right_camera_link" />
-    <origin xyz="-0.05 -0.315 0.93" rpy="0 0 0" />
-  </joint>
-
-  <joint name="left_camera_link_joint" type="fixed">
-    <parent link="base_link" />
-    <child link="left_camera_link" />
-    <origin xyz="0.0 -0.23 1.075" rpy="0 0 -1.57" />
+    <child link="ydlidar_front_link" />
+    <origin xyz="0.12 0 0.125" rpy="0 0 0" />
   </joint>
 
   <joint name="link_0_joint" type="fixed">
     <parent link="base_link" />
     <child link="arm_link_1" />
-    <origin xyz="-0.05 -0.275 0.995" rpy="1.57 0 0" />
+    <origin xyz="-0.05 -0.275 0.995" rpy="0 0 0" />
   </joint>
+
+  <joint name="right_camera_link_joint" type="fixed">
+    <parent link="arm_link_1" />
+    <child link="right_camera_link" />
+    <origin xyz="-0.027 -0.09 0.0227" rpy="0 0 0" />
+  </joint>
+
+ 
 
 
 

@@ -74,10 +74,10 @@ target_link_libraries(campusrover_driver ${catkin_LIBRARIES})
 add_executable(joy_to_twist src/joy_to_twist.cpp)
 target_link_libraries(joy_to_twist ${catkin_LIBRARIES}) 
 
-add_executable(luke_cmd_vel_mux src/luke_cmd_vel_mux.cpp)
-target_link_libraries(luke_cmd_vel_mux ${catkin_LIBRARIES})
+add_executable(lcr_cmd_vel_mux src/lcr_cmd_vel_mux.cpp)
+target_link_libraries(lcr_cmd_vel_mux ${catkin_LIBRARIES})
 
-
+#
 
 #############
 ## Install ##

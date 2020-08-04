@@ -1,13 +1,8 @@
 <launch>
 
   <node name="cartographer_start_trajectory" pkg="cartographer_ros"
-      type="cartographer_start_trajectory" args="
-          -configuration_directory $(find campusrover_odom)/launch/cartographer
-          -configuration_basename campusrover_2d.lua
-          -initial_pose {to_trajectory_id=0,relative_pose={translation={1.0,0.0,0.0},rotation={0.0,0.0,0.0}}}"
+      type="cartographer_start_trajectory" 
       output="screen">
-    
   </node>
-
-
+  
 </launch>

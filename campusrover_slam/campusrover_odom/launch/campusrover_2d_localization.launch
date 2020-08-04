@@ -28,10 +28,6 @@
       <param name="trajectory_publish_rate" value="10" />
     </node>
 
-    <!-- <include file="$(find campusrover_odom)/launch/odom_publish.launch">
-      <arg na`me="use_wheel" value="true"/>
-      <arg name="debug"     value="false"/>
-    </include> -->
   </group>
 
   <!-- run pointcloud_to_laserscan node -->
@@ -92,5 +88,7 @@
       <arg name="pub_tf" value="true"/>
       <arg name="debug"     value="false"/>
   </include> -->
+
+  <include file="$(find campusrover_odom)/launch/start_trajectory.launch"/>
 
 </launch>

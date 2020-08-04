@@ -1,0 +1,13 @@
+<launch>
+
+  <node name="cartographer_pbstream_to_ros_map" pkg="cartographer_ros"
+      type="cartographer_pbstream_to_ros_map" args="
+          -pbstream_filename $(find campusrover_map_server)/maps/map2d/dorm2_12f.pbstream
+          -map_filestem $(find campusrover_map_server)/maps/map2d/dorm2_12f
+          -resolution 0.05"
+      output="screen">
+    
+  </node>
+
+
+</launch>

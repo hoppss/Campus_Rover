@@ -1,0 +1,6 @@
+image: /home/luke/campusrover_ws/src/Campus_Rover/campusrover_slam/campusrover_map_server/maps/map2d/dorm2_1f.pgm
+resolution: 0.050000
+origin: [-6.950000, -7.082596, 0.0]
+negate: 0
+occupied_thresh: 0.65
+free_thresh: 0.196

@@ -157,24 +157,24 @@ class read_video_and_recognize:
 
     pixel_depth_ros=round(float(pixel_depth)/1000, 3)
 
-    # intr_matrix = np.array([
-    #               [self.intr.fx,0,self.intr.ppx],
-    #               [0,self.intr.fy,self.intr.ppy],
-    #               [0,0,1]
-    #               ])
-    # pixel_matrix=np.array([[point_x],[point_y],[1]])
-    # [[x_biase],[y_biase],[z_world]] = (np.linalg.inv(intr_matrix)).dot(pixel_matrix)*pixel_depth_ros
+    intr_matrix = np.array([
+                  [self.intr.fx,0,self.intr.ppx],
+                  [0,self.intr.fy,self.intr.ppy],
+                  [0,0,1]
+                  ])
+    pixel_matrix=np.array([[point_x],[point_y],[1]])
+    [[x_biase],[y_biase],[z_world]] = (np.linalg.inv(intr_matrix)).dot(pixel_matrix)*pixel_depth_ros
 
-    pixel_diff_y=int(point_y)-240
-    pixel_diff_x=int(point_x)-320
-    # calculation the real image longth
-    x=2*pixel_depth_ros*math.tan(math.radians(54/2))
-    y=2*pixel_depth_ros*math.tan(math.radians(43/2))
-    diff_x=x/640
-    diff_y=y/480
-    x_biase=round(diff_x*pixel_diff_x,3)
-    y_biase=round(diff_y*pixel_diff_y,3)
-    z_world=pixel_depth_ros
+    # pixel_diff_y=int(point_y)-240
+    # pixel_diff_x=int(point_x)-320
+    # # calculation the real image longth
+    # x=2*pixel_depth_ros*math.tan(math.radians(54/2))
+    # y=2*pixel_depth_ros*math.tan(math.radians(43/2))
+    # diff_x=x/640
+    # diff_y=y/480
+    # x_biase=round(diff_x*pixel_diff_x,3)
+    # y_biase=round(diff_y*pixel_diff_y,3)
+    # z_world=pixel_depth_ros
 
     goal = PoseStamped()
     goal.header.seq = 1

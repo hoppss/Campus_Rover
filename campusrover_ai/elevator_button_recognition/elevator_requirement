@@ -1,5 +1,7 @@
-opencv=3.3.1
-tensorflow=1.13.1
-tensorflow_gpu=1.13.1
-python=2.7
-cuda=10.0.326
+opencv = 3.3.1
+tensorflow = 1.13.1
+numpy = 1.13.3
+pyrealsensn2 = 2.36.0
+tensorflow_gpu = 1.13.1(if you can't use the tensorflow_gpu, you don need to install )
+python = 2.7
+cuda= 10.0 (if you don't have the GPU,you don't need to install)

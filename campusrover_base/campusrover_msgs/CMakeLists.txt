@@ -59,6 +59,7 @@ add_service_files(
   MapInitPose.srv
   LocalizerSwitch.srv
   ArmTablePosition.srv
+  ArmTableHomeReturn.srv
 )
 #
 ## Generate added messages and services with any dependencies listed here

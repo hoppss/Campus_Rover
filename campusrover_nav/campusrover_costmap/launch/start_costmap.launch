@@ -1,6 +1,6 @@
 <launch>
   <arg name="debug"               default="false"/>
-  <arg name="bag_filename"        default="$(env HOME)/bags/campusrover_bag/20200402_3f_1.bag"/>
+  <arg name="bag_filename"        default="$(env HOME)/bags/campusrover_bag/20200704elevator_test_4_180trun_2.bag"/>
   <!-- ros input topics -->
   <arg name="use_velodyne"        default="false"/>
   <arg if="$(arg use_velodyne)"  name="pointcloud" default="/velodyne_points"/>
@@ -28,8 +28,8 @@
   <node name="campusrover_costmap" pkg="campusrover_costmap" type="campusrover_costmap" output="screen">
     <remap from="points2"             to="$(arg pointcloud)" />
     <param name="pcl_viz"             type="bool"   value="false" />
-    <param name="map_size_width"      type="double" value="5" />
-    <param name="map_size_height"     type="double" value="5" />
+    <param name="map_size_width"      type="double" value="4" />
+    <param name="map_size_height"     type="double" value="4" />
     <param name="map_resolution"      type="double" value="0.05" />
     <param name="max_obstacle_height" type="double" value="2.0" />
     <param name="min_obstacle_height" type="double" value="0.05" />

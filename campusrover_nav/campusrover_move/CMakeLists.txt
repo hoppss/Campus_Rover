@@ -67,4 +67,7 @@ target_link_libraries(lu_simulation ${catkin_LIBRARIES})
 add_executable(path_following src/path_following.cpp)
 target_link_libraries(path_following ${catkin_LIBRARIES})
 
+add_executable(obstacle_avoidance src/obstacle_avoidance.cpp)
+target_link_libraries(obstacle_avoidance ${catkin_LIBRARIES})
+
 

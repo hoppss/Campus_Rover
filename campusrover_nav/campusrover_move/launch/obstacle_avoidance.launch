@@ -1,0 +1,40 @@
+<launch>
+    <arg name="debug"               default="false"/>
+    <arg name="bag_filename"        default="$(env HOME)/bags/campusrover_bag/20200529_elevator_1.bag"/>
+
+    <arg name="local_path"       default="/local_path"/>
+    <arg name="global_path"         default="/global_path"/>
+    <arg name="local_costmap"       default="/campusrover_local_costmap"/>
+
+    <!-- /////////////////////////////////////////////////////////////////////////////////// -->
+    <group if="$(arg debug)">
+
+        <param name="use_sim_time" value="true" />
+        <node name="playbag" pkg="rosbag" type="play"
+                args="--clock $(arg bag_filename)" />
+
+        <param name="robot_description"
+            textfile="$(find campusrover_description)/urdf/campusrover.urdf" />
+
+        <node name="robot_state_publisher" pkg="robot_state_publisher"
+            type="robot_state_publisher" />
+
+
+        <!-- rviz -->
+        <node name="rviz" pkg="rviz" type="rviz" args="-d $(find campusrover_move)/rviz/dp_planner.rviz" required="true"/>
+
+    </group>
+
+    <node pkg="campusrover_move" type="obstacle_avoidance" name="obstacle_avoidance" output="screen">
+        <remap from="local_path"    to="$(arg local_path)" />
+        <remap from="global_path"    to="$(arg global_path)" />
+        <remap from="costmap"    to="$(arg local_costmap)" />
+        <param name="robot_frame" value="base_link" />
+        
+        <param name="target_point_dis" value="1.0" />
+
+        <param name="threshold_occupied" value="10" />
+
+        <param name="enble_costmap_obstacle" value="false" />
+    </node>
+</launch>

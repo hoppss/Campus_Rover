@@ -5,7 +5,7 @@
 #include <geometry_msgs/Twist.h>
 #include <geometry_msgs/PoseStamped.h>
 #include <geometry_msgs/PoseWithCovarianceStamped.h>
-
+#include <nav_msgs/Path.h>
 
 #include <tf/transform_broadcaster.h>
 #include <tf/transform_listener.h>
@@ -19,13 +19,15 @@
 
 using namespace std;
 
-ros::Subscriber twist_sub_, initial_pose_sub_;
-ros::Publisher odom_pub_;
+ros::Subscriber twist_sub_, initial_pose_sub_, goal_pose_sub_;
+ros::Publisher odom_pub_, global_path_pub_;
 
+nav_msgs::Path global_path_;
 string odom_frame_id_, robot_frame_id_;
 bool publish_tf_;
 double x_ = 0, y_ = 0, yaw_ = 0;
 double current_speed_, current_angular_velocity_;
+double path_resolution_;
 
 
 void GetParameters(ros::NodeHandle n_private)
@@ -33,6 +35,7 @@ void GetParameters(ros::NodeHandle n_private)
   n_private.param<string>("odom_frame_id", odom_frame_id_, "map");
   n_private.param<string>("robot_frame_id", robot_frame_id_, "base_link");
   n_private.param<bool>("publish_tf", publish_tf_, true);
+  n_private.param<double>("path_resolution", path_resolution_, 0.05);
 }
 
 void timerCallback(const ros::TimerEvent& event)
@@ -162,6 +165,62 @@ void InitialposeCallback(const geometry_msgs::PoseWithCovarianceStampedConstPtr&
 
 }
 
+void GoalposeCallback(const geometry_msgs::PoseStampedConstPtr& pose_msg)
+{
+  static int global_path_step_count;
+  static geometry_msgs::PoseStamped global_path_pose;
+  static geometry_msgs::PoseStamped last_pose;
+  static tf2::Quaternion path_pose_q_tf;
+  static geometry_msgs::Quaternion path_pose_q_msg;
+  static double target_yaw;
+  static bool first_time = true;
+  static double step_x, step_y;
+
+  if(first_time)
+  {
+    last_pose.pose = pose_msg->pose;
+    global_path_.header.frame_id = pose_msg->header.frame_id;
+    first_time = false;
+    return;
+  }
+
+  //push the path pose from robot pose to closest path pose 
+  global_path_step_count = int (sqrt(pow(last_pose.pose.position.x 
+                                      - pose_msg->pose.position.x,2) 
+                                  + pow(last_pose.pose.position.y 
+                                      - pose_msg->pose.position.y, 2))/path_resolution_);
+  step_x = double ((pose_msg->pose.position.x 
+                                      - last_pose.pose.position.x)/global_path_step_count);
+  step_y = double ((pose_msg->pose.position.y 
+                                      - last_pose.pose.position.y)/global_path_step_count);
+  
+  for(int i = 0;i < global_path_step_count;i++)
+  {
+    if(i ==0)
+    {
+      global_path_pose.pose.position.x = last_pose.pose.position.x;
+      global_path_pose.pose.position.y = last_pose.pose.position.y;
+    }
+    else
+    {
+      global_path_pose.pose.position.x += step_x;
+      global_path_pose.pose.position.y += step_y;
+
+      target_yaw = atan2(global_path_pose.pose.position.y - global_path_.poses[i-1].pose.position.y, 
+                          global_path_pose.pose.position.x - global_path_.poses[i-1].pose.position.x);
+      
+      path_pose_q_tf.setRPY(0.0,0.0,target_yaw);
+      path_pose_q_msg = tf2::toMsg(path_pose_q_tf);
+      global_path_pose.pose.orientation = path_pose_q_msg;
+    }
+    global_path_.poses.push_back(global_path_pose);
+  }
+
+  global_path_pub_.publish(global_path_);
+  last_pose.pose = pose_msg->pose;
+}
+
+
 int main(int argc, char** argv){
   ros::init(argc, argv, "lu_simulation");
   ros::NodeHandle nh;
@@ -170,9 +229,11 @@ int main(int argc, char** argv){
 	ros::Time::init();
 
   twist_sub_ = nh.subscribe("/cmd_vel", 100, TwistCallback);
-  initial_pose_sub_ = nh.subscribe("/initialpose", 100, InitialposeCallback);
+  initial_pose_sub_ = nh.subscribe("/initialpose", 10, InitialposeCallback);
+  goal_pose_sub_ = nh.subscribe("/move_base_simple/goal", 10, GoalposeCallback);
 
   odom_pub_ = nh.advertise<nav_msgs::Odometry> ("odom", 10);
+  global_path_pub_ = nh.advertise<nav_msgs::Path>("global_path", 20);
 
   ros::Timer timer = nh.createTimer(ros::Duration(0.05), timerCallback);
 

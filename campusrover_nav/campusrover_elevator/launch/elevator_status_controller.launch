@@ -48,8 +48,6 @@
     </node>
 
     <node pkg="campusrover_elevator" type="elevator_status_controller" name="elevator_status_controller" output="screen"/>
-        <!-- ... -->
-    <!-- </node> -->
 
     <!-- elevator door status -->
     <include file="$(find campusrover_elevator)/launch/elevator_door_status.launch" />

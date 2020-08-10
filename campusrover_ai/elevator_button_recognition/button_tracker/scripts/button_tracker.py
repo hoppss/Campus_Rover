@@ -8,27 +8,13 @@ import tf
 import PIL.Image as Image
 import PIL.ImageOps as ImageOps
 from sensor_msgs.msg import Image
-from std_msgs.msg import Bool
 from std_msgs.msg import String
 from geometry_msgs.msg import PoseStamped
 from campusrover_msgs.srv import *
 from button_recognition.srv import *
 from cv_bridge import CvBridge
-from sensor_msgs.msg import PointCloud2
-from sensor_msgs import point_cloud2
 from campusrover_msgs.msg import ButtonCommand
 import pyrealsense2 as rs
-# from global_variable import initialize
-
-
-def camera_intr():
-  pipeline = rs.pipeline()
-  config = rs.config()
-  config.enable_stream(rs.stream.color, 640, 480, rs.format.rgb8, 30)
-  cfg = pipeline.start(config)
-  profile = cfg.get_stream(rs.stream.color)
-  intr = profile.as_video_stream_profile().get_intrinsics()
-  return intr.ppx,intr.ppy,intr.fx,intr.fy
 
 class ButtonTracker:
   def __init__(self):
@@ -93,8 +79,9 @@ class read_video_and_recognize:
     self.presstext='set'
     self.init_brightness_value = 0
     self.depth_check = False
+    self.intr = None
     self.pub=rospy.Publisher('button_recognize_image',Image,queue_size=2)
-    self.brightness_set= rospy.get_param('brightness_detect',6.45)
+    self.brightness_set= rospy.get_param("~brightness_detect")
     rospy.Subscriber("/color_image_raw", Image,self.read_and_recognize)
     rospy.Subscriber('/aligned_depth_image_raw',Image,self.depth_image)
     rospy.Subscriber('/button_info', ButtonCommand,self.button_info_enable)
@@ -168,27 +155,26 @@ class read_video_and_recognize:
     point_y = (self.mybox[3] + self.mybox[1]) / 2.0
     pixel_depth=cv_depth_image[int(point_y),int(point_x)]
 
-    # (cam_intr_ppx,cam_intr_ppy,cam_intr_fx,cam_intr_fy) = camera_intr()
     pixel_depth_ros=round(float(pixel_depth)/1000, 3)
 
-    intr_matrix = np.array([
-                  [612.669,0,317.633],
-                  [0,611.278,235.112],
-                  [0,0,1]
-                  ])
-    pixel_matrix=np.array([[point_x],[point_y],[1]])
-    [[x_biase],[y_biase],[z_world]] = (np.linalg.inv(intr_matrix)).dot(pixel_matrix)*pixel_depth_ros
+    # intr_matrix = np.array([
+    #               [self.intr.fx,0,self.intr.ppx],
+    #               [0,self.intr.fy,self.intr.ppy],
+    #               [0,0,1]
+    #               ])
+    # pixel_matrix=np.array([[point_x],[point_y],[1]])
+    # [[x_biase],[y_biase],[z_world]] = (np.linalg.inv(intr_matrix)).dot(pixel_matrix)*pixel_depth_ros
 
-    # pixel_diff_y=int(point_y)-cam_intr_ppy
-    # pixel_diff_x=int(point_x)-cam_intr_ppx
-    # # calculation the real image longth
-    # x=2*pixel_depth_ros*math.tan(math.radians(54/2))
-    # y=2*pixel_depth_ros*math.tan(math.radians(43/2))
-    # diff_x=x/640
-    # diff_y=y/480
-    # x_biase=round(diff_x*pixel_diff_x,3)
-    # y_biase=round(diff_y*pixel_diff_y,3)
-    # z_world=pixel_depth_ros
+    pixel_diff_y=int(point_y)-240
+    pixel_diff_x=int(point_x)-320
+    # calculation the real image longth
+    x=2*pixel_depth_ros*math.tan(math.radians(54/2))
+    y=2*pixel_depth_ros*math.tan(math.radians(43/2))
+    diff_x=x/640
+    diff_y=y/480
+    x_biase=round(diff_x*pixel_diff_x,3)
+    y_biase=round(diff_y*pixel_diff_y,3)
+    z_world=pixel_depth_ros
 
     goal = PoseStamped()
     goal.header.seq = 1
@@ -206,7 +192,14 @@ class read_video_and_recognize:
         print('call_arm_service')
         self.call_arm_service(goal)
         print('arm_service finish')
-        
+  
+  def camera_intr(self):
+    pipeline = rs.pipeline()
+    config = rs.config()
+    config.enable_stream(rs.stream.color, 640, 480, rs.format.rgb8, 30)
+    cfg = pipeline.start(config)
+    profile = cfg.get_stream(rs.stream.color)
+    self.intr = profile.as_video_stream_profile().get_intrinsics()
 
   def button_info_enable(self,button):
     self.button_info=button.button_name.data
@@ -239,4 +232,5 @@ class read_video_and_recognize:
 if __name__ == '__main__':
   rospy.init_node('button_tracker', anonymous=True)
   read = read_video_and_recognize()
+  # read.camera_intr()
   rospy.spin()

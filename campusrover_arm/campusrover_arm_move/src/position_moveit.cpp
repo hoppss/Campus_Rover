@@ -59,7 +59,10 @@ bool get_button_check_data_ = false;
 bool button_status_ = false;
 bool enable_button_check_;
 
+bool get_arm_service_ = false;
+
 void initialization();
+void ArmPressButton();
 void ButtonPoseCallback(geometry_msgs::Pose Pose);
 void BtnCallService(ros::ServiceClient &client,campusrover_msgs::PressButton &srv);
 void StatusCheckCallService(ros::ServiceClient &client,campusrover_msgs::ElevatorStatusChecker &srv);
@@ -91,226 +94,240 @@ void initialization()
 
 }
 
+void timerCallback(const ros::TimerEvent& event)
+{
+  
+
+  if(get_arm_service_)
+  {
+    get_arm_service_ = false;
+    ArmPressButton();
+  }
+  
+  
+
+}
+//----------------------------------------------------------------------------------------------------------------------
+void ArmPressButton()
+{
+  static campusrover_msgs::ElevatorStatusChecker status_msg;
+  static dynamixel_controllers::SetComplianceSlope slope_msg;
+
+  static const std::string PLANNING_GROUP = planning_group_name_;
+  moveit::planning_interface::MoveGroupInterface move_group(PLANNING_GROUP);
+
+  move_group.setGoalOrientationTolerance(0.3); 
+  move_group.setGoalJointTolerance(0.01);
+  move_group.setGoalPositionTolerance(0.01);
+  move_group.setMaxVelocityScalingFactor(1.0);
+  move_group.setMaxAccelerationScalingFactor(1.0);
+  move_group.setPlanningTime(planning_time_);
+  move_group.setNumPlanningAttempts(num_planning_attempts_);
+  move_group.allowReplanning(allow_replanning_);
+
+  slope_msg.request.slope = 45;
+  SetComplianceSlopeCallService(joint_1_slope_client_, slope_msg);
+  SetComplianceSlopeCallService(joint_2_slope_client_, slope_msg);
+  SetComplianceSlopeCallService(joint_3_slope_client_, slope_msg);
+  
+  cout << "GoalJointTolerance : " <<move_group.getGoalJointTolerance()<< endl;
+  cout << "GoalPositionTolerance : " <<move_group.getGoalPositionTolerance()<< endl;
+  cout << "GoalOrientationTolerance : " <<move_group.getGoalOrientationTolerance()<< endl;
+
+  moveit::planning_interface::PlanningSceneInterface planning_scene_interface;
+  // const robot_state::JointModelGroup* joint_model_group =
+  //   move_group.getCurrentState()->getJointModelGroup(PLANNING_GROUP);
+  
+
+  //Visualization_//
+  // namespace rvt = rviz_visual_tools;
+  // moveit_visual_tools::MoveItVisualTools visual_tools(planning_frame_id_);
+  // visual_tools.deleteAllMarkers();
+  // visual_tools.loadRemoteControl();
+  // Eigen::Isometry3d text_pose = Eigen::Isometry3d::Identity();
+  // visual_tools.trigger();
+
+  //move to standby_pose//
+  bool success;
+  if(!standby_pose_ready_)
+  {
+    cout << "move to standby_pose" << endl;
+    move_group.setMaxVelocityScalingFactor(1.0);
+    success = (move_group.setNamedTarget(standby_pose_name_) == moveit::planning_interface::MoveItErrorCode::SUCCESS);
+    move_group.move();
+    standby_pose_ready_ = true;
+  }
+
+
+  //ros::Duration(1.0).sleep();
+  //move_group.clearPoseTarget();
+
+  //move to button pose
+  cout << "move to button pose" << endl;
+  moveit::planning_interface::MoveGroupInterface::Plan plan;
+  static geometry_msgs::Pose target_pose;
+  static geometry_msgs::PoseStamped local_pose;
+  static tf2::Quaternion quat_tf;
+  static tf2_ros::Buffer tfBuffer;
+  static tf2_ros::TransformListener tfListener(tfBuffer);
+  static campusrover_msgs::ButtonCommand button_command;
+  static double pitch, yaw;
+
+  cout << "Planning Frame : " <<move_group.getPlanningFrame()<<" input frame : "<<pose_.header.frame_id<< endl;
+
+  bool transformed = false;
+  if (planning_frame_id_ != pose_.header.frame_id)
+  {
+    while(!transformed)
+    {
+      try
+      {
+        tfBuffer.transform(pose_, local_pose, planning_frame_id_);
+        transformed = true;
+      }
+      catch (tf2::TransformException &ex)
+      {
+        ROS_WARN("position_move: %s",ex.what());
+        ros::Duration(1.0).sleep();
+        continue;
+      }
+    }
+    pose_ = local_pose;
+  }
+
+
+  
+
+  pitch = yaw = 0.0;
+  
+  target_pose.position = pose_.pose.position;
+
+  
+  target_pose.position.x += shift_x_;
+  target_pose.position.y += shift_y_;
+  target_pose.position.z += shift_z_;
+
+  yaw = atan2(pose_.pose.position.y,pose_.pose.position.x);
+  
+  quat_tf.setRPY( 0, pitch, yaw ); 
+  geometry_msgs::Quaternion quat_msg = tf2::toMsg(quat_tf);
+  target_pose.orientation = quat_msg;
+  
+
+  cout << "target pose : " <<target_pose<< endl;
+
+  move_group.setPoseTarget(target_pose);
+  success = (move_group.plan(plan) == moveit::planning_interface::MoveItErrorCode::SUCCESS);
+  if(success)
+  {
+    move_group.move();
+    ros::Duration(0.1).sleep();
+
+    static std::vector<geometry_msgs::Pose> waypoints;
+    waypoints.clear();
+
+    waypoints.push_back(target_pose);
+
+    target_pose.position.x += press_dis_;
+    waypoints.push_back(target_pose); 
+
+    target_pose.position.x -= press_dis_;
+    waypoints.push_back(target_pose);  
+
+
+    // Cartesian motions are frequently needed to be slower for actions such as approach and retreat
+    // grasp motions. Here we demonstrate how to reduce the speed of the robot arm via a scaling factor
+    // of the maxiumum speed of each joint. Note this is not the speed of the end effector point.
+
+    static moveit_msgs::RobotTrajectory trajectory;
+    double fraction = move_group.computeCartesianPath(waypoints, eef_step_, jump_threshold_, trajectory);
+    ROS_INFO_NAMED("tutorial", "Visualizing plan 4 (Cartesian path) (%.2f%% acheived)", fraction * 100.0);
+
+    // Visualize the plan in RViz
+    // visual_tools.deleteAllMarkers();
+    // visual_tools.publishText(text_pose, "Joint Space Goal", rvt::WHITE, rvt::XLARGE);
+    // visual_tools.publishPath(waypoints, rvt::LIME_GREEN, rvt::SMALL);
+    // for (std::size_t i = 0; i < waypoints.size(); ++i)
+    // visual_tools.publishAxisLabeled(waypoints[i], "pt" + std::to_string(i), rvt::SMALL);
+    // visual_tools.trigger();
+
+    plan.trajectory_ = trajectory;
+    move_group.execute(plan);
+
+
+    move_group.setNamedTarget(press_pose_name_);
+    move_group.move();
+
+    if(enable_button_check_)
+    {
+      //move to press  pose press_pose_name_
+      
+
+      //check button is pressed
+      button_command.button_name.data = button_info_;
+      button_command.command_type.data = "check";
+      button_info_pub_.publish(button_command);
+
+      while (!get_button_check_data_)
+      {
+        ROS_WARN("arm move group  : waiting for button check");
+        ros::Duration(1.0).sleep();
+      }
+
+      if(get_button_check_data_)
+      {
+        if(!button_check_status_)
+        {
+          button_command.button_name.data = button_info_;
+          button_command.command_type.data = "init";
+          
+          get_button_check_data_ = false;
+          cout << "button don't be pressed please ,call arm action again" << endl;
+          
+          button_info_pub_.publish(button_command);
+          return;
+        }
+        get_button_check_data_ = false;
+      }
+    }
+    ros::Duration(0.1).sleep();
+    status_msg.request.node_name.data = "arm";
+    status_msg.request.status.data = true;
+  }
+  else
+  {
+    status_msg.request.node_name.data = "arm";
+    status_msg.request.status.data = false;
+  }
+
+  
+  StatusCheckCallService(status_check_client_, status_msg);
+
+  slope_msg.request.slope = 70;
+  SetComplianceSlopeCallService(joint_1_slope_client_, slope_msg);
+  SetComplianceSlopeCallService(joint_2_slope_client_, slope_msg);
+  SetComplianceSlopeCallService(joint_3_slope_client_, slope_msg);
+
+  
+  cout << "move to release_pose " << endl;
+  
+  move_group.setNamedTarget(release_pose_name_);
+  move_group.move();
+
+  standby_pose_ready_ = false;
+  
+  cout << "done" << endl;
+}
 //void ButtonPoseCallback(geometry_msgs::Pose pose)
 bool ArmServiceCallback(campusrover_msgs::ArmAction::Request  &req, campusrover_msgs::ArmAction::Response &res)
 {
-    static campusrover_msgs::ElevatorStatusChecker status_msg;
-    static dynamixel_controllers::SetComplianceSlope slope_msg;
+    
 
     pose_ = req.button_pose;
     cout << "recrvie pose : " <<pose_<< endl;
-    static const std::string PLANNING_GROUP = planning_group_name_;
-    moveit::planning_interface::MoveGroupInterface move_group(PLANNING_GROUP);
+
+    get_arm_service_ = true;
     
-    move_group.setGoalOrientationTolerance(0.3); 
-    move_group.setGoalJointTolerance(0.01);
-    move_group.setGoalPositionTolerance(0.01);
-    move_group.setMaxVelocityScalingFactor(1.0);
-    move_group.setMaxAccelerationScalingFactor(1.0);
-    move_group.setPlanningTime(planning_time_);
-    move_group.setNumPlanningAttempts(num_planning_attempts_);
-    move_group.allowReplanning(allow_replanning_);
-
-    slope_msg.request.slope = 45;
-    SetComplianceSlopeCallService(joint_1_slope_client_, slope_msg);
-    SetComplianceSlopeCallService(joint_2_slope_client_, slope_msg);
-    SetComplianceSlopeCallService(joint_3_slope_client_, slope_msg);
-    
-    cout << "GoalJointTolerance : " <<move_group.getGoalJointTolerance()<< endl;
-    cout << "GoalPositionTolerance : " <<move_group.getGoalPositionTolerance()<< endl;
-    cout << "GoalOrientationTolerance : " <<move_group.getGoalOrientationTolerance()<< endl;
-
-    moveit::planning_interface::PlanningSceneInterface planning_scene_interface;
-    // const robot_state::JointModelGroup* joint_model_group =
-    //   move_group.getCurrentState()->getJointModelGroup(PLANNING_GROUP);
-    
-
-    //Visualization_//
-    // namespace rvt = rviz_visual_tools;
-    // moveit_visual_tools::MoveItVisualTools visual_tools(planning_frame_id_);
-    // visual_tools.deleteAllMarkers();
-    // visual_tools.loadRemoteControl();
-    // Eigen::Isometry3d text_pose = Eigen::Isometry3d::Identity();
-    // visual_tools.trigger();
-
-    //move to standby_pose//
-    bool success;
-    if(!standby_pose_ready_)
-    {
-      cout << "move to standby_pose" << endl;
-      move_group.setMaxVelocityScalingFactor(1.0);
-      success = (move_group.setNamedTarget(standby_pose_name_) == moveit::planning_interface::MoveItErrorCode::SUCCESS);
-      move_group.move();
-      standby_pose_ready_ = true;
-    }
-
-
-    //ros::Duration(1.0).sleep();
-    //move_group.clearPoseTarget();
-
-    //move to button pose
-    cout << "move to button pose" << endl;
-    moveit::planning_interface::MoveGroupInterface::Plan plan;
-    static geometry_msgs::Pose target_pose;
-    static geometry_msgs::PoseStamped local_pose;
-    static tf2::Quaternion quat_tf;
-    static tf2_ros::Buffer tfBuffer;
-    static tf2_ros::TransformListener tfListener(tfBuffer);
-    static campusrover_msgs::ButtonCommand button_command;
-    static double pitch, yaw;
-
-    cout << "Planning Frame : " <<move_group.getPlanningFrame()<<" input frame : "<<pose_.header.frame_id<< endl;
-
-    bool transformed = false;
-    if (planning_frame_id_ != pose_.header.frame_id)
-    {
-      while(!transformed)
-      {
-        try
-        {
-          tfBuffer.transform(pose_, local_pose, planning_frame_id_);
-          transformed = true;
-        }
-        catch (tf2::TransformException &ex)
-        {
-          ROS_WARN("position_move: %s",ex.what());
-          ros::Duration(1.0).sleep();
-          continue;
-        }
-      }
-      pose_ = local_pose;
-    }
-
-
-    
-
-    pitch = yaw = 0.0;
-    
-    target_pose.position = pose_.pose.position;
-
-    
-    target_pose.position.x += shift_x_;
-    target_pose.position.y += shift_y_;
-    target_pose.position.z += shift_z_;
-
-    yaw = atan2(pose_.pose.position.y,pose_.pose.position.x);
-    
-    quat_tf.setRPY( 0, pitch, yaw ); 
-    geometry_msgs::Quaternion quat_msg = tf2::toMsg(quat_tf);
-    target_pose.orientation = quat_msg;
-    
-
-    cout << "target pose : " <<target_pose<< endl;
-
-    move_group.setPoseTarget(target_pose);
-    success = (move_group.plan(plan) == moveit::planning_interface::MoveItErrorCode::SUCCESS);
-    if(success)
-    {
-      move_group.move();
-      ros::Duration(0.1).sleep();
-
-      static std::vector<geometry_msgs::Pose> waypoints;
-      waypoints.clear();
-
-      waypoints.push_back(target_pose);
-
-      target_pose.position.x += press_dis_;
-      waypoints.push_back(target_pose); 
-
-      target_pose.position.x -= press_dis_;
-      waypoints.push_back(target_pose);  
-
- 
-      // Cartesian motions are frequently needed to be slower for actions such as approach and retreat
-      // grasp motions. Here we demonstrate how to reduce the speed of the robot arm via a scaling factor
-      // of the maxiumum speed of each joint. Note this is not the speed of the end effector point.
-
-      static moveit_msgs::RobotTrajectory trajectory;
-      double fraction = move_group.computeCartesianPath(waypoints, eef_step_, jump_threshold_, trajectory);
-      ROS_INFO_NAMED("tutorial", "Visualizing plan 4 (Cartesian path) (%.2f%% acheived)", fraction * 100.0);
-
-      // Visualize the plan in RViz
-      // visual_tools.deleteAllMarkers();
-      // visual_tools.publishText(text_pose, "Joint Space Goal", rvt::WHITE, rvt::XLARGE);
-      // visual_tools.publishPath(waypoints, rvt::LIME_GREEN, rvt::SMALL);
-      // for (std::size_t i = 0; i < waypoints.size(); ++i)
-      // visual_tools.publishAxisLabeled(waypoints[i], "pt" + std::to_string(i), rvt::SMALL);
-      // visual_tools.trigger();
-
-      plan.trajectory_ = trajectory;
-      move_group.execute(plan);
-
-
-      move_group.setNamedTarget(press_pose_name_);
-      move_group.move();
-
-      if(enable_button_check_)
-      {
-        //move to press  pose press_pose_name_
-        
-
-        //check button is pressed
-        button_command.button_name.data = button_info_;
-        button_command.command_type.data = "check";
-        button_info_pub_.publish(button_command);
-
-        while (!get_button_check_data_)
-        {
-          ROS_WARN("arm move group  : waiting for button check");
-          ros::Duration(1.0).sleep();
-        }
-
-        if(get_button_check_data_)
-        {
-          if(!button_check_status_)
-          {
-            button_command.button_name.data = button_info_;
-            button_command.command_type.data = "init";
-            
-            get_button_check_data_ = false;
-            cout << "button don't be pressed please ,call arm action again" << endl;
-            
-            button_info_pub_.publish(button_command);
-            return true;
-          }
-          get_button_check_data_ = false;
-        }
-      }
-
-      
-      
-
-      //move to standby pose
-
-      ros::Duration(0.1).sleep();
-
-      status_msg.request.node_name.data = "arm";
-      status_msg.request.status.data = true;
-
-    }
-    else
-    {
-      status_msg.request.node_name.data = "arm";
-      status_msg.request.status.data = false;
-    }
-
-    
-    StatusCheckCallService(status_check_client_, status_msg);
-
-    slope_msg.request.slope = 70;
-    SetComplianceSlopeCallService(joint_1_slope_client_, slope_msg);
-    SetComplianceSlopeCallService(joint_2_slope_client_, slope_msg);
-    SetComplianceSlopeCallService(joint_3_slope_client_, slope_msg);
-
-    
-    cout << "move to release_pose " << endl;
-    
-    move_group.setNamedTarget(release_pose_name_);
-    move_group.move();
-
-    standby_pose_ready_ = false;
-    
-    cout << "done" << endl;
     return true;
     
 }
@@ -417,6 +434,8 @@ int main(int argc, char **argv)
     joint_1_slope_client_ = n.serviceClient<dynamixel_controllers::SetComplianceSlope>("/joint_1/set_compliance_slope");
     joint_2_slope_client_ = n.serviceClient<dynamixel_controllers::SetComplianceSlope>("/joint_2/set_compliance_slope");
     joint_3_slope_client_ = n.serviceClient<dynamixel_controllers::SetComplianceSlope>("/joint_3/set_compliance_slope");
+
+    ros::Timer timer = n.createTimer(ros::Duration(0.05), timerCallback);
 
     spinner.start();
     ros::waitForShutdown();

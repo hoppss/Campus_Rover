@@ -166,14 +166,14 @@ class ButtonRecognizer:
       recognition_list.append([boxes[i], scores[i], text, belief])
 
     if draw:
-      classes = [1]*len(boxes)
+      classes = [1]*len(boxes) 
       self.draw_detection_result(image_np, boxes, classes, scores, self.category_index)
       self.draw_recognition_result(image_np, recognition_list)
 
     return recognition_list
 
-  @staticmethod
-  def draw_detection_result(image_np, boxes, classes, scores, category, predict_chars=None):
+
+  def draw_detection_result(self, image_np, boxes, classes, scores, category, predict_chars=None):
     vis_util.visualize_boxes_and_labels_on_image_array(
       image_np,
       np.squeeze(boxes),

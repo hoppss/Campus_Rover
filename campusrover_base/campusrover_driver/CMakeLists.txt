@@ -14,6 +14,7 @@ find_package(catkin REQUIRED COMPONENTS
   message_generation
   tf
   dynamic_reconfigure
+  campusrover_msgs
 )
 
 
@@ -43,8 +44,6 @@ find_package(catkin REQUIRED COMPONENTS
 # )
 
 ## Generate added messages and services with any dependencies listed here
-generate_messages()
-generate_dynamic_reconfigure_options(cfg/SimCampusroverDriver.cfg)
 
 ################################################
 ## Declare ROS dynamic reconfigure parameters ##

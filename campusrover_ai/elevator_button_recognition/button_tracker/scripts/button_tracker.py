@@ -90,7 +90,12 @@ class read_video_and_recognize:
   # initialize tracking process
     bridge = CvBridge()
     cv_image = bridge.imgmsg_to_cv2(Image, 'bgr8')
-    hsv=cv2.cvtColor(cv_image,cv2.COLOR_BGR2HSV)
+    b,g,r = cv2.split(cv_image)
+    b = cv2.equalizeHist(b)
+    g = cv2.equalizeHist(g)
+    r = cv2.equalizeHist(r)
+    cv_image_eq = cv2.merge([b,g,r])
+    hsv=cv2.cvtColor(cv_image_eq,cv2.COLOR_BGR2HSV)
     self.frame_id=Image.header.frame_id
     button_tracker = ButtonTracker()
     if self.recognize_check == True:  
